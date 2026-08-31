@@ -31,11 +31,11 @@
 - 导出 GPX，再删除本地数据并重新导入，核对点数、日期和总距离。
 - 导入大文件前保留原始文件；批量导入会重建每日统计。
 
-## 合并升级与数据保留
+## Bundle ID 变更与数据边界
 
-- 在仍有历史轨迹的 Traceon/Companio 真机安装上覆盖安装同签名的 ARO 版本；确认显示名称变为 ARO，历史天数、总距离、轨迹点、导出和原有定位模式/记录开关均保持不变。
-- 确认 iOS App 的 bundle identifier 仍为 `com.xunbo.traceon`，不应出现第二个独立 iOS App 或新的空数据库。
-- 不要为了测试升级而删除旧 App；卸载会移除本地容器，无法验证原位升级的数据保留。
+- 在仍有历史轨迹的 Traceon/Companio 真机上先导出 GPX/GeoJSON，再安装使用新身份的 ARO；确认 ARO 可以独立启动、定位授权和设置初始化正常，并将导出文件重新导入后核对点数、日期和总距离。
+- 确认 iOS Bundle ID 为 `com.xunbo.aro`，Watch App 为 `com.xunbo.aro.watchkitapp`，Widget Extension 为 `com.xunbo.aro.watchkitapp.widget`，Watch 的 `WKCompanionAppBundleIdentifier` 为 `com.xunbo.aro`。
+- 明确验证 ARO 不会读取旧 `com.xunbo.traceon` 容器中的 SQLite/UserDefaults；旧 App 与 ARO 可以作为两个独立身份存在。不要把新 App 的数据库路径仍叫 `Application Support/traceon/tracks.sqlite3` 解读为跨 Bundle ID 的自动迁移。
 
 ## Apple Watch 与快捷指令
 
@@ -55,7 +55,7 @@
 5. 移除活动复杂功能后重复相同观察，作为对照；至少观察完整一天再判断 watchOS 调度差异。
 6. 确认复杂功能只显示 Watch App 写入的 App Group 快照，没有自己的 `WKInterfaceDevice` 读取、前台计时器或 iPhone 网络请求；Watch App 的自主刷新只更新 application context，不应产生无请求对应的 `sendMessage`。模拟器只能验证编译和静态布局，不能验证复杂功能刷新频率。
 
-如果表盘编辑器中找不到 `ARO 电量`，记录手表型号和 watchOS 版本，确认已安装完整的 `ARO Watch App`（不是只有 iOS App），并核对 Widget Extension 已随 Watch App 嵌入、bundle identifier 为 `com.xunbo.traceon.watchkitapp.widget`、App Group 为 `group.com.xunbo.traceon.watch`。在手表上打开一次 ARO 后退出并重新打开表盘编辑器；确认当前表盘位置支持所选 accessory family，再重新安装一次 Watch App 做对照。不要把模拟器中能编译或能预览 Widget 当作真机表盘可发现性的证明。
+如果表盘编辑器中找不到 `ARO 电量`，记录手表型号和 watchOS 版本，确认已安装完整的 `ARO Watch App`（不是只有 iOS App），并核对 Widget Extension 已随 Watch App 嵌入、bundle identifier 为 `com.xunbo.aro.watchkitapp.widget`、App Group 为 `group.com.xunbo.traceon.watch`。在手表上打开一次 ARO 后退出并重新打开表盘编辑器；确认当前表盘位置支持所选 accessory family，再重新安装一次 Watch App 做对照。不要把模拟器中能编译或能预览 Widget 当作真机表盘可发现性的证明。
 
 ## 设备功能的后台能耗隔离
 

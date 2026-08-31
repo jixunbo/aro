@@ -24,13 +24,13 @@ ARO (Everything Around You) is a privacy-first combined iOS/iPadOS and watchOS a
 - Normal inserts increment the relevant daily summary. Batch imports run in a transaction and rebuild every daily summary from timestamp-ordered raw points.
 - Today/day queries are capped at 50,000 points; the lifetime map reads at most 8,000 row-ID-sampled points. Full export reads all points.
 - Tracking enabled state, tracking mode, and onboarding completion are in `UserDefaults`. Deleting all data clears both SQLite tables; uninstalling the app removes unexported data.
-- The user-visible name is ARO, while the iOS bundle identifier remains the legacy `com.xunbo.traceon`; existing Traceon/Companio application data, SQLite history, and tracking/onboarding defaults stay in the same app container. The watch snapshot cache is independent of the SQLite track database.
+- The user-visible name is ARO and the product bundle identifiers use the ARO namespace: iOS `com.xunbo.aro`, Watch App `com.xunbo.aro.watchkitapp`, and Widget Extension `com.xunbo.aro.watchkitapp.widget`. These identifiers intentionally create a new app identity; an existing Traceon/Companio install does not receive an in-place upgrade or automatic SQLite/UserDefaults migration. The database path remains `Application Support/traceon/tracks.sqlite3` within the new container, and the watch snapshot cache remains independent of the SQLite track database.
 
 ## Runtime and dependencies
 
 - Minimum deployment targets: iOS/iPadOS 17.0 and watchOS 10.0. The iOS target supports iPhone and iPad, not Mac Catalyst.
-- The project has four targets: `aro` (`com.xunbo.traceon`), embedded `ARO Watch App` (`com.xunbo.traceon.watchkitapp`, companion identifier `com.xunbo.traceon`), embedded `ARO Watch Widget Extension` (`com.xunbo.traceon.watchkitapp.widget`), and `aroTests`. The Watch App and Widget Extension share the Watch App Group `group.com.xunbo.traceon.watch`; the iOS host does not need that group.
-- The repository and Xcode project are named `aro` (`aro.xcodeproj`); the former Traceon/Companio names are retained only where required for upgrade compatibility, stable identifiers, or historical documentation.
+- The project has four targets: `aro` (`com.xunbo.aro`), embedded `ARO Watch App` (`com.xunbo.aro.watchkitapp`, companion identifier `com.xunbo.aro`), embedded `ARO Watch Widget Extension` (`com.xunbo.aro.watchkitapp.widget`), and `aroTests`. The Watch App and Widget Extension share the stable Watch App Group `group.com.xunbo.traceon.watch`; the iOS host does not need that group.
+- The repository and Xcode project are named `aro` (`aro.xcodeproj`); the former Traceon/Companio names remain only in the stable data path, WidgetKit kind, App Group, or historical upgrade notes.
 - Project settings use Swift 5 with minimal strict-concurrency checking. `README.md` requires Xcode 26+; the project was last created/upgraded with Xcode 26.3.
 - Dependencies are Apple frameworks plus the system SQLite library linked with `-lsqlite3`. The device feature uses WatchConnectivity, WatchKit, and AppIntents. There are no package-manager dependencies or external service APIs.
 - The app declares the `location` background mode, location/motion permission strings, and a privacy manifest with no collected data or tracking.

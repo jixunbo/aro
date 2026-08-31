@@ -48,7 +48,9 @@
 
 **Implications:** The host depends on and embeds the watch target. Shared WatchConnectivity payload code is compiled into both targets. Location, track storage, device UI/connectivity, and watch source remain in separate directories and target memberships.
 
-## Preserve the legacy application identity and data container
+## Preserve the legacy application identity and data container (superseded)
+
+This earlier decision applied while the product was being renamed without changing its system identity. It was superseded by “Adopt ARO bundle identifiers” below after the user explicitly requested a new Bundle ID namespace.
 
 **Decision:** Change the user-visible application name to ARO and rename the local project/source targets, while retaining the iOS bundle identifier `com.xunbo.traceon`, the `Application Support/traceon/tracks.sqlite3` database path, and existing tracking/onboarding `UserDefaults` keys.
 
@@ -58,11 +60,19 @@
 
 ## ARO repository and source naming
 
-**Decision:** Rename the repository-facing project, scheme, source directories, target names, and product-specific source files to `aro`/`ARO`, while keeping legacy bundle identifiers and persistent data names unchanged.
+**Decision:** Rename the repository-facing project, scheme, source directories, target names, and product-specific source files to `aro`/`ARO`, while keeping persistent data names unchanged.
 
-**Reason:** ARO is the product name and “Everything Around You” is the intended identity; the codebase should expose that name consistently without breaking installed-app upgrades or Watch pairing.
+**Reason:** ARO is the product name and “Everything Around You” is the intended identity; the codebase should expose that name consistently while preserving stable on-device data and Watch snapshot names.
 
-**Implications:** Open `aro.xcodeproj` and build the shared `aro` scheme. The iOS module and test target are `aro` and `aroTests`; the Watch targets and battery/widget symbols use ARO names. `com.xunbo.traceon`, `com.xunbo.traceon.watchkitapp`, `group.com.xunbo.traceon.watch`, and `Application Support/traceon/tracks.sqlite3` remain stable compatibility identifiers.
+**Implications:** Open `aro.xcodeproj` and build the shared `aro` scheme. The iOS module and test target are `aro` and `aroTests`; the Watch targets and battery/widget symbols use ARO names. The Watch App Group and `Application Support/traceon/tracks.sqlite3` remain stable data identifiers; Bundle IDs are defined by the newer decision below.
+
+## Adopt ARO bundle identifiers
+
+**Decision:** Use `com.xunbo.aro` for the iOS host, `com.xunbo.aro.watchkitapp` for the embedded Watch App, `com.xunbo.aro.watchkitapp.widget` for the Widget Extension, and `com.xunbo.aro` as `WKCompanionAppBundleIdentifier`. Keep the existing Watch App Group and relative SQLite filename unchanged.
+
+**Reason:** The product identity is now ARO, and the user explicitly chose a new Bundle ID namespace for all three shipped targets.
+
+**Implications:** ARO is a new system app identity rather than an in-place Traceon upgrade. Existing Traceon/Companio containers, UserDefaults, permissions, and SQLite history are not automatically visible to ARO; users should export/import data if they need to move history. The stable Watch App Group remains a deliberate compatibility choice for the watch snapshot store, while the iOS host does not gain that entitlement.
 
 ## Separate location and device lifecycles
 
