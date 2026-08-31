@@ -21,7 +21,7 @@
 2. 在 `traceon`、`Companio Watch App` 和 `Companio Watch Widget Extension` 三个 target 的 Signing & Capabilities 中选择同一个开发团队；Watch App 与 Widget Extension 都需要 `group.com.xunbo.traceon.watch` App Group。
 3. 保持 iOS bundle identifier 为 `com.xunbo.traceon`，watchOS bundle identifier 为 `com.xunbo.traceon.watchkitapp`，Widget Extension bundle identifier 为 `com.xunbo.traceon.watchkitapp.widget`，并确认 watch target 的 `WKCompanionAppBundleIdentifier` 为 `com.xunbo.traceon`。
 4. 选择已配对 Apple Watch 的 iPhone 作为运行设备，并运行共享的 `traceon` scheme。watchOS App 会作为 Watch Content 嵌入 iOS App，Widget Extension 会嵌入 Watch App。
-5. 首次启动依次授予“使用 App 时”和“始终”定位权限。若设备页迟迟没有首条电量，请在 Apple Watch 上打开一次 Companio；随后可在表盘编辑器中添加 Companio 电量复杂功能。
+5. 首次启动依次授予“使用 App 时”和“始终”定位权限。若设备页迟迟没有首条电量，请在 Apple Watch 上打开一次 Companio；随后在表盘编辑器的复杂功能列表中选择 `Companio 电量`。如果 Xcode 报告 provisioning profile 缺少 App Groups，请在两个 watch target 的 Signing & Capabilities 中添加 App Groups，并注册/勾选 `group.com.xunbo.traceon.watch` 后重新运行。
 
 现有 Traceon 安装升级后仍使用 `com.xunbo.traceon` 和原来的 `Application Support/traceon/tracks.sqlite3`，不会因为显示名称变为 Companio 而迁移或清空已有轨迹。
 
