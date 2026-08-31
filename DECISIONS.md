@@ -42,19 +42,27 @@
 
 ## One surviving iOS host with an embedded watch companion
 
-**Decision:** Keep the existing `traceon` target and Xcode project as the sole iOS host, add the existing Companio functionality as an embedded `Companio Watch App` target, and expose device functionality as a separate iOS feature within the host.
+**Decision:** Keep the existing `aro` target and Xcode project as the sole iOS host, retain the existing location functionality, and expose Apple Watch device functionality through an embedded `ARO Watch App` target and separate iOS feature within the host.
 
-**Reason:** The combined product needs both established Traceon location history and Companio watch battery behavior without creating a third project or replacing the source-of-truth host.
+**Reason:** ARO needs both established Traceon location history and Apple Watch battery behavior without creating a third project or replacing the source-of-truth host.
 
 **Implications:** The host depends on and embeds the watch target. Shared WatchConnectivity payload code is compiled into both targets. Location, track storage, device UI/connectivity, and watch source remain in separate directories and target memberships.
 
-## Preserve the Traceon application identity and data container
+## Preserve the legacy application identity and data container
 
-**Decision:** Change the user-visible application name to Companio while retaining the iOS bundle identifier `com.xunbo.traceon`, the `Application Support/traceon/tracks.sqlite3` database path, and existing tracking/onboarding `UserDefaults` keys.
+**Decision:** Change the user-visible application name to ARO and rename the local project/source targets, while retaining the iOS bundle identifier `com.xunbo.traceon`, the `Application Support/traceon/tracks.sqlite3` database path, and existing tracking/onboarding `UserDefaults` keys.
 
-**Reason:** Existing installed Traceon users must retain their local SQLite history and settings through an upgrade.
+**Reason:** Existing installed Traceon/Companio users must retain their local SQLite history and settings through an upgrade even though the product is now called ARO.
 
-**Implications:** No bundle-ID or data-path migration is introduced. The embedded watch target uses `com.xunbo.traceon.watchkitapp` and declares `com.xunbo.traceon` as `WKCompanionAppBundleIdentifier`.
+**Implications:** No bundle-ID or data-path migration is introduced. The embedded watch target is displayed as `ARO Watch App`, uses `com.xunbo.traceon.watchkitapp`, and declares `com.xunbo.traceon` as `WKCompanionAppBundleIdentifier`.
+
+## ARO repository and source naming
+
+**Decision:** Rename the repository-facing project, scheme, source directories, target names, and product-specific source files to `aro`/`ARO`, while keeping legacy bundle identifiers and persistent data names unchanged.
+
+**Reason:** ARO is the product name and “Everything Around You” is the intended identity; the codebase should expose that name consistently without breaking installed-app upgrades or Watch pairing.
+
+**Implications:** Open `aro.xcodeproj` and build the shared `aro` scheme. The iOS module and test target are `aro` and `aroTests`; the Watch targets and battery/widget symbols use ARO names. `com.xunbo.traceon`, `com.xunbo.traceon.watchkitapp`, `group.com.xunbo.traceon.watch`, and `Application Support/traceon/tracks.sqlite3` remain stable compatibility identifiers.
 
 ## Separate location and device lifecycles
 
@@ -74,11 +82,11 @@
 
 ## Watch-owned snapshot and WidgetKit complication
 
-**Decision:** Keep `CompanioBatteryReporter` as the only component that reads `WKInterfaceDevice.current().batteryLevel`. Persist its newest valid `BatterySnapshot` in the Watch App Group `group.com.xunbo.traceon.watch`, and have the WidgetKit complication display that shared snapshot.
+**Decision:** Keep `AROBatteryReporter` as the only component that reads `WKInterfaceDevice.current().batteryLevel`. Persist its newest valid `BatterySnapshot` in the Watch App Group `group.com.xunbo.traceon.watch`, and have the WidgetKit complication display that shared snapshot.
 
 **Reason:** The complication should improve watch-face visibility and provide another watchOS refresh opportunity without creating a second battery-monitoring architecture or an iPhone polling path.
 
-**Implications:** Battery samples continue to use application context and explicit reachable replies. Autonomous watch refreshes do not send unsolicited `sendMessage` calls that could wake the iPhone; only an explicit iPhone request receives a live reply. The watch app persists every newer timestamp but reloads the complication timeline only when displayed battery/status values meaningfully change. WidgetKit and watchOS background refresh are system scheduled; a preferred interval is not a guarantee.
+**Implications:** Battery samples continue to use application context and explicit reachable replies. Autonomous watch refreshes do not send unsolicited `sendMessage` calls that could wake the iPhone; only an explicit iPhone request receives a live reply. The watch app persists every newer timestamp but reloads the complication timeline only when displayed battery/status values meaningfully change. The original WidgetKit kind string stays stable so an installed complication survives the ARO display-name rename. WidgetKit and watchOS background refresh are system scheduled; a preferred interval is not a guarantee.
 
 ## Freshness and retryable WatchConnectivity activation
 

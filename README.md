@@ -1,6 +1,6 @@
-# Companio
+# ARO
 
-一款隐私优先的 iOS + watchOS 伴侣 App：在 iPhone 上低功耗记录全天足迹，并同步显示 Apple Watch 最近一次有效电量快照。轨迹默认只存储在设备本地，不需要账号或服务器。
+ARO（Everything Around You）是一款隐私优先的 iOS + watchOS App：在 iPhone 上低功耗记录全天足迹，并同步显示 Apple Watch 最近一次有效电量快照。轨迹默认只存储在设备本地，不需要账号或服务器。
 
 ## 功能
 
@@ -17,15 +17,15 @@
 
 ## 运行
 
-1. 使用 Xcode 26 或更新版本打开 `traceon.xcodeproj`。
-2. 在 `traceon`、`Companio Watch App` 和 `Companio Watch Widget Extension` 三个 target 的 Signing & Capabilities 中选择同一个开发团队；Watch App 与 Widget Extension 都需要 `group.com.xunbo.traceon.watch` App Group。
+1. 使用 Xcode 26 或更新版本打开 `aro.xcodeproj`。
+2. 在 `aro`、`ARO Watch App` 和 `ARO Watch Widget Extension` 三个 target 的 Signing & Capabilities 中选择同一个开发团队；Watch App 与 Widget Extension 都需要 `group.com.xunbo.traceon.watch` App Group。
 3. 保持 iOS bundle identifier 为 `com.xunbo.traceon`，watchOS bundle identifier 为 `com.xunbo.traceon.watchkitapp`，Widget Extension bundle identifier 为 `com.xunbo.traceon.watchkitapp.widget`，并确认 watch target 的 `WKCompanionAppBundleIdentifier` 为 `com.xunbo.traceon`。
-4. 选择已配对 Apple Watch 的 iPhone 作为运行设备，并运行共享的 `traceon` scheme。watchOS App 会作为 Watch Content 嵌入 iOS App，Widget Extension 会嵌入 Watch App。
-5. 首次启动依次授予“使用 App 时”和“始终”定位权限。若设备页迟迟没有首条电量，请在 Apple Watch 上打开一次 Companio；随后在表盘编辑器的复杂功能列表中选择 `Companio 电量`。如果 Xcode 报告 provisioning profile 缺少 App Groups，请在两个 watch target 的 Signing & Capabilities 中添加 App Groups，并注册/勾选 `group.com.xunbo.traceon.watch` 后重新运行。
+4. 选择已配对 Apple Watch 的 iPhone 作为运行设备，并运行共享的 `aro` scheme。watchOS App 会作为 Watch Content 嵌入 iOS App，Widget Extension 会嵌入 Watch App。
+5. 首次启动依次授予“使用 App 时”和“始终”定位权限。若设备页迟迟没有首条电量，请在 Apple Watch 上打开一次 ARO；随后在表盘编辑器的复杂功能列表中选择 `ARO 电量`。如果 Xcode 报告 provisioning profile 缺少 App Groups，请在两个 watch target 的 Signing & Capabilities 中添加 App Groups，并注册/勾选 `group.com.xunbo.traceon.watch` 后重新运行。
 
-如果表盘编辑器中没有 `Companio 电量`：确认手表系统为 watchOS 10 或更新版本，并且是从配对 iPhone 的 `traceon` scheme 安装了完整的 Watch App（其中包含 `Companio Watch Widget Extension`），而不是只安装 iOS App。先在手表上打开一次 Companio，再退出表盘编辑器并重新进入；复杂功能只会出现在支持相应 accessory family 的表盘位置。仍未出现时，重新从 Xcode 安装 Watch App 与 Widget Extension，检查两个 watch target 都使用同一个 App Group，并确认 Widget Extension 的 bundle identifier 为 `com.xunbo.traceon.watchkitapp.widget`。模拟器只能验证编译，不能验证复杂功能是否出现在已配对手表的表盘编辑器中。
+如果表盘编辑器中没有 `ARO 电量`：确认手表系统为 watchOS 10 或更新版本，并且是从配对 iPhone 的 `aro` scheme 安装了完整的 Watch App（其中包含 `ARO Watch Widget Extension`），而不是只安装 iOS App。先在手表上打开一次 ARO，再退出表盘编辑器并重新进入；复杂功能只会出现在支持相应 accessory family 的表盘位置。仍未出现时，重新从 Xcode 安装 Watch App 与 Widget Extension，检查两个 watch target 都使用同一个 App Group，并确认 Widget Extension 的 bundle identifier 为 `com.xunbo.traceon.watchkitapp.widget`。模拟器只能验证编译，不能验证复杂功能是否出现在已配对手表的表盘编辑器中。
 
-现有 Traceon 安装升级后仍使用 `com.xunbo.traceon` 和原来的 `Application Support/traceon/tracks.sqlite3`，不会因为显示名称变为 Companio 而迁移或清空已有轨迹。
+现有 Traceon/Companio 安装升级后仍使用 `com.xunbo.traceon` 和原来的 `Application Support/traceon/tracks.sqlite3`，不会因为显示名称变为 ARO 而迁移或清空已有轨迹。这里保留旧 bundle ID 和数据路径是有意的兼容性决定。
 
 后台轨迹必须在真机、锁屏、步行/驾车等不同场景下持续测试。iOS 会根据系统压力、定位设置和信号环境调度事件，因此任何后台方案都不保证逐点连续。
 

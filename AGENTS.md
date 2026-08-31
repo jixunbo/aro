@@ -1,4 +1,4 @@
-# traceon repository instructions
+# aro repository instructions
 
 ## Before making changes
 
@@ -18,31 +18,31 @@
 
 ## Build, test, analyze, and run
 
-Run commands from the repository root. The checked-in shared scheme is `traceon`.
+Run commands from the repository root. The checked-in shared scheme is `aro`.
 
 ```sh
 # Simulator build
-xcodebuild -project traceon.xcodeproj -scheme traceon -sdk iphonesimulator \
+xcodebuild -project aro.xcodeproj -scheme aro -sdk iphonesimulator \
   -destination 'generic/platform=iOS Simulator' -derivedDataPath DerivedData \
   CODE_SIGNING_ALLOWED=NO build
 
 # Unit tests; substitute another installed simulator name if needed
-xcodebuild -project traceon.xcodeproj -scheme traceon \
+xcodebuild -project aro.xcodeproj -scheme aro \
   -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
   -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO test
 
 # Xcode static analyzer
-xcodebuild -project traceon.xcodeproj -scheme traceon -sdk iphonesimulator \
+xcodebuild -project aro.xcodeproj -scheme aro -sdk iphonesimulator \
   -destination 'generic/platform=iOS Simulator' -derivedDataPath DerivedData \
   CODE_SIGNING_ALLOWED=NO analyze
 
 # Generic iOS/device compile; also compiles and embeds the watchOS target
-xcodebuild -project traceon.xcodeproj -scheme traceon \
+xcodebuild -project aro.xcodeproj -scheme aro \
   -destination 'generic/platform=iOS' -derivedDataPath DerivedData-device \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-There is no separate lint or formatter configuration; use compiler warnings and the analyzer. For interactive running, open `traceon.xcodeproj`, select a signing team, and run on an iOS device. Simulator location is useful for basic behavior only. Background relaunch and energy behavior require the real-device checks in `TESTING.md`.
+There is no separate lint or formatter configuration; use compiler warnings and the analyzer. For interactive running, open `aro.xcodeproj`, select a signing team, and run on an iOS device. Simulator location is useful for basic behavior only. Background relaunch and energy behavior require the real-device checks in `TESTING.md`.
 
 ## Repository conventions and constraints
 
@@ -54,14 +54,14 @@ There is no separate lint or formatter configuration; use compiler warnings and 
 - Background location behavior depends on `Info.plist`, staged authorization, and both significant-change/visit and standard location updates. Changes in this area must be tested on a real device and keep permission copy, background modes, and runtime behavior aligned.
 - `BatterySnapshot.swift` is compiled into the iOS and watchOS targets and defines the WatchConnectivity contract. Preserve newest-timestamp-wins cache semantics and label cached data as non-live.
 - Keep `PhoneConnectivity` passive during initialization and activation. A Core Location background relaunch must not send a live watch request; live requests belong only to explicit Devices UI use or the App Intent. Do not add iPhone polling or battery-only background tasks, and do not couple connectivity to `LocationService`.
-- Preserve the watch target dependency, Embed Watch Content phase, `com.xunbo.traceon.watchkitapp` identifier, and `WKCompanionAppBundleIdentifier = com.xunbo.traceon` relationship.
+- Preserve the watch target dependency, Embed Watch Content phase, `com.xunbo.traceon.watchkitapp` identifier, and `WKCompanionAppBundleIdentifier = com.xunbo.traceon` relationship. The target and project display names are ARO; the legacy identifiers remain for upgrade compatibility.
 - Keep `PrivacyInfo.xcprivacy` accurate when introducing dependencies or required-reason API usage.
-- New source or resource files must also be added to the appropriate target in `traceon.xcodeproj/project.pbxproj`; the project does not auto-discover files.
+- New source or resource files must also be added to the appropriate target in `aro.xcodeproj/project.pbxproj`; the project does not auto-discover files.
 - User-facing text and the Xcode development region are currently Simplified Chinese; follow the surrounding language unless the task includes localization.
 - Add focused XCTest coverage for changed filtering, distance, import, or export behavior. Do not treat simulator tests as proof of background delivery or battery performance.
 
 ## Files normally left alone
 
 - Do not edit or commit generated output under `DerivedData/`, `DerivedData-device/`, `build/`, or Xcode user-state directories.
-- Modify `traceon.xcodeproj/project.pbxproj` only when target membership or build settings must change.
-- Modify `traceon/Resources/Info.plist`, `PrivacyInfo.xcprivacy`, signing/capability settings, and asset catalogs only when the requested behavior requires it; they define runtime, privacy, and distribution contracts.
+- Modify `aro.xcodeproj/project.pbxproj` only when target membership or build settings must change.
+- Modify `aro/Resources/Info.plist`, `PrivacyInfo.xcprivacy`, signing/capability settings, and asset catalogs only when the requested behavior requires it; they define runtime, privacy, and distribution contracts.
