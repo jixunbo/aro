@@ -38,7 +38,6 @@ struct InsightsView: View {
         .navigationTitle("足迹总览")
         .task {
             repository.refresh(includeOverview: true)
-            repository.loadOverview()
         }
     }
 
@@ -46,4 +45,3 @@ struct InsightsView: View {
         repository.lifetime.firstDate?.formatted(.dateTime.year().month().day()) ?? "暂无"
     }
 }
-

@@ -16,6 +16,11 @@ struct TrackMapView: UIViewRepresentable {
         map.showsUserLocation = showsUserLocation
         map.pointOfInterestFilter = .excludingAll
         map.preferredConfiguration = MKStandardMapConfiguration(elevationStyle: overview ? .realistic : .flat)
+
+        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.inspectRoute(_:)))
+        tap.delegate = context.coordinator
+        tap.cancelsTouchesInView = false
+        map.addGestureRecognizer(tap)
         return map
     }
 
@@ -26,8 +31,11 @@ struct TrackMapView: UIViewRepresentable {
         context.coordinator.lastSignature = signature
         context.coordinator.lastCount = points.count
         map.removeOverlays(map.overlays)
+        context.coordinator.clearInspection(on: map)
 
         let segments = makeSegments(points)
+        context.coordinator.displayedPoints = segments.filter { $0.count > 1 }.flatMap { $0 }
+        context.coordinator.overview = overview
         for segment in segments where segment.count > 1 {
             let polyline = MKPolyline(coordinates: segment.map(\.coordinate), count: segment.count)
             map.addOverlay(polyline)
@@ -59,10 +67,53 @@ struct TrackMapView: UIViewRepresentable {
         return result
     }
 
-    final class Coordinator: NSObject, MKMapViewDelegate {
+    final class Coordinator: NSObject, MKMapViewDelegate, UIGestureRecognizerDelegate {
         var lastSignature: Int64 = -1
         var lastCount = -1
         var hasPositioned = false
+        var displayedPoints: [TrackPoint] = []
+        var overview = false
+        private var inspectedAnnotation: InspectedTrackPointAnnotation?
+
+        @objc func inspectRoute(_ recognizer: UITapGestureRecognizer) {
+            guard recognizer.state == .ended, let map = recognizer.view as? MKMapView else { return }
+            let tappedPoint = recognizer.location(in: map)
+            let tolerance: CGFloat = 26
+            let toleranceSquared = tolerance * tolerance
+            var nearestPoint: TrackPoint?
+            var nearestDistanceSquared = toleranceSquared
+
+            for point in displayedPoints {
+                let screenPoint = map.convert(point.coordinate, toPointTo: map)
+                let horizontalDistance = screenPoint.x - tappedPoint.x
+                let verticalDistance = screenPoint.y - tappedPoint.y
+                guard abs(horizontalDistance) <= tolerance, abs(verticalDistance) <= tolerance else { continue }
+                let distanceSquared = horizontalDistance * horizontalDistance + verticalDistance * verticalDistance
+                if distanceSquared <= nearestDistanceSquared {
+                    nearestDistanceSquared = distanceSquared
+                    nearestPoint = point
+                }
+            }
+
+            guard let nearestPoint else {
+                clearInspection(on: map)
+                return
+            }
+            showInspection(for: nearestPoint, on: map)
+        }
+
+        func clearInspection(on map: MKMapView) {
+            guard let inspectedAnnotation else { return }
+            map.removeAnnotation(inspectedAnnotation)
+            self.inspectedAnnotation = nil
+        }
+
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+        ) -> Bool {
+            true
+        }
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
             guard let polyline = overlay as? MKPolyline else { return MKOverlayRenderer(overlay: overlay) }
@@ -73,5 +124,66 @@ struct TrackMapView: UIViewRepresentable {
             renderer.lineJoin = .round
             return renderer
         }
+
+        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            guard annotation is InspectedTrackPointAnnotation else { return nil }
+            let identifier = "inspected-track-point"
+            let view = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) as? MKMarkerAnnotationView
+                ?? MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+            view.annotation = annotation
+            view.canShowCallout = true
+            view.markerTintColor = .systemBlue
+            view.glyphImage = UIImage(systemName: "clock.fill")
+            return view
+        }
+
+        private func showInspection(for point: TrackPoint, on map: MKMapView) {
+            clearInspection(on: map)
+
+            var details: [String] = []
+            if !overview {
+                details.append(Self.dateFormatter.string(from: point.timestamp))
+            }
+            if point.horizontalAccuracy > 0 {
+                details.append("精度 ±\(Int(point.horizontalAccuracy.rounded())) m")
+            }
+            if let activity = point.activity, !activity.isEmpty, activity != "未知" {
+                details.append(activity)
+            }
+
+            let annotation = InspectedTrackPointAnnotation(
+                coordinate: point.coordinate,
+                title: (overview ? Self.dateTimeFormatter : Self.timeFormatter).string(from: point.timestamp),
+                subtitle: details.isEmpty ? nil : details.joined(separator: " · ")
+            )
+            inspectedAnnotation = annotation
+            map.addAnnotation(annotation)
+            map.selectAnnotation(annotation, animated: true)
+        }
+
+        private static let timeFormatter: DateFormatter = formatter("HH:mm:ss")
+        private static let dateFormatter: DateFormatter = formatter("yyyy年M月d日")
+        private static let dateTimeFormatter: DateFormatter = formatter("yyyy年M月d日 HH:mm:ss")
+
+        private static func formatter(_ format: String) -> DateFormatter {
+            let formatter = DateFormatter()
+            formatter.calendar = .autoupdatingCurrent
+            formatter.locale = Locale(identifier: "zh_CN")
+            formatter.timeZone = .autoupdatingCurrent
+            formatter.dateFormat = format
+            return formatter
+        }
+    }
+}
+
+private final class InspectedTrackPointAnnotation: NSObject, MKAnnotation {
+    let coordinate: CLLocationCoordinate2D
+    let title: String?
+    let subtitle: String?
+
+    init(coordinate: CLLocationCoordinate2D, title: String, subtitle: String?) {
+        self.coordinate = coordinate
+        self.title = title
+        self.subtitle = subtitle
     }
 }

@@ -9,11 +9,18 @@ final class TrackDatabase: @unchecked Sendable {
     private var database: OpaquePointer?
     private let databaseURL: URL
 
-    private init() {
+    private convenience init() {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let folder = support.appendingPathComponent("traceon", isDirectory: true)
-        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        databaseURL = folder.appendingPathComponent("tracks.sqlite3")
+        self.init(databaseURL: folder.appendingPathComponent("tracks.sqlite3"))
+    }
+
+    init(databaseURL: URL) {
+        self.databaseURL = databaseURL
+        try? FileManager.default.createDirectory(
+            at: databaseURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
         queue.sync { openAndMigrate() }
     }
 
@@ -65,11 +72,22 @@ final class TrackDatabase: @unchecked Sendable {
 
     func overviewPoints(maximum: Int = 8_000) -> [TrackPoint] {
         queue.sync {
+            guard maximum > 0 else { return [] }
             let total = scalarInt("SELECT COUNT(*) FROM track_points")
             guard total > 0 else { return [] }
-            let stride = max(1, total / maximum)
+            let stride = max(1, (total - 1) / maximum + 1)
             return queryPoints(
-                sql: "SELECT \(pointColumns) FROM track_points WHERE (id % ?) = 0 OR id = 1 ORDER BY timestamp ASC LIMIT ?",
+                sql: """
+                    WITH ordered_points AS (
+                        SELECT \(pointColumns),
+                               ROW_NUMBER() OVER (ORDER BY timestamp DESC, id DESC) - 1 AS sample_index
+                        FROM track_points
+                    )
+                    SELECT \(pointColumns) FROM ordered_points
+                    WHERE (sample_index % ?) = 0
+                    ORDER BY timestamp ASC, id ASC
+                    LIMIT ?
+                    """,
                 bindings: { statement in
                     sqlite3_bind_int(statement, 1, Int32(stride))
                     sqlite3_bind_int(statement, 2, Int32(maximum))

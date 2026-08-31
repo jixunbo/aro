@@ -44,14 +44,6 @@ final class TrackRepository: ObservableObject {
         }.value
     }
 
-    func loadOverview() {
-        let database = self.database
-        Task.detached(priority: .utility) {
-            let points = database.overviewPoints()
-            await MainActor.run { self.overviewPoints = points }
-        }
-    }
-
     func didInsertPoint() {
         refresh()
     }
@@ -65,4 +57,3 @@ final class TrackRepository: ObservableObject {
         databaseBytes = 0
     }
 }
-

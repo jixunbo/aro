@@ -47,6 +47,7 @@
 		A10000000000000000000010 /* BatterySnapshot.swift in Widget Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* BatterySnapshot.swift */; };
 		A10000000000000000000011 /* WatchSnapshotStore.swift in Widget Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* WatchSnapshotStore.swift */; };
 		A10000000000000000000012 /* ARO Watch Widget Extension.appex in Embed Watch Widget */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* ARO Watch Widget Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A20000000000000000000001 /* TrackDatabaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000001 /* TrackDatabaseTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -120,6 +121,7 @@
 		B1000000000000000000000E /* Widget Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B1000000000000000000000F /* AROWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AROWatch.entitlements; sourceTree = "<group>"; };
 		B10000000000000000000010 /* ARO Watch Widget Extension.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = "ARO Watch Widget Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B20000000000000000000001 /* TrackDatabaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackDatabaseTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -152,7 +154,7 @@
 		G0000000000000000000000E /* Insights */ = {isa = PBXGroup; children = (B0000000000000000000000D); path = Insights; sourceTree = "<group>"; };
 		G0000000000000000000000F /* Settings */ = {isa = PBXGroup; children = (B0000000000000000000000E, B0000000000000000000000F); path = Settings; sourceTree = "<group>"; };
 		G00000000000000000000010 /* Onboarding */ = {isa = PBXGroup; children = (B00000000000000000000010); path = Onboarding; sourceTree = "<group>"; };
-		G00000000000000000000011 /* aroTests */ = {isa = PBXGroup; children = (B00000000000000000000018, B1000000000000000000000B); path = aroTests; sourceTree = "<group>"; };
+		G00000000000000000000011 /* aroTests */ = {isa = PBXGroup; children = (B00000000000000000000018, B1000000000000000000000B, B20000000000000000000001); path = aroTests; sourceTree = "<group>"; };
 		G10000000000000000000001 /* Devices */ = {isa = PBXGroup; children = (B10000000000000000000001, B10000000000000000000002, B10000000000000000000003, B10000000000000000000004); path = Devices; sourceTree = "<group>"; };
 		G10000000000000000000002 /* aroWatch */ = {isa = PBXGroup; children = (B10000000000000000000006, B10000000000000000000007, B10000000000000000000008, B10000000000000000000009, B1000000000000000000000C, B1000000000000000000000F, G10000000000000000000003); path = aroWatch; sourceTree = "<group>"; };
 		G10000000000000000000003 /* Widget */ = {isa = PBXGroup; children = (B1000000000000000000000D, B1000000000000000000000E); path = Widget; sourceTree = "<group>"; };
@@ -238,7 +240,7 @@
 			files = (A00000000000000000000001, A00000000000000000000002, A00000000000000000000003, A00000000000000000000004, A00000000000000000000005, A00000000000000000000006, A00000000000000000000007, A00000000000000000000016, A00000000000000000000008, A00000000000000000000009, A0000000000000000000000A, A0000000000000000000000B, A0000000000000000000000C, A0000000000000000000000D, A0000000000000000000000E, A0000000000000000000000F, A00000000000000000000010, A00000000000000000000011, A00000000000000000000012, A00000000000000000000013, A10000000000000000000001, A10000000000000000000002, A10000000000000000000003, A10000000000000000000004, A10000000000000000000005);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		F00000000000000000000004 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000015, A1000000000000000000000D); runOnlyForDeploymentPostprocessing = 0; };
+		F00000000000000000000004 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000015, A1000000000000000000000D, A20000000000000000000001); runOnlyForDeploymentPostprocessing = 0; };
 		F30000000000000000000001 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000006, A10000000000000000000007, A10000000000000000000008, A10000000000000000000009, A1000000000000000000000A, A1000000000000000000000E); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
