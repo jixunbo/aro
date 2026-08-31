@@ -90,7 +90,7 @@ struct CompanioBatteryWidget: Widget {
         StaticConfiguration(kind: Self.kind, provider: CompanioBatteryWidgetProvider()) { entry in
             CompanioBatteryWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("Apple Watch 电量")
+        .configurationDisplayName("Companio 电量")
         .description("显示 Apple Watch 最近同步的电量。")
         .supportedFamilies([
             .accessoryCircular,
