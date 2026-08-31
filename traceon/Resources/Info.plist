@@ -5,7 +5,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>traceon</string>
+    <string>Companio</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -23,11 +23,11 @@
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>traceon 需要定位来绘制你主动开启的足迹，并在地图上展示当前位置。</string>
+    <string>Companio 需要定位来绘制你主动开启的足迹，并在地图上展示当前位置。</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>允许“始终”定位后，traceon 才能在锁屏、切换 App 或被系统回收后继续自动记录你的足迹。</string>
+    <string>允许“始终”定位后，Companio 才能在锁屏、切换 App 或被系统回收后继续自动记录你的足迹。</string>
     <key>NSMotionUsageDescription</key>
-    <string>traceon 使用运动状态来判断你是否在移动，从而降低静止时的定位耗电。</string>
+    <string>Companio 使用运动状态来判断你是否在移动，从而降低静止时的定位耗电。</string>
     <key>NSLocationTemporaryUsageDescriptionDictionary</key>
     <dict>
         <key>TrackRecording</key>

@@ -78,7 +78,7 @@ struct TodayView: View {
         ContentUnavailableView {
             Label("等待第一段足迹", systemImage: "map")
         } description: {
-            Text(locationService.isTrackingEnabled ? "带着手机移动一段距离，轨迹会自动出现在这里。" : "开启自动记录后，traceon 才会保存位置。")
+            Text(locationService.isTrackingEnabled ? "带着手机移动一段距离，轨迹会自动出现在这里。" : "开启自动记录后，Companio 才会保存位置。")
         }
         .frame(maxWidth: .infinity)
         .frame(height: 300)
