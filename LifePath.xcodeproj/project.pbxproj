@@ -1,0 +1,178 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A00000000000000000000001 = {isa = PBXBuildFile; fileRef = B00000000000000000000001; };
+		A00000000000000000000002 = {isa = PBXBuildFile; fileRef = B00000000000000000000002; };
+		A00000000000000000000003 = {isa = PBXBuildFile; fileRef = B00000000000000000000003; };
+		A00000000000000000000004 = {isa = PBXBuildFile; fileRef = B00000000000000000000004; };
+		A00000000000000000000005 = {isa = PBXBuildFile; fileRef = B00000000000000000000005; };
+		A00000000000000000000006 = {isa = PBXBuildFile; fileRef = B00000000000000000000006; };
+		A00000000000000000000007 = {isa = PBXBuildFile; fileRef = B00000000000000000000007; };
+		A00000000000000000000008 = {isa = PBXBuildFile; fileRef = B00000000000000000000008; };
+		A00000000000000000000009 = {isa = PBXBuildFile; fileRef = B00000000000000000000009; };
+		A0000000000000000000000A = {isa = PBXBuildFile; fileRef = B0000000000000000000000A; };
+		A0000000000000000000000B = {isa = PBXBuildFile; fileRef = B0000000000000000000000B; };
+		A0000000000000000000000C = {isa = PBXBuildFile; fileRef = B0000000000000000000000C; };
+		A0000000000000000000000D = {isa = PBXBuildFile; fileRef = B0000000000000000000000D; };
+		A0000000000000000000000E = {isa = PBXBuildFile; fileRef = B0000000000000000000000E; };
+		A0000000000000000000000F = {isa = PBXBuildFile; fileRef = B0000000000000000000000F; };
+		A00000000000000000000010 = {isa = PBXBuildFile; fileRef = B00000000000000000000010; };
+		A00000000000000000000011 = {isa = PBXBuildFile; fileRef = B00000000000000000000011; };
+		A00000000000000000000012 = {isa = PBXBuildFile; fileRef = B00000000000000000000012; };
+		A00000000000000000000013 = {isa = PBXBuildFile; fileRef = B00000000000000000000013; };
+		A00000000000000000000014 = {isa = PBXBuildFile; fileRef = B00000000000000000000014; };
+		A00000000000000000000015 = {isa = PBXBuildFile; fileRef = B00000000000000000000018; };
+		A00000000000000000000016 = {isa = PBXBuildFile; fileRef = B0000000000000000000001A; };
+		A00000000000000000000017 = {isa = PBXBuildFile; fileRef = B0000000000000000000001B; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C00000000000000000000001 = {isa = PBXContainerItemProxy; containerPortal = E00000000000000000000001; proxyType = 1; remoteGlobalIDString = D00000000000000000000001; remoteInfo = LifePath; };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		B00000000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifePathApp.swift; sourceTree = "<group>"; };
+		B00000000000000000000002 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		B00000000000000000000003 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		B00000000000000000000004 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingMode.swift; sourceTree = "<group>"; };
+		B00000000000000000000005 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackPoint.swift; sourceTree = "<group>"; };
+		B00000000000000000000006 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMath.swift; sourceTree = "<group>"; };
+		B00000000000000000000007 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackExport.swift; sourceTree = "<group>"; };
+		B00000000000000000000008 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackDatabase.swift; sourceTree = "<group>"; };
+		B00000000000000000000009 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackRepository.swift; sourceTree = "<group>"; };
+		B0000000000000000000000A = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
+		B0000000000000000000000B = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
+		B0000000000000000000000C = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		B0000000000000000000000D = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsView.swift; sourceTree = "<group>"; };
+		B0000000000000000000000E = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B0000000000000000000000F = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackDocument.swift; sourceTree = "<group>"; };
+		B00000000000000000000010 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		B00000000000000000000011 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatters.swift; sourceTree = "<group>"; };
+		B00000000000000000000012 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMapView.swift; sourceTree = "<group>"; };
+		B00000000000000000000013 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCard.swift; sourceTree = "<group>"; };
+		B00000000000000000000014 = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B00000000000000000000015 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B00000000000000000000016 = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		B00000000000000000000017 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LifePath.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B00000000000000000000018 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMathTests.swift; sourceTree = "<group>"; };
+		B00000000000000000000019 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LifePathTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0000000000000000000001A = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackImport.swift; sourceTree = "<group>"; };
+		B0000000000000000000001B = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F00000000000000000000001 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		F00000000000000000000005 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		G00000000000000000000001 = {
+			isa = PBXGroup;
+			children = (G00000000000000000000002, G00000000000000000000011, B00000000000000000000016, G0000000000000000000000B);
+			sourceTree = "<group>";
+		};
+		G00000000000000000000002 = {
+			isa = PBXGroup;
+			children = (G00000000000000000000003, G00000000000000000000004, G00000000000000000000005, G00000000000000000000006, G00000000000000000000007, G0000000000000000000000A, G00000000000000000000008);
+			path = LifePath;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000003 /* App */ = {isa = PBXGroup; children = (B00000000000000000000001, B00000000000000000000002, B00000000000000000000003); path = App; sourceTree = "<group>"; };
+		G00000000000000000000004 /* Core */ = {isa = PBXGroup; children = (B00000000000000000000004); path = Core; sourceTree = "<group>"; };
+		G00000000000000000000005 /* Data */ = {isa = PBXGroup; children = (B00000000000000000000005, B00000000000000000000006, B00000000000000000000007, B0000000000000000000001A, B00000000000000000000008, B00000000000000000000009); path = Data; sourceTree = "<group>"; };
+		G00000000000000000000006 /* Location */ = {isa = PBXGroup; children = (B0000000000000000000000A); path = Location; sourceTree = "<group>"; };
+		G00000000000000000000007 /* Features */ = {isa = PBXGroup; children = (G0000000000000000000000C, G0000000000000000000000D, G0000000000000000000000E, G0000000000000000000000F, G00000000000000000000010); path = Features; sourceTree = "<group>"; };
+		G00000000000000000000008 /* Resources */ = {isa = PBXGroup; children = (B00000000000000000000014, B00000000000000000000015, B0000000000000000000001B); path = Resources; sourceTree = "<group>"; };
+		G0000000000000000000000A /* Shared */ = {isa = PBXGroup; children = (B00000000000000000000011, B00000000000000000000012, B00000000000000000000013); path = Shared; sourceTree = "<group>"; };
+		G0000000000000000000000B /* Products */ = {isa = PBXGroup; children = (B00000000000000000000017, B00000000000000000000019); name = Products; sourceTree = "<group>"; };
+		G0000000000000000000000C /* Today */ = {isa = PBXGroup; children = (B0000000000000000000000B); path = Today; sourceTree = "<group>"; };
+		G0000000000000000000000D /* History */ = {isa = PBXGroup; children = (B0000000000000000000000C); path = History; sourceTree = "<group>"; };
+		G0000000000000000000000E /* Insights */ = {isa = PBXGroup; children = (B0000000000000000000000D); path = Insights; sourceTree = "<group>"; };
+		G0000000000000000000000F /* Settings */ = {isa = PBXGroup; children = (B0000000000000000000000E, B0000000000000000000000F); path = Settings; sourceTree = "<group>"; };
+		G00000000000000000000010 /* Onboarding */ = {isa = PBXGroup; children = (B00000000000000000000010); path = Onboarding; sourceTree = "<group>"; };
+		G00000000000000000000011 /* LifePathTests */ = {isa = PBXGroup; children = (B00000000000000000000018); path = LifePathTests; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D00000000000000000000001 /* LifePath */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = H00000000000000000000002;
+			buildPhases = (F00000000000000000000002, F00000000000000000000001, F00000000000000000000003);
+			buildRules = ();
+			dependencies = ();
+			name = LifePath;
+			productName = LifePath;
+			productReference = B00000000000000000000017;
+			productType = "com.apple.product-type.application";
+		};
+		D00000000000000000000002 /* LifePathTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = H00000000000000000000003;
+			buildPhases = (F00000000000000000000004, F00000000000000000000005, F00000000000000000000006);
+			buildRules = ();
+			dependencies = (C00000000000000000000002);
+			name = LifePathTests;
+			productName = LifePathTests;
+			productReference = B00000000000000000000019;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E00000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 2630; LastUpgradeCheck = 2630; TargetAttributes = {D00000000000000000000001 = {CreatedOnToolsVersion = 26.3; ProvisioningStyle = Automatic; }; D00000000000000000000002 = {CreatedOnToolsVersion = 26.3; }; }; };
+			buildConfigurationList = H00000000000000000000001;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = zh-Hans;
+			hasScannedForEncodings = 0;
+			knownRegions = (zh-Hans, en, Base);
+			mainGroup = G00000000000000000000001;
+			productRefGroup = G0000000000000000000000B;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (D00000000000000000000001, D00000000000000000000002);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F00000000000000000000003 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000014, A00000000000000000000017); runOnlyForDeploymentPostprocessing = 0; };
+		F00000000000000000000006 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F00000000000000000000002 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (A00000000000000000000001, A00000000000000000000002, A00000000000000000000003, A00000000000000000000004, A00000000000000000000005, A00000000000000000000006, A00000000000000000000007, A00000000000000000000016, A00000000000000000000008, A00000000000000000000009, A0000000000000000000000A, A0000000000000000000000B, A0000000000000000000000C, A0000000000000000000000D, A0000000000000000000000E, A0000000000000000000000F, A00000000000000000000010, A00000000000000000000011, A00000000000000000000012, A00000000000000000000013);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F00000000000000000000004 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000015); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C00000000000000000000002 = {isa = PBXTargetDependency; target = D00000000000000000000001; targetProxy = C00000000000000000000001; };
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		I00000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = dwarf; ENABLE_TESTABILITY = YES; GCC_C_LANGUAGE_STANDARD = gnu17; GCC_OPTIMIZATION_LEVEL = 0; IPHONEOS_DEPLOYMENT_TARGET = 17.0; ONLY_ACTIVE_ARCH = YES; SDKROOT = iphoneos; SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)"; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = Debug; };
+		I00000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; ENABLE_NS_ASSERTIONS = NO; GCC_C_LANGUAGE_STANDARD = gnu17; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_COMPILATION_MODE = wholemodule; VALIDATE_PRODUCT = YES; }; name = Release; };
+		I00000000000000000000003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = LifePath/Resources/Info.plist; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel"; INFOPLIST_KEY_UILaunchScreen_Generation = YES; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.0; OTHER_LDFLAGS = "-lsqlite3"; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.LifePath; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
+		I00000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = LifePath/Resources/Info.plist; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel"; INFOPLIST_KEY_UILaunchScreen_Generation = YES; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.0; OTHER_LDFLAGS = "-lsqlite3"; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.LifePath; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
+		I00000000000000000000005 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.LifePathTests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LifePath.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LifePath"; }; name = Debug; };
+		I00000000000000000000006 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.LifePathTests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LifePath.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/LifePath"; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		H00000000000000000000001 = {isa = XCConfigurationList; buildConfigurations = (I00000000000000000000001, I00000000000000000000002); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		H00000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (I00000000000000000000003, I00000000000000000000004); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		H00000000000000000000003 = {isa = XCConfigurationList; buildConfigurations = (I00000000000000000000005, I00000000000000000000006); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = E00000000000000000000001;
+}
