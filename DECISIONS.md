@@ -92,7 +92,7 @@ This earlier decision applied while the product was being renamed without changi
 
 ## Watch-owned snapshot and WidgetKit complication
 
-**Decision:** Keep `AROBatteryReporter` as the only component that reads `WKInterfaceDevice.current().batteryLevel`. Persist its newest valid `BatterySnapshot` in the Watch App Group `group.com.xunbo.traceon.watch`, and have the WidgetKit complication display that shared snapshot.
+**Decision:** Keep `WatchBatteryService` as the only component that reads `WKInterfaceDevice.current().batteryLevel`. Persist its newest valid `BatterySnapshot` in the Watch App Group `group.com.xunbo.traceon.watch`, and have the WidgetKit complication display that shared snapshot.
 
 **Reason:** The complication should improve watch-face visibility and provide another watchOS refresh opportunity without creating a second battery-monitoring architecture or an iPhone polling path.
 

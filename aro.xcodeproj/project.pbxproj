@@ -36,7 +36,7 @@
 		A10000000000000000000005 /* BatterySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* BatterySnapshot.swift */; };
 		A10000000000000000000006 /* AROWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* AROWatchApp.swift */; };
 		A10000000000000000000007 /* WatchContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000007 /* WatchContentView.swift */; };
-		A10000000000000000000008 /* AROBatteryReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* AROBatteryReporter.swift */; };
+		A10000000000000000000008 /* WatchBatteryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* WatchBatteryService.swift */; };
 		A10000000000000000000009 /* WatchExtensionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000009 /* WatchExtensionDelegate.swift */; };
 		A1000000000000000000000A /* BatterySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* BatterySnapshot.swift */; };
 		A1000000000000000000000B /* ARO Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* ARO Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -111,7 +111,7 @@
 		B10000000000000000000005 /* BatterySnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatterySnapshot.swift; sourceTree = "<group>"; };
 		B10000000000000000000006 /* AROWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AROWatchApp.swift; sourceTree = "<group>"; };
 		B10000000000000000000007 /* WatchContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchContentView.swift; sourceTree = "<group>"; };
-		B10000000000000000000008 /* AROBatteryReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AROBatteryReporter.swift; sourceTree = "<group>"; };
+		B10000000000000000000008 /* WatchBatteryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchBatteryService.swift; sourceTree = "<group>"; };
 		B10000000000000000000009 /* WatchExtensionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchExtensionDelegate.swift; sourceTree = "<group>"; };
 		B1000000000000000000000A /* ARO Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ARO Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1000000000000000000000B /* BatterySnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatterySnapshotTests.swift; sourceTree = "<group>"; };

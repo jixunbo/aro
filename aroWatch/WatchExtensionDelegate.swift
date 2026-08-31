@@ -2,12 +2,12 @@ import WatchKit
 
 final class WatchExtensionDelegate: NSObject, WKExtensionDelegate {
     func applicationDidFinishLaunching() {
-        Task { @MainActor in AROBatteryReporter.shared.refreshAndSend() }
+        Task { @MainActor in WatchBatteryService.shared.refreshAndSend() }
         scheduleNextRefresh()
     }
 
     func applicationWillResignActive() {
-        Task { @MainActor in AROBatteryReporter.shared.refreshAndSend() }
+        Task { @MainActor in WatchBatteryService.shared.refreshAndSend() }
         scheduleNextRefresh()
     }
 
@@ -19,7 +19,7 @@ final class WatchExtensionDelegate: NSObject, WKExtensionDelegate {
             }
 
             Task { @MainActor in
-                AROBatteryReporter.shared.refreshAndSend {
+                WatchBatteryService.shared.refreshAndSend {
                     self.scheduleNextRefresh()
                     refreshTask.setTaskCompletedWithSnapshot(false)
                 }

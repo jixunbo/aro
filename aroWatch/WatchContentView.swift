@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct WatchContentView: View {
-    @EnvironmentObject private var reporter: AROBatteryReporter
+    @EnvironmentObject private var reporter: WatchBatteryService
 
     var body: some View {
         VStack(spacing: 10) {
@@ -37,5 +37,5 @@ struct WatchContentView: View {
 
 #Preview {
     WatchContentView()
-        .environmentObject(AROBatteryReporter.shared)
+        .environmentObject(WatchBatteryService.shared)
 }

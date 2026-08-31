@@ -4,8 +4,8 @@ import WatchKit
 import WidgetKit
 
 @MainActor
-final class AROBatteryReporter: NSObject, ObservableObject {
-    static let shared = AROBatteryReporter()
+final class WatchBatteryService: NSObject, ObservableObject {
+    static let shared = WatchBatteryService()
 
     @Published private(set) var snapshot: BatterySnapshot?
     @Published private(set) var isReachable = false
@@ -74,7 +74,7 @@ final class AROBatteryReporter: NSObject, ObservableObject {
     }
 }
 
-extension AROBatteryReporter: WCSessionDelegate {
+extension WatchBatteryService: WCSessionDelegate {
     nonisolated func session(
         _ session: WCSession,
         activationDidCompleteWith activationState: WCSessionActivationState,
