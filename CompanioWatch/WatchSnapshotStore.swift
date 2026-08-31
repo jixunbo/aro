@@ -11,12 +11,13 @@ enum WatchSnapshotStore {
 
     private static let storageKey = "latestAppleWatchBatterySnapshot"
 
-    private static var defaults: UserDefaults {
-        UserDefaults(suiteName: appGroupIdentifier) ?? .standard
+    private static var defaults: UserDefaults? {
+        UserDefaults(suiteName: appGroupIdentifier)
     }
 
     static func load() -> BatterySnapshot? {
-        guard let data = defaults.data(forKey: storageKey),
+        guard let defaults,
+              let data = defaults.data(forKey: storageKey),
               let snapshot = try? JSONDecoder().decode(BatterySnapshot.self, from: data),
               (0...100).contains(snapshot.level) else {
             return nil
@@ -29,7 +30,7 @@ enum WatchSnapshotStore {
     /// require a timeline reload.
     @discardableResult
     static func save(_ snapshot: BatterySnapshot) -> Bool {
-        guard (0...100).contains(snapshot.level) else { return false }
+        guard (0...100).contains(snapshot.level), let defaults else { return false }
 
         if let existing = load() {
             guard snapshot.updatedAt >= existing.updatedAt, snapshot != existing else { return false }

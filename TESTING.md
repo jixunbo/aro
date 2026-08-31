@@ -53,7 +53,7 @@
 3. 打开一次 Watch App，确认表盘复杂功能与 Watch App 显示同一电量和状态；在 iPhone“设备”页记录收到的时间戳。
 4. 关闭 Watch App 并保持手表闲置数小时，周期性记录 iPhone 快照时间戳；比较启用活动复杂功能前后的实际新鲜度。不要把 WidgetKit 的 `.after(30 分钟)` 或 Watch App 的首选 30 分钟解读为固定保证。
 5. 移除活动复杂功能后重复相同观察，作为对照；至少观察完整一天再判断 watchOS 调度差异。
-6. 确认复杂功能只显示 Watch App 写入的 App Group 快照，没有自己的 `WKInterfaceDevice` 读取、前台计时器或 iPhone 网络请求。模拟器只能验证编译和静态布局，不能验证复杂功能刷新频率。
+6. 确认复杂功能只显示 Watch App 写入的 App Group 快照，没有自己的 `WKInterfaceDevice` 读取、前台计时器或 iPhone 网络请求；Watch App 的自主刷新只更新 application context，不应产生无请求对应的 `sendMessage`。模拟器只能验证编译和静态布局，不能验证复杂功能刷新频率。
 
 如果表盘编辑器中找不到 `Companio 电量`，记录手表型号和 watchOS 版本，确认已安装完整的 `Companio Watch App`（不是只有 iOS App），并核对 Widget Extension 已随 Watch App 嵌入、bundle identifier 为 `com.xunbo.traceon.watchkitapp.widget`、App Group 为 `group.com.xunbo.traceon.watch`。在手表上打开一次 Companio 后退出并重新打开表盘编辑器；确认当前表盘位置支持所选 accessory family，再重新安装一次 Watch App 做对照。不要把模拟器中能编译或能预览 Widget 当作真机表盘可发现性的证明。
 

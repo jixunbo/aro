@@ -78,7 +78,7 @@
 
 **Reason:** The complication should improve watch-face visibility and provide another watchOS refresh opportunity without creating a second battery-monitoring architecture or an iPhone polling path.
 
-**Implications:** Battery samples continue to use application context and explicit reachable replies. The watch app persists every newer timestamp but reloads the complication timeline only when displayed battery/status values meaningfully change. WidgetKit and watchOS background refresh are system scheduled; a preferred interval is not a guarantee.
+**Implications:** Battery samples continue to use application context and explicit reachable replies. Autonomous watch refreshes do not send unsolicited `sendMessage` calls that could wake the iPhone; only an explicit iPhone request receives a live reply. The watch app persists every newer timestamp but reloads the complication timeline only when displayed battery/status values meaningfully change. WidgetKit and watchOS background refresh are system scheduled; a preferred interval is not a guarantee.
 
 ## Freshness and retryable WatchConnectivity activation
 

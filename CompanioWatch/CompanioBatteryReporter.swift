@@ -60,7 +60,7 @@ final class CompanioBatteryReporter: NSObject, ObservableObject {
         }
     }
 
-    private func publish(_ snapshot: BatterySnapshot, sendReachableMessage: Bool = true) {
+    private func publish(_ snapshot: BatterySnapshot) {
         if WatchSnapshotStore.save(snapshot) {
             WidgetCenter.shared.reloadTimelines(ofKind: WatchSnapshotStore.widgetKind)
         }
@@ -70,10 +70,6 @@ final class CompanioBatteryReporter: NSObject, ObservableObject {
             try session.updateApplicationContext(snapshot.payload)
         } catch {
             // The next foreground or background refresh will retry with a newer snapshot.
-        }
-
-        if sendReachableMessage && session.isReachable {
-            session.sendMessage(snapshot.payload, replyHandler: nil, errorHandler: nil)
         }
     }
 }
@@ -119,7 +115,7 @@ extension CompanioBatteryReporter: WCSessionDelegate {
                 deviceName: device.name
             )
             self.snapshot = fresh
-            self.publish(fresh, sendReachableMessage: false)
+            self.publish(fresh)
             replyHandler(fresh.payload)
         }
     }
