@@ -5,13 +5,13 @@ import SQLite3
 final class TrackDatabase: @unchecked Sendable {
     static let shared = TrackDatabase()
 
-    private let queue = DispatchQueue(label: "app.lifepath.database", qos: .utility)
+    private let queue = DispatchQueue(label: "app.traceon.database", qos: .utility)
     private var database: OpaquePointer?
     private let databaseURL: URL
 
     private init() {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let folder = support.appendingPathComponent("LifePath", isDirectory: true)
+        let folder = support.appendingPathComponent("traceon", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         databaseURL = folder.appendingPathComponent("tracks.sqlite3")
         queue.sync { openAndMigrate() }

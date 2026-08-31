@@ -1,4 +1,4 @@
-# 迹行 LifePath
+# traceon
 
 一款隐私优先、低功耗的 iOS 全天足迹记录 App。轨迹默认只存储在设备本地，不需要账号或服务器。
 
@@ -13,7 +13,7 @@
 
 ## 运行
 
-1. 使用 Xcode 26 或更新版本打开 `LifePath.xcodeproj`。
+1. 使用 Xcode 26 或更新版本打开 `traceon.xcodeproj`。
 2. 在 target 的 Signing & Capabilities 中选择你的开发团队。
 3. 使用真机运行；模拟器只能通过 Location 菜单模拟轨迹。
 4. 首次启动依次授予“使用 App 时”和“始终”定位权限。
@@ -21,4 +21,3 @@
 后台轨迹必须在真机、锁屏、步行/驾车等不同场景下持续测试。iOS 会根据系统压力、定位设置和信号环境调度事件，因此任何后台方案都不保证逐点连续。
 
 详细的真机验收与耗电测量步骤见 [TESTING.md](TESTING.md)。
-

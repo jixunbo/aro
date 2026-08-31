@@ -8,7 +8,7 @@ struct SettingsView: View {
     @State private var showDeleteConfirmation = false
     @State private var exportDocument: TrackDocument?
     @State private var exportType: UTType = .xml
-    @State private var exportFilename = "LifePath.gpx"
+    @State private var exportFilename = "traceon.gpx"
     @State private var isExporting = false
     @State private var showImporter = false
     @State private var importMessage: String?
@@ -136,7 +136,7 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section("关于") {
-            LabeledContent("产品", value: "迹行 LifePath")
+            LabeledContent("产品", value: "traceon")
             LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
             Button("重新查看隐私引导") { hasCompletedOnboarding = false }
         }
@@ -159,11 +159,11 @@ struct SettingsView: View {
         isExporting = true
         Task.detached(priority: .userInitiated) {
             let points = TrackDatabase.shared.allPoints()
-            let name = "LifePath \(Date.now.formatted(.iso8601.year().month().day()))"
+            let name = "traceon \(Date.now.formatted(.iso8601.year().month().day()))"
             let data = asGPX ? TrackExport.gpx(points: points, name: name) : TrackExport.geoJSON(points: points, name: name)
             await MainActor.run {
                 exportType = asGPX ? .xml : .json
-                exportFilename = asGPX ? "LifePath.gpx" : "LifePath.geojson"
+                exportFilename = asGPX ? "traceon.gpx" : "traceon.geojson"
                 exportDocument = TrackDocument(data: data)
                 isExporting = false
             }

@@ -1,6 +1,6 @@
 import CoreLocation
 import XCTest
-@testable import LifePath
+@testable import traceon
 
 final class TrackMathTests: XCTestCase {
     func testDistanceAddsPlausibleSegments() {

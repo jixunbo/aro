@@ -2,7 +2,7 @@
 
 ## Purpose and current capabilities
 
-LifePath (`迹行`) is a privacy-first iOS/iPadOS app that records a user's location history with selectable power/accuracy trade-offs. It can record in the background, show today's route and per-day history, render a sampled lifetime overview, calculate distance and point counts, import/export GPX and GeoJSON, and delete all local track data. It has no account, backend, analytics, or cloud synchronization.
+traceon is a privacy-first iOS/iPadOS app that records a user's location history with selectable power/accuracy trade-offs. It can record in the background, show today's route and per-day history, render a sampled lifetime overview, calculate distance and point counts, import/export GPX and GeoJSON, and delete all local track data. It has no account, backend, analytics, or cloud synchronization.
 
 ## Architecture and data flow
 
@@ -15,7 +15,7 @@ LifePath (`迹行`) is a privacy-first iOS/iPadOS app that records a user's loca
 
 ## Storage
 
-- The database is `Application Support/LifePath/tracks.sqlite3`, uses SQLite WAL with `synchronous=NORMAL`, and is protected until the first device unlock.
+- The database is `Application Support/traceon/tracks.sqlite3`, uses SQLite WAL with `synchronous=NORMAL`, and is protected until the first device unlock.
 - `track_points` stores raw samples. A unique index on timestamp, latitude, and longitude provides import/recording deduplication. `daily_summary` stores per-local-calendar-day point counts, distance, and first/last timestamps for history and lifetime statistics.
 - Normal inserts increment the relevant daily summary. Batch imports run in a transaction and rebuild every daily summary from timestamp-ordered raw points.
 - Today/day queries are capped at 50,000 points; the lifetime map reads at most 8,000 row-ID-sampled points. Full export reads all points.
