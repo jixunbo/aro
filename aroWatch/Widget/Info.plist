@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleDisplayName</key>
-	<string>ARO</string>
+	<string>aro</string>
 	<key>CFBundleName</key>
 	<string>AROBatteryWidget</string>
 	<key>CFBundleShortVersionString</key>

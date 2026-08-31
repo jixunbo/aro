@@ -11,7 +11,7 @@ enum TrackExport {
 
         let value = """
         <?xml version="1.0" encoding="UTF-8"?>
-        <gpx version="1.1" creator="ARO" xmlns="http://www.topografix.com/GPX/1/1">
+        <gpx version="1.1" creator="aro" xmlns="http://www.topografix.com/GPX/1/1">
           <trk><name>\(escapedName)</name><trkseg>
         \(body)
           </trkseg></trk>

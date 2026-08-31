@@ -90,7 +90,7 @@ struct AROBatteryWidget: Widget {
         StaticConfiguration(kind: Self.kind, provider: AROBatteryWidgetProvider()) { entry in
             AROBatteryWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("ARO 电量")
+        .configurationDisplayName("aro 电量")
         .description("显示 Apple Watch 最近同步的电量。")
         .supportedFamilies([
             .accessoryCircular,

@@ -8,7 +8,7 @@ import Foundation
 enum WatchSnapshotStore {
     static let appGroupIdentifier = "group.com.xunbo.traceon.watch"
     // Keep the original kind stable so an installed complication survives the
-    // display-name and source-file rename to ARO.
+    // display-name rename to aro and source-directory rename to aroWatch.
     static let widgetKind = "CompanioBatteryWidget"
 
     private static let storageKey = "latestAppleWatchBatterySnapshot"

@@ -57,9 +57,9 @@ struct DevicesView: View {
             .font(.headline)
 
             if connectivity.isWatchAppInstalled {
-                Text("手表组件已安装，正在等待第一条电量数据。通常不需要额外设置；如果几分钟后仍无数据，请在手表上打开一次 ARO。")
+                Text("手表组件已安装，正在等待第一条电量数据。通常不需要额外设置；如果几分钟后仍无数据，请在手表上打开一次 aro。")
             } else {
-                Text("ARO 已包含 Apple Watch 组件。若系统没有自动安装，请在 iPhone 的 Watch App → 我的手表 → 可用 App 中安装 ARO；开启自动安装后无需手动配对。")
+                Text("aro 已包含 Apple Watch 组件。若系统没有自动安装，请在 iPhone 的 Watch App → 我的手表 → 可用 App 中安装 aro；开启自动安装后无需手动配对。")
             }
 
             Text("安装状态会在 App 回到前台时自动检查。")
@@ -119,7 +119,7 @@ struct DevicesView: View {
                             .foregroundStyle(.orange)
                     }
                 } else {
-                    Text("请在 Apple Watch 上打开一次 ARO")
+                    Text("请在 Apple Watch 上打开一次 aro")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

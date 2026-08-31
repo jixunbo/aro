@@ -1,13 +1,13 @@
-# ARO 真机验收清单
+# aro 真机验收清单
 
 ## 后台记录
 
 每次测试前在“设置”页确认：自动记录已开启、定位权限为“始终”、精确位置已开启。
 
-1. **普通后台**：打开 ARO 后切换到其他 App，步行 500 米；回到 ARO，确认轨迹点、距离和时间更新。
+1. **普通后台**：打开 aro 后切换到其他 App，步行 500 米；回到 aro，确认轨迹点、距离和时间更新。
 2. **锁屏**：锁屏后步行或驾车 10 分钟；解锁后确认路线没有完全中断。
-3. **系统回收**：开启多个大型 App 造成内存压力，随后移动；ARO 应能通过显著位置变化或到访通道恢复。
-4. **手动划掉**：从多任务界面结束 ARO，再移动至少 500 米；不同 iOS 版本的调度可能有延迟，检查“记录通道”是否显示“显著位置变化”。
+3. **系统回收**：开启多个大型 App 造成内存压力，随后移动；aro 应能通过显著位置变化或到访通道恢复。
+4. **手动划掉**：从多任务界面结束 aro，再移动至少 500 米；不同 iOS 版本的调度可能有延迟，检查“记录通道”是否显示“显著位置变化”。
 5. **重启手机**：重启并首次解锁后移动；确认数据库仍可写入。
 6. **权限降级**：分别测试“使用 App 时”、关闭精确位置、关闭系统定位和关闭后台 App 刷新，确认界面能明确显示状态。
 7. **弱信号**：测试地铁、地下停车场、高楼密集区；确认漂移点不会造成异常长距离。
@@ -16,8 +16,8 @@
 
 不要用一次短测试判断耗电。至少比较两个完整工作日，并保持路线和手机使用方式接近。
 
-- 第一天：暂停 ARO，记录“设置 → 电池”中的总耗电与屏幕时间。
-- 第二天：使用“均衡”模式，记录相同数据以及 ARO 的后台活动占比。
+- 第一天：暂停 aro，记录“设置 → 电池”中的总耗电与屏幕时间。
+- 第二天：使用“均衡”模式，记录相同数据以及 aro 的后台活动占比。
 - 第三天：如需更低耗电，改用“极省电”；如需路线细节，改用“精确”。
 - 使用 Xcode Instruments 的 Energy Log 做 30–60 分钟步行和驾车样本。
 - 测试低电量模式、Wi‑Fi 开/关和蜂窝弱信号；无线信号差通常会放大定位耗电。
@@ -33,14 +33,14 @@
 
 ## Bundle ID 变更与数据边界
 
-- 在仍有历史轨迹的 Traceon/Companio 真机上先导出 GPX/GeoJSON，再安装使用新身份的 ARO；确认 ARO 可以独立启动、定位授权和设置初始化正常，并将导出文件重新导入后核对点数、日期和总距离。
+- 在仍有历史轨迹的 Traceon/Companio 真机上先导出 GPX/GeoJSON，再安装使用新身份的 aro；确认 aro 可以独立启动、定位授权和设置初始化正常，并将导出文件重新导入后核对点数、日期和总距离。
 - 确认 iOS Bundle ID 为 `com.xunbo.aro`，Watch App 为 `com.xunbo.aro.watchkitapp`，Widget Extension 为 `com.xunbo.aro.watchkitapp.widget`，Watch 的 `WKCompanionAppBundleIdentifier` 为 `com.xunbo.aro`。
-- 明确验证 ARO 不会读取旧 `com.xunbo.traceon` 容器中的 SQLite/UserDefaults；旧 App 与 ARO 可以作为两个独立身份存在。不要把新 App 的数据库路径仍叫 `Application Support/traceon/tracks.sqlite3` 解读为跨 Bundle ID 的自动迁移。
+- 明确验证 aro 不会读取旧 `com.xunbo.traceon` 容器中的 SQLite/UserDefaults；旧 App 与 aro 可以作为两个独立身份存在。不要把新 App 的数据库路径仍叫 `Application Support/traceon/tracks.sqlite3` 解读为跨 Bundle ID 的自动迁移。
 
 ## Apple Watch 与快捷指令
 
-1. 使用同一开发团队签名 `aro` 与 `ARO Watch App`，在已配对的 iPhone/Apple Watch 上从 `aro` scheme 安装；确认 Watch App 中显示 ARO。
-2. 在手表上打开 ARO，确认电量、充电状态和 iPhone 连接状态出现；回到 iPhone“设备”页，确认设备名、电量和同步时间一致。
+1. 使用同一开发团队签名 `aro` 与 `ARO Watch App`，在已配对的 iPhone/Apple Watch 上从 `aro` scheme 安装；确认 Watch App 中显示 aro。
+2. 在手表上打开 aro，确认电量、充电状态和 iPhone 连接状态出现；回到 iPhone“设备”页，确认设备名、电量和同步时间一致。
 3. 手表可达时进入“设备”页并点刷新，确认产生新的同步时间；不要只依据数值相同判断是否刷新。
 4. 关闭蓝牙、让手表离线或拉开距离后再次查看，确认 iPhone 明确标注“使用缓存/不代表实时电量”，并保留较新的快照而不被旧时间戳覆盖。
 5. 在快捷指令中运行“获取设备电量”：可达时确认先尝试实时请求；不可达时确认返回最近缓存及同步时间；从未收到快照时确认给出可操作的错误提示。
@@ -49,13 +49,13 @@
 ## WidgetKit 电量复杂功能
 
 1. 在同一开发团队下安装 `ARO Watch App` 与 `ARO Watch Widget Extension`，并确认两者都使用 `group.com.xunbo.traceon.watch` App Group。
-2. 在活动 Apple Watch 表盘上添加 ARO 复杂功能，分别检查圆形、角落、行内和矩形样式；首次没有快照时应显示 `--%`，不能出现伪造电量。
+2. 在活动 Apple Watch 表盘上添加 aro 复杂功能，分别检查圆形、角落、行内和矩形样式；首次没有快照时应显示 `--%`，不能出现伪造电量。
 3. 打开一次 Watch App，确认表盘复杂功能与 Watch App 显示同一电量和状态；在 iPhone“设备”页记录收到的时间戳。
 4. 关闭 Watch App 并保持手表闲置数小时，周期性记录 iPhone 快照时间戳；比较启用活动复杂功能前后的实际新鲜度。不要把 WidgetKit 的 `.after(30 分钟)` 或 Watch App 的首选 30 分钟解读为固定保证。
 5. 移除活动复杂功能后重复相同观察，作为对照；至少观察完整一天再判断 watchOS 调度差异。
 6. 确认复杂功能只显示 Watch App 写入的 App Group 快照，没有自己的 `WKInterfaceDevice` 读取、前台计时器或 iPhone 网络请求；Watch App 的自主刷新只更新 application context，不应产生无请求对应的 `sendMessage`。模拟器只能验证编译和静态布局，不能验证复杂功能刷新频率。
 
-如果表盘编辑器中找不到 `ARO 电量`，记录手表型号和 watchOS 版本，确认已安装完整的 `ARO Watch App`（不是只有 iOS App），并核对 Widget Extension 已随 Watch App 嵌入、bundle identifier 为 `com.xunbo.aro.watchkitapp.widget`、App Group 为 `group.com.xunbo.traceon.watch`。在手表上打开一次 ARO 后退出并重新打开表盘编辑器；确认当前表盘位置支持所选 accessory family，再重新安装一次 Watch App 做对照。不要把模拟器中能编译或能预览 Widget 当作真机表盘可发现性的证明。
+如果表盘编辑器中找不到 `aro 电量`，记录手表型号和 watchOS 版本，确认已安装完整的 `ARO Watch App`（不是只有 iOS App），并核对 Widget Extension 已随 Watch App 嵌入、bundle identifier 为 `com.xunbo.aro.watchkitapp.widget`、App Group 为 `group.com.xunbo.traceon.watch`。在手表上打开一次 aro 后退出并重新打开表盘编辑器；确认当前表盘位置支持所选 accessory family，再重新安装一次 Watch App 做对照。不要把模拟器中能编译或能预览 Widget 当作真机表盘可发现性的证明。
 
 ## 设备功能的后台能耗隔离
 

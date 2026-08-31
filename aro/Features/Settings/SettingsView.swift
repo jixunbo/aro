@@ -8,7 +8,7 @@ struct SettingsView: View {
     @State private var showDeleteConfirmation = false
     @State private var exportDocument: TrackDocument?
     @State private var exportType: UTType = .xml
-    @State private var exportFilename = "ARO.gpx"
+    @State private var exportFilename = "aro.gpx"
     @State private var isExporting = false
     @State private var showImporter = false
     @State private var importMessage: String?
@@ -136,7 +136,7 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section("关于") {
-            LabeledContent("产品", value: "ARO")
+            LabeledContent("产品", value: "aro")
             LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
             Button("重新查看隐私引导") { hasCompletedOnboarding = false }
         }
@@ -159,11 +159,11 @@ struct SettingsView: View {
         isExporting = true
         Task.detached(priority: .userInitiated) {
             let points = TrackDatabase.shared.allPoints()
-            let name = "ARO \(Date.now.formatted(.iso8601.year().month().day()))"
+            let name = "aro \(Date.now.formatted(.iso8601.year().month().day()))"
             let data = asGPX ? TrackExport.gpx(points: points, name: name) : TrackExport.geoJSON(points: points, name: name)
             await MainActor.run {
                 exportType = asGPX ? .xml : .json
-                exportFilename = asGPX ? "ARO.gpx" : "ARO.geojson"
+                exportFilename = asGPX ? "aro.gpx" : "aro.geojson"
                 exportDocument = TrackDocument(data: data)
                 isExporting = false
             }

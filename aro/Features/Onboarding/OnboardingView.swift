@@ -15,7 +15,7 @@ struct OnboardingView: View {
                     pageView(
                         symbol: "point.topleft.down.to.point.bottomright.curvepath",
                         title: "把走过的路留下来",
-                        detail: "ARO 在后台自动记录每天的路线，打开时再绘制地图。"
+                        detail: "aro 在后台自动记录每天的路线，打开时再绘制地图。"
                     ).tag(0)
                     pageView(
                         symbol: "lock.shield.fill",
@@ -84,7 +84,7 @@ struct OnboardingView: View {
     private var permissionDetail: String {
         locationService.authorizationStatus == .authorizedWhenInUse
             ? "下一步请选择“始终允许”。否则 App 被系统回收后可能无法继续自动记录。"
-            : "iOS 会分两次询问定位权限。ARO 只在你开启记录后使用位置。"
+            : "iOS 会分两次询问定位权限。aro 只在你开启记录后使用位置。"
     }
 
     private var buttonTitle: String {

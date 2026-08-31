@@ -74,7 +74,7 @@ enum BatteryIntentError: Error, CustomLocalizedStringResourceConvertible {
     case noData
 
     var localizedStringResource: LocalizedStringResource {
-        "尚未收到 Apple Watch 电量。请先在手表上打开一次 ARO。"
+        "尚未收到 Apple Watch 电量。请先在手表上打开一次 aro。"
     }
 }
 
