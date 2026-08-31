@@ -1,6 +1,7 @@
 import Foundation
 import WatchConnectivity
 import WatchKit
+import WidgetKit
 
 @MainActor
 final class CompanioBatteryReporter: NSObject, ObservableObject {
@@ -54,12 +55,16 @@ final class CompanioBatteryReporter: NSObject, ObservableObject {
                 deviceName: device.name
             )
             self.snapshot = snapshot
-            self.send(snapshot)
+            self.publish(snapshot)
             completion?()
         }
     }
 
-    private func send(_ snapshot: BatterySnapshot) {
+    private func publish(_ snapshot: BatterySnapshot, sendReachableMessage: Bool = true) {
+        if WatchSnapshotStore.save(snapshot) {
+            WidgetCenter.shared.reloadTimelines(ofKind: WatchSnapshotStore.widgetKind)
+        }
+
         guard let session, session.activationState == .activated else { return }
         do {
             try session.updateApplicationContext(snapshot.payload)
@@ -67,7 +72,7 @@ final class CompanioBatteryReporter: NSObject, ObservableObject {
             // The next foreground or background refresh will retry with a newer snapshot.
         }
 
-        if session.isReachable {
+        if sendReachableMessage && session.isReachable {
             session.sendMessage(snapshot.payload, replyHandler: nil, errorHandler: nil)
         }
     }
@@ -114,7 +119,7 @@ extension CompanioBatteryReporter: WCSessionDelegate {
                 deviceName: device.name
             )
             self.snapshot = fresh
-            self.send(fresh)
+            self.publish(fresh, sendReachableMessage: false)
             replyHandler(fresh.payload)
         }
     }

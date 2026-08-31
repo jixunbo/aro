@@ -46,6 +46,15 @@
 5. 在快捷指令中运行“获取设备电量”：可达时确认先尝试实时请求；不可达时确认返回最近缓存及同步时间；从未收到快照时确认给出可操作的错误提示。
 6. 让 watchOS 在锁屏/后台状态下自行调度刷新，之后比较时间戳。记录实际间隔，但不要把首选的 30 分钟当作系统保证。
 
+## WidgetKit 电量复杂功能
+
+1. 在同一开发团队下安装 `Companio Watch App` 与 `Companio Watch Widget Extension`，并确认两者都使用 `group.com.xunbo.traceon.watch` App Group。
+2. 在活动 Apple Watch 表盘上添加 Companio 复杂功能，分别检查圆形、角落、行内和矩形样式；首次没有快照时应显示 `--%`，不能出现伪造电量。
+3. 打开一次 Watch App，确认表盘复杂功能与 Watch App 显示同一电量和状态；在 iPhone“设备”页记录收到的时间戳。
+4. 关闭 Watch App 并保持手表闲置数小时，周期性记录 iPhone 快照时间戳；比较启用活动复杂功能前后的实际新鲜度。不要把 WidgetKit 的 `.after(30 分钟)` 或 Watch App 的首选 30 分钟解读为固定保证。
+5. 移除活动复杂功能后重复相同观察，作为对照；至少观察完整一天再判断 watchOS 调度差异。
+6. 确认复杂功能只显示 Watch App 写入的 App Group 快照，没有自己的 `WKInterfaceDevice` 读取、前台计时器或 iPhone 网络请求。模拟器只能验证编译和静态布局，不能验证复杂功能刷新频率。
+
 ## 设备功能的后台能耗隔离
 
 - 在未打开“设备”页的情况下，通过显著位置变化触发一次 iOS 后台定位唤醒；用 Instruments/日志确认这次启动没有向 Apple Watch 发送实时电量请求。

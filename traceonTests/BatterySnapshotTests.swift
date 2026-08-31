@@ -34,4 +34,21 @@ final class BatterySnapshotTests: XCTestCase {
             XCTAssertEqual(selected, newest)
         }
     }
+
+    func testBatteryStoreAcceptsNewerApplicationContextSnapshot() async {
+        await MainActor.run {
+            let suiteName = "BatterySnapshotTests.\(UUID().uuidString)"
+            let defaults = UserDefaults(suiteName: suiteName)!
+            defer { defaults.removePersistentDomain(forName: suiteName) }
+
+            let store = BatteryStore(defaults: defaults, storageKey: "snapshot")
+            let cached = BatterySnapshot(level: 42, state: .unplugged, updatedAt: Date(timeIntervalSince1970: 100))
+            let applicationContext = BatterySnapshot(level: 67, state: .charging, updatedAt: Date(timeIntervalSince1970: 200))
+
+            store.update(cached)
+            _ = store.update(from: applicationContext.payload)
+
+            XCTAssertEqual(store.snapshot, applicationContext)
+        }
+    }
 }

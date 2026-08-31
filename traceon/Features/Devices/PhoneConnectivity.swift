@@ -11,6 +11,7 @@ final class PhoneConnectivity: NSObject, ObservableObject {
     @Published private(set) var lastError: String?
 
     private var session: WCSession?
+    private var activationInProgress = false
     private var activationWaiters: [UUID: CheckedContinuation<Bool, Never>] = [:]
     private var pendingRequests: [UUID: CheckedContinuation<BatterySnapshot?, Never>] = [:]
 
@@ -27,8 +28,8 @@ final class PhoneConnectivity: NSObject, ObservableObject {
             let session = WCSession.default
             self.session = session
             session.delegate = self
-            session.activate()
         }
+        startActivationIfNeeded()
         refreshSessionState()
     }
 
@@ -48,6 +49,7 @@ final class PhoneConnectivity: NSObject, ObservableObject {
             guard activated else { return BatteryStore.shared.snapshot }
         }
 
+        ingestReceivedApplicationContext(from: session)
         refreshSessionState()
         guard session.isReachable else { return BatteryStore.shared.snapshot }
         let remainingNanoseconds = nanoseconds(until: deadline)
@@ -118,6 +120,20 @@ final class PhoneConnectivity: NSObject, ObservableObject {
         lastError = nil
     }
 
+    private func ingestReceivedApplicationContext(from session: WCSession) {
+        guard !session.receivedApplicationContext.isEmpty else { return }
+        receive(session.receivedApplicationContext)
+    }
+
+    private func startActivationIfNeeded(force: Bool = false) {
+        guard let session, !activationInProgress else { return }
+        guard session.activationState != .activated else { return }
+        guard force || session.activationState == .notActivated else { return }
+
+        activationInProgress = true
+        session.activate()
+    }
+
     private func refreshSessionState() {
         guard let session else { return }
         activationState = session.activationState
@@ -133,7 +149,11 @@ extension PhoneConnectivity: WCSessionDelegate {
         error: Error?
     ) {
         Task { @MainActor in
+            self.activationInProgress = false
             self.lastError = error?.localizedDescription
+            if activationState == .activated {
+                self.ingestReceivedApplicationContext(from: session)
+            }
             self.refreshSessionState()
             self.finishActivationWaiters(activated: activationState == .activated)
         }
@@ -144,8 +164,11 @@ extension PhoneConnectivity: WCSessionDelegate {
     }
 
     nonisolated func sessionDidDeactivate(_ session: WCSession) {
-        session.activate()
-        Task { @MainActor in self.refreshSessionState() }
+        Task { @MainActor in
+            self.activationInProgress = false
+            self.startActivationIfNeeded(force: true)
+            self.refreshSessionState()
+        }
     }
 
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {

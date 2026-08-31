@@ -71,3 +71,19 @@
 **Reason:** Device UI and Shortcuts need a useful last known value when the watch is temporarily unreachable without implying that cached state is live.
 
 **Implications:** The UI presents the synchronization timestamp and explicitly labels unreachable data as cached. Payload key/type changes remain a coordinated cross-target compatibility change.
+
+## Watch-owned snapshot and WidgetKit complication
+
+**Decision:** Keep `CompanioBatteryReporter` as the only component that reads `WKInterfaceDevice.current().batteryLevel`. Persist its newest valid `BatterySnapshot` in the Watch App Group `group.com.xunbo.traceon.watch`, and have the WidgetKit complication display that shared snapshot.
+
+**Reason:** The complication should improve watch-face visibility and provide another watchOS refresh opportunity without creating a second battery-monitoring architecture or an iPhone polling path.
+
+**Implications:** Battery samples continue to use application context and explicit reachable replies. The watch app persists every newer timestamp but reloads the complication timeline only when displayed battery/status values meaningfully change. WidgetKit and watchOS background refresh are system scheduled; a preferred interval is not a guarantee.
+
+## Freshness and retryable WatchConnectivity activation
+
+**Decision:** After activation, ingest `WCSession.receivedApplicationContext` through the existing newest-timestamp-wins `BatteryStore` path before checking reachability or falling back to cache. Track activation-in-progress separately so an explicit call retries `.notActivated` sessions after an activation error, while avoiding duplicate activation calls and continuation resumes.
+
+**Reason:** A newer opportunistic Watch sample can already be available when a Shortcut or Devices refresh starts, and failed activation must not permanently disable later explicit refreshes.
+
+**Implications:** Reachable sessions still receive an explicit live request; unreachable sessions return the newest cache available after context ingestion. Location lifecycle and background energy behavior remain unchanged.

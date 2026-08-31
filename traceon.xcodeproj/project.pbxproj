@@ -42,11 +42,17 @@
 		A1000000000000000000000B /* Companio Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* Companio Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A1000000000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000014 /* Assets.xcassets */; };
 		A1000000000000000000000D /* BatterySnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000B /* BatterySnapshotTests.swift */; };
+		A1000000000000000000000E /* WatchSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* WatchSnapshotStore.swift */; };
+		A1000000000000000000000F /* CompanioBatteryWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000D /* CompanioBatteryWidget.swift */; };
+		A10000000000000000000010 /* BatterySnapshot.swift in Widget Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* BatterySnapshot.swift */; };
+		A10000000000000000000011 /* WatchSnapshotStore.swift in Widget Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* WatchSnapshotStore.swift */; };
+		A10000000000000000000012 /* Companio Watch Widget Extension.appex in Embed Watch Widget */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* Companio Watch Widget Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		C00000000000000000000001 = {isa = PBXContainerItemProxy; containerPortal = E00000000000000000000001; proxyType = 1; remoteGlobalIDString = D00000000000000000000001; remoteInfo = traceon; };
 		C10000000000000000000001 /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = E00000000000000000000001 /* Project object */; proxyType = 1; remoteGlobalIDString = D10000000000000000000001; remoteInfo = "Companio Watch App"; };
+		C10000000000000000000002 /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = E00000000000000000000001 /* Project object */; proxyType = 1; remoteGlobalIDString = D20000000000000000000001; remoteInfo = "Companio Watch Widget Extension"; };
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -57,6 +63,15 @@
 			dstSubfolderSpec = 16;
 			files = (A1000000000000000000000B /* Companio Watch App.app in Embed Watch Content */, );
 			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F10000000000000000000002 /* Embed Watch Widget */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (A10000000000000000000012 /* Companio Watch Widget Extension.appex in Embed Watch Widget */, );
+			name = "Embed Watch Widget";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -100,6 +115,11 @@
 		B10000000000000000000009 /* WatchExtensionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchExtensionDelegate.swift; sourceTree = "<group>"; };
 		B1000000000000000000000A /* Companio Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Companio Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1000000000000000000000B /* BatterySnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatterySnapshotTests.swift; sourceTree = "<group>"; };
+		B1000000000000000000000C /* WatchSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSnapshotStore.swift; sourceTree = "<group>"; };
+		B1000000000000000000000D /* CompanioBatteryWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanioBatteryWidget.swift; sourceTree = "<group>"; };
+		B1000000000000000000000E /* Widget Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B1000000000000000000000F /* CompanioWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CompanioWatch.entitlements; sourceTree = "<group>"; };
+		B10000000000000000000010 /* Companio Watch Widget Extension.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = "Companio Watch Widget Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -126,7 +146,7 @@
 		G00000000000000000000007 /* Features */ = {isa = PBXGroup; children = (G0000000000000000000000C, G0000000000000000000000D, G0000000000000000000000E, G10000000000000000000001, G0000000000000000000000F, G00000000000000000000010); path = Features; sourceTree = "<group>"; };
 		G00000000000000000000008 /* Resources */ = {isa = PBXGroup; children = (B00000000000000000000014, B00000000000000000000015, B0000000000000000000001B); path = Resources; sourceTree = "<group>"; };
 		G0000000000000000000000A /* Shared */ = {isa = PBXGroup; children = (B00000000000000000000011, B00000000000000000000012, B00000000000000000000013, B10000000000000000000005); path = Shared; sourceTree = "<group>"; };
-		G0000000000000000000000B /* Products */ = {isa = PBXGroup; children = (B00000000000000000000017, B1000000000000000000000A, B00000000000000000000019); name = Products; sourceTree = "<group>"; };
+		G0000000000000000000000B /* Products */ = {isa = PBXGroup; children = (B00000000000000000000017, B1000000000000000000000A, B10000000000000000000010, B00000000000000000000019); name = Products; sourceTree = "<group>"; };
 		G0000000000000000000000C /* Today */ = {isa = PBXGroup; children = (B0000000000000000000000B); path = Today; sourceTree = "<group>"; };
 		G0000000000000000000000D /* History */ = {isa = PBXGroup; children = (B0000000000000000000000C); path = History; sourceTree = "<group>"; };
 		G0000000000000000000000E /* Insights */ = {isa = PBXGroup; children = (B0000000000000000000000D); path = Insights; sourceTree = "<group>"; };
@@ -134,7 +154,8 @@
 		G00000000000000000000010 /* Onboarding */ = {isa = PBXGroup; children = (B00000000000000000000010); path = Onboarding; sourceTree = "<group>"; };
 		G00000000000000000000011 /* traceonTests */ = {isa = PBXGroup; children = (B00000000000000000000018, B1000000000000000000000B); path = traceonTests; sourceTree = "<group>"; };
 		G10000000000000000000001 /* Devices */ = {isa = PBXGroup; children = (B10000000000000000000001, B10000000000000000000002, B10000000000000000000003, B10000000000000000000004); path = Devices; sourceTree = "<group>"; };
-		G10000000000000000000002 /* CompanioWatch */ = {isa = PBXGroup; children = (B10000000000000000000006, B10000000000000000000007, B10000000000000000000008, B10000000000000000000009); path = CompanioWatch; sourceTree = "<group>"; };
+		G10000000000000000000002 /* CompanioWatch */ = {isa = PBXGroup; children = (B10000000000000000000006, B10000000000000000000007, B10000000000000000000008, B10000000000000000000009, B1000000000000000000000C, B1000000000000000000000F, G10000000000000000000003); path = CompanioWatch; sourceTree = "<group>"; };
+		G10000000000000000000003 /* Widget */ = {isa = PBXGroup; children = (B1000000000000000000000D, B1000000000000000000000E); path = Widget; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -163,20 +184,31 @@
 		D10000000000000000000001 /* Companio Watch App */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = H10000000000000000000001 /* Build configuration list for PBXNativeTarget "Companio Watch App" */;
-			buildPhases = (F30000000000000000000001 /* Sources */, F20000000000000000000001 /* Frameworks */, F40000000000000000000001 /* Resources */);
+			buildPhases = (F30000000000000000000001 /* Sources */, F20000000000000000000001 /* Frameworks */, F40000000000000000000001 /* Resources */, F10000000000000000000002 /* Embed Watch Widget */);
 			buildRules = ();
-			dependencies = ();
+			dependencies = (C30000000000000000000001 /* PBXTargetDependency */);
 			name = "Companio Watch App";
 			productName = "Companio Watch App";
 			productReference = B1000000000000000000000A /* Companio Watch App.app */;
 			productType = "com.apple.product-type.application";
+		};
+		D20000000000000000000001 /* Companio Watch Widget Extension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = H20000000000000000000001 /* Build configuration list for PBXNativeTarget "Companio Watch Widget Extension" */;
+			buildPhases = (F50000000000000000000001 /* Sources */, F60000000000000000000001 /* Frameworks */, F70000000000000000000001 /* Resources */);
+			buildRules = ();
+			dependencies = ();
+			name = "Companio Watch Widget Extension";
+			productName = "Companio Watch Widget Extension";
+			productReference = B10000000000000000000010 /* Companio Watch Widget Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		E00000000000000000000001 /* Project object */ = {
 			isa = PBXProject;
-			attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 2630; LastUpgradeCheck = 2630; TargetAttributes = {D00000000000000000000001 = {CreatedOnToolsVersion = 26.3; ProvisioningStyle = Automatic; }; D00000000000000000000002 = {CreatedOnToolsVersion = 26.3; }; D10000000000000000000001 = {CreatedOnToolsVersion = 26.3; ProvisioningStyle = Automatic; }; }; };
+			attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 2630; LastUpgradeCheck = 2630; TargetAttributes = {D00000000000000000000001 = {CreatedOnToolsVersion = 26.3; ProvisioningStyle = Automatic; }; D00000000000000000000002 = {CreatedOnToolsVersion = 26.3; }; D10000000000000000000001 = {CreatedOnToolsVersion = 26.3; ProvisioningStyle = Automatic; }; D20000000000000000000001 = {CreatedOnToolsVersion = 26.3; ProvisioningStyle = Automatic; }; }; };
 			buildConfigurationList = H00000000000000000000001;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = zh-Hans;
@@ -186,7 +218,7 @@
 			productRefGroup = G0000000000000000000000B;
 			projectDirPath = "";
 			projectRoot = "";
-			targets = (D00000000000000000000001, D10000000000000000000001 /* Companio Watch App */, D00000000000000000000002);
+			targets = (D00000000000000000000001, D10000000000000000000001 /* Companio Watch App */, D20000000000000000000001 /* Companio Watch Widget Extension */, D00000000000000000000002);
 		};
 /* End PBXProject section */
 
@@ -194,6 +226,9 @@
 		F00000000000000000000003 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000014, A00000000000000000000017); runOnlyForDeploymentPostprocessing = 0; };
 		F00000000000000000000006 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 		F40000000000000000000001 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000C /* Assets.xcassets in Resources */, ); runOnlyForDeploymentPostprocessing = 0; };
+		F50000000000000000000001 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000F /* CompanioBatteryWidget.swift in Sources */, A10000000000000000000010 /* BatterySnapshot.swift in Widget Sources */, A10000000000000000000011 /* WatchSnapshotStore.swift in Widget Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
+		F60000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		F70000000000000000000001 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -204,12 +239,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F00000000000000000000004 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000015, A1000000000000000000000D); runOnlyForDeploymentPostprocessing = 0; };
-		F30000000000000000000001 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000006, A10000000000000000000007, A10000000000000000000008, A10000000000000000000009, A1000000000000000000000A); runOnlyForDeploymentPostprocessing = 0; };
+		F30000000000000000000001 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000006, A10000000000000000000007, A10000000000000000000008, A10000000000000000000009, A1000000000000000000000A, A1000000000000000000000E); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
 		C00000000000000000000002 = {isa = PBXTargetDependency; target = D00000000000000000000001; targetProxy = C00000000000000000000001; };
 		C20000000000000000000001 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = D10000000000000000000001 /* Companio Watch App */; targetProxy = C10000000000000000000001 /* PBXContainerItemProxy */; };
+		C30000000000000000000001 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = D20000000000000000000001 /* Companio Watch Widget Extension */; targetProxy = C10000000000000000000002 /* PBXContainerItemProxy */; };
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -219,8 +255,10 @@
 		I00000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = traceon/Resources/Info.plist; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel"; INFOPLIST_KEY_UILaunchScreen_Generation = YES; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.0; OTHER_LDFLAGS = "-lsqlite3"; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.traceon; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
 		I00000000000000000000005 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.traceonTests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/traceon.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/traceon"; }; name = Debug; };
 		I00000000000000000000006 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.traceonTests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/traceon.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/traceon"; }; name = Release; };
-		I10000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = Companio; INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown"; INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.xunbo.traceon; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.traceon.watchkitapp; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = watchos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "watchos watchsimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 4; WATCHOS_DEPLOYMENT_TARGET = 10.0; }; name = Debug; };
-		I10000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = Companio; INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown"; INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.xunbo.traceon; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.traceon.watchkitapp; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = watchos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "watchos watchsimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 4; WATCHOS_DEPLOYMENT_TARGET = 10.0; }; name = Release; };
+		I10000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = CompanioWatch/CompanioWatch.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = Companio; INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown"; INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.xunbo.traceon; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.traceon.watchkitapp; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = watchos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "watchos watchsimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 4; WATCHOS_DEPLOYMENT_TARGET = 10.0; }; name = Debug; };
+		I10000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = CompanioWatch/CompanioWatch.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = Companio; INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown"; INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.xunbo.traceon; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.traceon.watchkitapp; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = watchos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "watchos watchsimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 4; WATCHOS_DEPLOYMENT_TARGET = 10.0; }; name = Release; };
+		I20000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_ENTITLEMENTS = CompanioWatch/CompanioWatch.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = CompanioWatch/Widget/Info.plist; INFOPLIST_KEY_CFBundleDisplayName = Companio; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.traceon.watchkitapp.widget; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = watchos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "watchos watchsimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 4; WATCHOS_DEPLOYMENT_TARGET = 10.0; }; name = Debug; };
+		I20000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_ENTITLEMENTS = CompanioWatch/CompanioWatch.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = CompanioWatch/Widget/Info.plist; INFOPLIST_KEY_CFBundleDisplayName = Companio; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.0; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.traceon.watchkitapp.widget; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = watchos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "watchos watchsimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 4; WATCHOS_DEPLOYMENT_TARGET = 10.0; }; name = Release; };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -228,6 +266,7 @@
 		H00000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (I00000000000000000000003, I00000000000000000000004); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 		H00000000000000000000003 = {isa = XCConfigurationList; buildConfigurations = (I00000000000000000000005, I00000000000000000000006); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 		H10000000000000000000001 /* Build configuration list for PBXNativeTarget "Companio Watch App" */ = {isa = XCConfigurationList; buildConfigurations = (I10000000000000000000001 /* Debug */, I10000000000000000000002 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		H20000000000000000000001 /* Build configuration list for PBXNativeTarget "Companio Watch Widget Extension" */ = {isa = XCConfigurationList; buildConfigurations = (I20000000000000000000001 /* Debug */, I20000000000000000000002 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 	};
 	rootObject = E00000000000000000000001;
