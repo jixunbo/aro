@@ -26,7 +26,7 @@ final class LocationService: NSObject, ObservableObject {
             configureDetailManager()
             if isTrackingEnabled {
                 restartDetailUpdates()
-                motionManager.stopActivityUpdates()
+                stopMotionUpdates()
                 if mode != .eco { startMotionUpdates() }
             }
         }
@@ -37,6 +37,8 @@ final class LocationService: NSObject, ObservableObject {
     private let motionManager = CMMotionActivityManager()
     private var latestAcceptedPoint: TrackPoint?
     private var isStarted = false
+    private var detailUpdatesPaused = false
+    private var isMotionUpdating = false
 
     private enum Keys {
         static let enabled = "tracking.enabled"
@@ -113,17 +115,19 @@ final class LocationService: NSObject, ObservableObject {
     }
 
     private func startLowPowerMonitoring() {
-        guard CLLocationManager.significantLocationChangeMonitoringAvailable() else { return }
-        wakeManager.startMonitoringSignificantLocationChanges()
+        if CLLocationManager.significantLocationChangeMonitoringAvailable() {
+            wakeManager.startMonitoringSignificantLocationChanges()
+        }
         wakeManager.startMonitoringVisits()
     }
 
     private func stopServices() {
         isStarted = false
+        detailUpdatesPaused = false
         wakeManager.stopMonitoringSignificantLocationChanges()
         wakeManager.stopMonitoringVisits()
         detailManager.stopUpdatingLocation()
-        motionManager.stopActivityUpdates()
+        stopMotionUpdates()
     }
 
     private func configureDetailManager() {
@@ -137,6 +141,7 @@ final class LocationService: NSObject, ObservableObject {
 
     private func restartDetailUpdates() {
         detailManager.stopUpdatingLocation()
+        detailUpdatesPaused = false
         configureDetailManager()
         if mode.usesContinuousUpdates,
            authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse {
@@ -144,10 +149,24 @@ final class LocationService: NSObject, ObservableObject {
         }
     }
 
+    private func resumeDetailUpdatesAfterLowPowerWake() {
+        guard detailUpdatesPaused,
+              isTrackingEnabled,
+              mode.usesContinuousUpdates,
+              authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse
+        else { return }
+
+        detailUpdatesPaused = false
+        configureDetailManager()
+        detailManager.startUpdatingLocation()
+        if mode != .eco { startMotionUpdates() }
+    }
+
     private func startMotionUpdates() {
-        guard CMMotionActivityManager.isActivityAvailable() else { return }
+        guard !isMotionUpdating, CMMotionActivityManager.isActivityAvailable() else { return }
+        isMotionUpdating = true
         motionManager.startActivityUpdates(to: .main) { [weak self] activity in
-            guard let self, let activity else { return }
+            guard let self, let activity, self.isTrackingEnabled, self.mode != .eco else { return }
             self.currentActivity = Self.label(for: activity)
             if activity.automotive {
                 self.detailManager.activityType = .automotiveNavigation
@@ -156,19 +175,13 @@ final class LocationService: NSObject, ObservableObject {
             } else {
                 self.detailManager.activityType = .other
             }
-            self.applyMotionPowerPolicy(isStationary: activity.stationary)
         }
     }
 
-    private func applyMotionPowerPolicy(isStationary: Bool) {
-        guard mode != .workout else { return }
-        if isStationary {
-            detailManager.desiredAccuracy = kCLLocationAccuracyKilometer
-            detailManager.distanceFilter = max(250, mode.distanceFilter)
-        } else {
-            detailManager.desiredAccuracy = mode.desiredAccuracy
-            detailManager.distanceFilter = mode.distanceFilter
-        }
+    private func stopMotionUpdates() {
+        guard isMotionUpdating else { return }
+        motionManager.stopActivityUpdates()
+        isMotionUpdating = false
     }
 
     private func consume(_ locations: [CLLocation], source: String) {
@@ -240,10 +253,14 @@ extension LocationService: @preconcurrency CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         consume(locations, source: manager === wakeManager ? "significant" : "standard")
+        if manager === wakeManager {
+            resumeDetailUpdatesAfterLowPowerWake()
+        }
     }
 
     func locationManager(_ manager: CLLocationManager, didVisit visit: CLVisit) {
-        let timestamp = visit.departureDate == .distantFuture ? visit.arrivalDate : visit.departureDate
+        let isDeparture = visit.departureDate != .distantFuture
+        let timestamp = isDeparture ? visit.departureDate : visit.arrivalDate
         let location = CLLocation(
             coordinate: visit.coordinate,
             altitude: 0,
@@ -252,6 +269,21 @@ extension LocationService: @preconcurrency CLLocationManagerDelegate {
             timestamp: timestamp
         )
         consume([location], source: "visit")
+        if isDeparture {
+            resumeDetailUpdatesAfterLowPowerWake()
+        }
+    }
+
+    func locationManagerDidPauseLocationUpdates(_ manager: CLLocationManager) {
+        guard manager === detailManager else { return }
+        detailUpdatesPaused = true
+        stopMotionUpdates()
+    }
+
+    func locationManagerDidResumeLocationUpdates(_ manager: CLLocationManager) {
+        guard manager === detailManager else { return }
+        detailUpdatesPaused = false
+        if mode != .eco { startMotionUpdates() }
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
