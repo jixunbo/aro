@@ -139,7 +139,7 @@ struct SettingsView: View {
             Button("导出全部为 GeoJSON") { prepareExport(asGPX: false) }
                 .disabled(isExporting || repository.lifetime.pointCount == 0)
             Button("导入 GPX 或 GeoJSON") { showImporter = true }
-            Button("删除全部轨迹", role: .destructive) { showDeleteConfirmation = true }
+            Button("删除全部轨迹", role: .destructive) { beginDeleteEverything() }
 #if ARO_CLOUDKIT_ENABLED
                 .disabled((repository.lifetime.pointCount == 0 && !cloudSync.hasCloudData) || cloudSync.isSyncing)
 #else
@@ -191,6 +191,13 @@ struct SettingsView: View {
             Text("当前 Local / Personal Team 构建未启用 iCloud 同步。轨迹仍会保存在本机 SQLite 中。")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+#if !ARO_CLOUDKIT_ENABLED
+            if localBuildMayHaveCloudData {
+                Label("检测到此安装曾使用 iCloud 同步。Local 构建不会删除云端副本。", systemImage: "exclamationmark.triangle")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+#endif
         } header: {
             Text("iCloud")
         } footer: {
@@ -219,6 +226,25 @@ struct SettingsView: View {
         }
     }
 
+#if !ARO_CLOUDKIT_ENABLED
+    private var localBuildMayHaveCloudData: Bool {
+        let defaults = UserDefaults.standard
+        return defaults.bool(forKey: "icloudSync.enabled")
+            || defaults.bool(forKey: "icloudSync.hasCloudData")
+            || defaults.double(forKey: "icloudSync.lastSyncAt") > 0
+    }
+#endif
+
+    private func beginDeleteEverything() {
+#if !ARO_CLOUDKIT_ENABLED
+        guard !localBuildMayHaveCloudData else {
+            deleteError = "此安装以前使用过 iCloud 同步，云端轨迹可能仍然存在。Local 构建无法安全完成“删除全部轨迹”；请改用 CloudDebug 或 CloudRelease 构建删除，避免以后重新启用 iCloud 时数据被同步回来。"
+            return
+        }
+#endif
+        showDeleteConfirmation = true
+    }
+
     private var deleteConfirmationMessage: String {
 #if ARO_CLOUDKIT_ENABLED
         if cloudSync.hasCloudData {
@@ -242,6 +268,10 @@ struct SettingsView: View {
             repository.deleteEverything()
         }
 #else
+        guard !localBuildMayHaveCloudData else {
+            deleteError = "此安装以前使用过 iCloud 同步，云端轨迹可能仍然存在。请切换到 CloudDebug 或 CloudRelease 构建后再删除全部轨迹。"
+            return
+        }
         repository.deleteEverything()
 #endif
     }
