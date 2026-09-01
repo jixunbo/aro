@@ -60,6 +60,14 @@ final class WatchBatteryService: NSObject, ObservableObject {
         }
     }
 
+    func refreshAndSendAsync() async {
+        await withCheckedContinuation { continuation in
+            refreshAndSend {
+                continuation.resume()
+            }
+        }
+    }
+
     private func publish(_ snapshot: BatterySnapshot) {
         if WatchSnapshotStore.save(snapshot) {
             WidgetCenter.shared.reloadTimelines(ofKind: WatchSnapshotStore.widgetKind)
