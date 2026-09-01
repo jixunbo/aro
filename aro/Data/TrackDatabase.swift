@@ -75,16 +75,35 @@ final class TrackDatabase: @unchecked Sendable {
             guard maximum > 0 else { return [] }
             let total = scalarInt("SELECT COUNT(*) FROM track_points")
             guard total > 0 else { return [] }
-            let stride = max(1, (total - 1) / maximum + 1)
+
+            if total <= maximum {
+                return queryPoints(
+                    sql: "SELECT \(pointColumns) FROM track_points ORDER BY timestamp ASC, id ASC",
+                    bindings: { _ in }
+                )
+            }
+
+            if maximum == 1 {
+                return queryPoints(
+                    sql: "SELECT \(pointColumns) FROM track_points ORDER BY timestamp DESC, id DESC LIMIT 1",
+                    bindings: { _ in }
+                )
+            }
+
+            let span = total - 1
+            let stride = max(1, (span + maximum - 2) / (maximum - 1))
             return queryPoints(
                 sql: """
                     WITH ordered_points AS (
                         SELECT \(pointColumns),
-                               ROW_NUMBER() OVER (ORDER BY timestamp DESC, id DESC) - 1 AS sample_index
+                               ROW_NUMBER() OVER (ORDER BY timestamp ASC, id ASC) - 1 AS sample_index,
+                               COUNT(*) OVER () AS total_count
                         FROM track_points
                     )
                     SELECT \(pointColumns) FROM ordered_points
-                    WHERE (sample_index % ?) = 0
+                    WHERE sample_index = 0
+                       OR sample_index = total_count - 1
+                       OR (sample_index % ?) = 0
                     ORDER BY timestamp ASC, id ASC
                     LIMIT ?
                     """,
