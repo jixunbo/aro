@@ -113,7 +113,6 @@ final class CloudSyncService: ObservableObject {
     func setEnabled(_ enabled: Bool) {
         UserDefaults.standard.set(enabled, forKey: Self.enabledKey)
         if enabled {
-            markCloudDataPresent()
             Task { await syncNow() }
         } else {
             activationTask?.cancel()
@@ -186,7 +185,7 @@ final class CloudSyncService: ObservableObject {
         let now = Date()
         lastSyncAt = now
         UserDefaults.standard.set(now.timeIntervalSince1970, forKey: Self.lastSyncKey)
-        statusText = "已同步"
+        statusText = isEnabled ? "已同步" : "未开启"
     }
 
     private func markCloudDataPresent() {
@@ -252,19 +251,23 @@ private actor CloudTrackSyncEngine: CKSyncEngineDelegate {
         let accountStatus = try await container.accountStatus()
         guard accountStatus == .available else { throw CloudSyncError.accountUnavailable(accountStatus) }
 
+        let stateSerialization = stateStore.load()
         var configuration = CKSyncEngine.Configuration(
             database: container.privateCloudDatabase,
-            stateSerialization: stateStore.load(),
+            stateSerialization: stateSerialization,
             delegate: self
         )
         configuration.automaticallySync = true
         let syncEngine = CKSyncEngine(configuration)
         self.syncEngine = syncEngine
-        syncEngine.state.add(pendingDatabaseChanges: [.saveZone(Self.zone)])
+        if stateSerialization == nil {
+            syncEngine.state.add(pendingDatabaseChanges: [.saveZone(Self.zone)])
+        }
         queueLocalChanges(on: syncEngine)
     }
 
-    func stop() {
+    func stop() async {
+        if let syncEngine { await syncEngine.cancelOperations() }
         syncEngine = nil
     }
 
@@ -278,15 +281,16 @@ private actor CloudTrackSyncEngine: CKSyncEngineDelegate {
     }
 
     func deleteCloudZone() async throws {
-        let accountStatus = try await container.accountStatus()
-        guard accountStatus == .available else { throw CloudSyncError.accountUnavailable(accountStatus) }
+        try await startIfNeeded()
+        guard let syncEngine else { return }
 
-        do {
-            _ = try await container.privateCloudDatabase.deleteRecordZone(withID: Self.zoneID)
-        } catch let error as CKError where error.code == .zoneNotFound {
-            // The intended end state is already true.
-        }
-        syncEngine = nil
+        syncEngine.state.hasPendingUntrackedChanges = false
+        syncEngine.state.add(pendingDatabaseChanges: [.deleteZone(Self.zoneID)])
+        try await syncEngine.sendChanges(
+            CKSyncEngine.SendChangesOptions(scope: .zoneIDs([Self.zoneID]))
+        )
+        await syncEngine.cancelOperations()
+        self.syncEngine = nil
         stateStore.clear()
     }
 
@@ -303,6 +307,9 @@ private actor CloudTrackSyncEngine: CKSyncEngineDelegate {
 
         case .fetchedDatabaseChanges(let event):
             if event.deletions.contains(where: { $0.zoneID == Self.zoneID }) {
+                syncEngine.state.remove(pendingDatabaseChanges: [.saveZone(Self.zone)])
+                syncEngine.state.hasPendingUntrackedChanges = false
+                await syncEngine.cancelOperations()
                 stateStore.clear()
                 self.syncEngine = nil
                 await MainActor.run { CloudSyncService.shared.handleRemoteZoneDeletion() }
