@@ -30,7 +30,7 @@ final class TrackDatabase: @unchecked Sendable {
 
     @discardableResult
     func insert(_ point: TrackPoint) -> Int64 {
-        queue.sync { insertLocked(point, updatesSummary: true) }
+        queue.sync { insertLocked(point, updatesSummary: true, cloudSynced: false) }
     }
 
     @discardableResult
@@ -40,7 +40,7 @@ final class TrackDatabase: @unchecked Sendable {
             execute("BEGIN IMMEDIATE")
             var inserted = 0
             for point in points.sorted(by: { $0.timestamp < $1.timestamp }) {
-                if insertLocked(point, updatesSummary: false) > 0 { inserted += 1 }
+                if insertLocked(point, updatesSummary: false, cloudSynced: false) > 0 { inserted += 1 }
             }
             rebuildDailySummariesLocked()
             execute("COMMIT")
@@ -48,8 +48,85 @@ final class TrackDatabase: @unchecked Sendable {
         }
     }
 
+    @discardableResult
+    func applyCloudPoints(_ points: [TrackPoint]) -> Int {
+        queue.sync {
+            guard !points.isEmpty else { return 0 }
+            execute("BEGIN IMMEDIATE")
+            var inserted = 0
+            for point in points.sorted(by: { $0.timestamp < $1.timestamp }) {
+                if insertLocked(point, updatesSummary: false, cloudSynced: true) > 0 {
+                    inserted += 1
+                } else if let syncID = point.syncID {
+                    markCloudSyncedLocked(syncID: syncID)
+                }
+            }
+            if inserted > 0 { rebuildDailySummariesLocked() }
+            execute("COMMIT")
+            return inserted
+        }
+    }
+
     func latestPoint() -> TrackPoint? {
         queue.sync { latestPointLocked() }
+    }
+
+    func point(syncID: String) -> TrackPoint? {
+        queue.sync {
+            queryPoints(
+                sql: "SELECT \(pointColumns) FROM track_points WHERE sync_id = ? LIMIT 1",
+                bindings: { statement in bindText(syncID, to: statement, index: 1) }
+            ).first
+        }
+    }
+
+    func unsyncedPoints(limit: Int = 500) -> [TrackPoint] {
+        queue.sync {
+            guard limit > 0 else { return [] }
+            return queryPoints(
+                sql: "SELECT \(pointColumns) FROM track_points WHERE cloud_synced = 0 ORDER BY timestamp ASC, id ASC LIMIT ?",
+                bindings: { statement in sqlite3_bind_int(statement, 1, Int32(limit)) }
+            )
+        }
+    }
+
+    func markCloudSynced(syncIDs: [String]) {
+        queue.sync {
+            guard !syncIDs.isEmpty else { return }
+            execute("BEGIN IMMEDIATE")
+            for syncID in Set(syncIDs) { markCloudSyncedLocked(syncID: syncID) }
+            execute("COMMIT")
+        }
+    }
+
+    func resetCloudSyncState() {
+        queue.sync { execute("UPDATE track_points SET cloud_synced = 0") }
+    }
+
+    @discardableResult
+    func deleteCloudPoints(syncIDs: [String]) -> Int {
+        queue.sync {
+            guard let database, !syncIDs.isEmpty else { return 0 }
+            execute("BEGIN IMMEDIATE")
+            var deleted = 0
+            let sql = "DELETE FROM track_points WHERE sync_id = ?"
+            var statement: OpaquePointer?
+            guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
+                execute("ROLLBACK")
+                return 0
+            }
+            defer { sqlite3_finalize(statement) }
+            for syncID in Set(syncIDs) {
+                sqlite3_reset(statement)
+                sqlite3_clear_bindings(statement)
+                bindText(syncID, to: statement, index: 1)
+                guard sqlite3_step(statement) == SQLITE_DONE else { continue }
+                deleted += Int(sqlite3_changes(database))
+            }
+            if deleted > 0 { rebuildDailySummariesLocked() }
+            execute("COMMIT")
+            return deleted
+        }
     }
 
     func points(from start: Date, to end: Date, limit: Int = 50_000) -> [TrackPoint] {
@@ -220,14 +297,19 @@ final class TrackDatabase: @unchecked Sendable {
                 course REAL NOT NULL DEFAULT -1,
                 source TEXT NOT NULL,
                 activity TEXT,
-                sync_id TEXT
+                sync_id TEXT,
+                cloud_synced INTEGER NOT NULL DEFAULT 0
             )
             """)
         if !columnExists("sync_id", in: "track_points") {
             execute("ALTER TABLE track_points ADD COLUMN sync_id TEXT")
         }
+        if !columnExists("cloud_synced", in: "track_points") {
+            execute("ALTER TABLE track_points ADD COLUMN cloud_synced INTEGER NOT NULL DEFAULT 0")
+        }
         execute("UPDATE track_points SET sync_id = lower(hex(randomblob(16))) WHERE sync_id IS NULL OR sync_id = ''")
         execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_track_points_sync_id ON track_points(sync_id)")
+        execute("CREATE INDEX IF NOT EXISTS idx_track_points_cloud_synced ON track_points(cloud_synced, id)")
         try? FileManager.default.setAttributes(
             [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication],
             ofItemAtPath: databaseURL.path
@@ -251,14 +333,14 @@ final class TrackDatabase: @unchecked Sendable {
         queryPoints(sql: "SELECT \(pointColumns) FROM track_points ORDER BY timestamp DESC LIMIT 1", bindings: { _ in }).first
     }
 
-    private func insertLocked(_ point: TrackPoint, updatesSummary: Bool) -> Int64 {
+    private func insertLocked(_ point: TrackPoint, updatesSummary: Bool, cloudSynced: Bool) -> Int64 {
         guard let database else { return 0 }
         let previous = updatesSummary ? latestPointLocked() : nil
         let syncID = point.syncID.flatMap { $0.isEmpty ? nil : $0 } ?? UUID().uuidString.lowercased()
         let sql = """
             INSERT OR IGNORE INTO track_points
-            (timestamp, latitude, longitude, altitude, horizontal_accuracy, speed, course, source, activity, sync_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (timestamp, latitude, longitude, altitude, horizontal_accuracy, speed, course, source, activity, sync_id, cloud_synced)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else { return 0 }
@@ -274,11 +356,22 @@ final class TrackDatabase: @unchecked Sendable {
         bindText(point.source, to: statement, index: 8)
         bindText(point.activity, to: statement, index: 9)
         bindText(syncID, to: statement, index: 10)
+        sqlite3_bind_int(statement, 11, cloudSynced ? 1 : 0)
 
         guard sqlite3_step(statement) == SQLITE_DONE, sqlite3_changes(database) > 0 else { return 0 }
         let rowID = sqlite3_last_insert_rowid(database)
         if updatesSummary { updateDailySummaryLocked(with: point, previous: previous) }
         return rowID
+    }
+
+    private func markCloudSyncedLocked(syncID: String) {
+        guard let database else { return }
+        let sql = "UPDATE track_points SET cloud_synced = 1 WHERE sync_id = ?"
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else { return }
+        defer { sqlite3_finalize(statement) }
+        bindText(syncID, to: statement, index: 1)
+        sqlite3_step(statement)
     }
 
     private func rebuildDailySummariesLocked() {
