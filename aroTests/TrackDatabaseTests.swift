@@ -138,6 +138,44 @@ final class TrackDatabaseTests: XCTestCase {
         XCTAssertNil(db.point(syncID: remoteSyncID))
     }
 
+    func testRemoteDuplicateAdoptsCloudIdentityBeforeUpload() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("TrackDatabaseTests-Reconcile-\(UUID().uuidString)", isDirectory: true)
+        var database: TrackDatabase? = TrackDatabase(databaseURL: folder.appendingPathComponent("tracks.sqlite3"))
+        defer {
+            database = nil
+            try? FileManager.default.removeItem(at: folder)
+        }
+        let db = try XCTUnwrap(database)
+        let timestamp = Date(timeIntervalSince1970: 10)
+
+        XCTAssertGreaterThan(
+            db.insert(TrackPoint(timestamp: timestamp, latitude: 52.52, longitude: 13.405)),
+            0
+        )
+        let originalSyncID = try XCTUnwrap(db.allPoints().first?.syncID)
+        XCTAssertEqual(db.unsyncedPoints().map(\.syncID), [originalSyncID])
+
+        let cloudSyncID = "canonical-cloud-record"
+        XCTAssertEqual(
+            db.applyCloudPoints([
+                TrackPoint(
+                    syncID: cloudSyncID,
+                    timestamp: timestamp,
+                    latitude: 52.52,
+                    longitude: 13.405
+                )
+            ]),
+            0
+        )
+
+        let stored = db.allPoints()
+        XCTAssertEqual(stored.count, 1)
+        XCTAssertEqual(stored.first?.syncID, cloudSyncID)
+        XCTAssertNil(db.point(syncID: originalSyncID))
+        XCTAssertTrue(db.unsyncedPoints().isEmpty)
+    }
+
     func testLegacyDatabaseMigrationBackfillsUniqueSyncIDs() throws {
         let folder = FileManager.default.temporaryDirectory
             .appendingPathComponent("TrackDatabaseTests-Legacy-\(UUID().uuidString)", isDirectory: true)

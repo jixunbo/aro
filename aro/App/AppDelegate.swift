@@ -7,6 +7,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         let locationTriggered = launchOptions?[.location] != nil
         LocationService.shared.handleApplicationLaunch(locationTriggered: locationTriggered)
+        if !locationTriggered {
+            Task { @MainActor in
+                CloudSyncService.shared.prepareForLaunch()
+            }
+        }
         return true
     }
 }

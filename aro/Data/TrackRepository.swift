@@ -66,9 +66,11 @@ final class CloudSyncService: ObservableObject {
     @Published private(set) var statusText = "未开启"
     @Published private(set) var isSyncing = false
     @Published private(set) var lastSyncAt: Date?
+    @Published private(set) var hasCloudData = false
 
     static let enabledKey = "icloudSync.enabled"
     private static let lastSyncKey = "icloudSync.lastSyncAt"
+    private static let hasCloudDataKey = "icloudSync.hasCloudData"
 
     private let manager = CloudTrackSyncEngine.shared
     private var activationTask: Task<Void, Never>?
@@ -76,11 +78,17 @@ final class CloudSyncService: ObservableObject {
     private init() {
         let timestamp = UserDefaults.standard.double(forKey: Self.lastSyncKey)
         if timestamp > 0 { lastSyncAt = Date(timeIntervalSince1970: timestamp) }
+        hasCloudData = UserDefaults.standard.bool(forKey: Self.hasCloudDataKey) || lastSyncAt != nil
         if UserDefaults.standard.bool(forKey: Self.enabledKey) { statusText = "等待同步" }
     }
 
     var isEnabled: Bool {
         UserDefaults.standard.bool(forKey: Self.enabledKey)
+    }
+
+    func prepareForLaunch() {
+        guard isEnabled else { return }
+        appBecameActive()
     }
 
     func appBecameActive() {
@@ -93,6 +101,7 @@ final class CloudSyncService: ObservableObject {
             do {
                 try await manager.startIfNeeded()
                 guard !Task.isCancelled else { return }
+                markCloudDataPresent()
                 statusText = "等待系统同步"
             } catch {
                 guard !Task.isCancelled else { return }
@@ -104,6 +113,7 @@ final class CloudSyncService: ObservableObject {
     func setEnabled(_ enabled: Bool) {
         UserDefaults.standard.set(enabled, forKey: Self.enabledKey)
         if enabled {
+            markCloudDataPresent()
             Task { await syncNow() }
         } else {
             activationTask?.cancel()
@@ -131,7 +141,7 @@ final class CloudSyncService: ObservableObject {
     }
 
     func deleteCloudAndLocalData() async throws {
-        guard isEnabled else {
+        guard hasCloudData else {
             TrackRepository.shared.deleteEverything()
             return
         }
@@ -141,9 +151,8 @@ final class CloudSyncService: ObservableObject {
         do {
             try await manager.deleteCloudZone()
             TrackRepository.shared.deleteEverything()
-            statusText = "已删除"
-            lastSyncAt = nil
-            UserDefaults.standard.removeObject(forKey: Self.lastSyncKey)
+            clearCloudDataState()
+            statusText = isEnabled ? "已清空" : "未开启"
         } catch {
             statusText = Self.message(for: error)
             throw error
@@ -152,6 +161,7 @@ final class CloudSyncService: ObservableObject {
 
     func noteAutomaticSync() {
         guard isEnabled else { return }
+        markCloudDataPresent()
         let now = Date()
         lastSyncAt = now
         UserDefaults.standard.set(now.timeIntervalSince1970, forKey: Self.lastSyncKey)
@@ -164,17 +174,31 @@ final class CloudSyncService: ObservableObject {
         isSyncing = false
     }
 
-    func disableAfterRemoteZoneDeletion() {
-        UserDefaults.standard.set(false, forKey: Self.enabledKey)
-        statusText = "iCloud 数据已被移除，已暂停同步"
+    func handleRemoteZoneDeletion() {
+        TrackRepository.shared.deleteEverything()
+        clearCloudDataState()
+        statusText = isEnabled ? "iCloud 已清空" : "未开启"
         isSyncing = false
     }
 
     private func noteSyncCompleted() {
+        markCloudDataPresent()
         let now = Date()
         lastSyncAt = now
         UserDefaults.standard.set(now.timeIntervalSince1970, forKey: Self.lastSyncKey)
         statusText = "已同步"
+    }
+
+    private func markCloudDataPresent() {
+        hasCloudData = true
+        UserDefaults.standard.set(true, forKey: Self.hasCloudDataKey)
+    }
+
+    private func clearCloudDataState() {
+        hasCloudData = false
+        lastSyncAt = nil
+        UserDefaults.standard.removeObject(forKey: Self.hasCloudDataKey)
+        UserDefaults.standard.removeObject(forKey: Self.lastSyncKey)
     }
 
     private static func message(for error: Error) -> String {
@@ -264,7 +288,6 @@ private actor CloudTrackSyncEngine: CKSyncEngineDelegate {
         }
         syncEngine = nil
         stateStore.clear()
-        database.resetCloudSyncState()
     }
 
     func handleEvent(_ event: CKSyncEngine.Event, syncEngine: CKSyncEngine) async {
@@ -281,9 +304,8 @@ private actor CloudTrackSyncEngine: CKSyncEngineDelegate {
         case .fetchedDatabaseChanges(let event):
             if event.deletions.contains(where: { $0.zoneID == Self.zoneID }) {
                 stateStore.clear()
-                database.resetCloudSyncState()
                 self.syncEngine = nil
-                await MainActor.run { CloudSyncService.shared.disableAfterRemoteZoneDeletion() }
+                await MainActor.run { CloudSyncService.shared.handleRemoteZoneDeletion() }
             }
 
         case .fetchedRecordZoneChanges(let event):

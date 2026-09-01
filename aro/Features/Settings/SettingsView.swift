@@ -134,11 +134,11 @@ struct SettingsView: View {
                 .disabled(isExporting || repository.lifetime.pointCount == 0)
             Button("导入 GPX 或 GeoJSON") { showImporter = true }
             Button("删除全部轨迹", role: .destructive) { showDeleteConfirmation = true }
-                .disabled(repository.lifetime.pointCount == 0 || cloudSync.isSyncing)
+                .disabled((repository.lifetime.pointCount == 0 && !cloudSync.hasCloudData) || cloudSync.isSyncing)
         } header: {
             Text("数据")
         } footer: {
-            Text("SQLite 始终保留一份本地轨迹。开启 iCloud 同步后，轨迹点也会保存到你的私人 iCloud 数据库。")
+            Text("SQLite 始终保留一份本地轨迹。关闭 iCloud 同步不会删除已有云端副本；“删除全部轨迹”会同时清理已存在的 iCloud 数据。")
         }
     }
 
@@ -191,14 +191,14 @@ struct SettingsView: View {
     }
 
     private var deleteConfirmationMessage: String {
-        if cloudSync.isEnabled {
-            return "这会从本机和你的 iCloud 私有数据库永久删除全部轨迹，并可能同步到其他设备。此操作无法撤销，建议先导出备份。"
+        if cloudSync.hasCloudData {
+            return "这会从本机和你的 iCloud 私有数据库永久删除全部轨迹；其他已开启同步的设备收到云端删除后也会清空本地轨迹。此操作无法撤销，建议先导出备份。"
         }
         return "此操作无法撤销，建议先导出备份。"
     }
 
     private func deleteEverything() {
-        if cloudSync.isEnabled {
+        if cloudSync.hasCloudData {
             Task {
                 do {
                     try await cloudSync.deleteCloudAndLocalData()

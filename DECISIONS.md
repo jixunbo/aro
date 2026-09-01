@@ -1,12 +1,24 @@
 # Architectural decisions
 
-## Local-only persistence
+## Local-only persistence (superseded)
+
+This decision was superseded by “Opt-in private CloudKit sync” below.
 
 **Decision:** Store tracks on-device in SQLite; do not require an account, backend, analytics service, or cloud synchronization.
 
 **Reason:** The product describes itself as privacy-first and intended for long-term local accumulation without a server.
 
-**Implications:** Export is the only implemented backup/transfer path. Deletion and uninstall can permanently remove unexported data. Any future external data flow is a product and privacy change, not an incidental implementation detail.
+**Implications:** Export was originally the only backup/transfer path. External data flow must remain an explicit privacy/product decision rather than an incidental implementation detail.
+
+## Opt-in private CloudKit sync
+
+**Decision:** Keep SQLite as the local source of truth and add explicit opt-in synchronization of raw `TrackPoint` records through `CKSyncEngine` and the user's private CloudKit database in container `iCloud.com.xunbo.aro`. Do not upload `daily_summary`, Watch battery data, analytics, or unrelated app state.
+
+**Reason:** The app needs optional multi-device track continuity without introducing an aro account or self-hosted backend, while preserving local-first recording and privacy boundaries.
+
+**Implications:** Every stored point has a stable `sync_id`; local writes are committed to SQLite first and are tracked as unsynced until CloudKit acknowledges them. Remote records are merged into SQLite and summaries are derived locally. Remote notification support is part of the iOS CloudKit capability, but Core Location-triggered cold launches deliberately do not initialize CloudKit so a location wake does not gain incidental network work. CloudKit/private-database behavior requires signed real-device validation; simulator and unsigned CI only validate compile and local logic.
+
+Disabling sync stops future synchronization but does not delete existing CloudKit data. “Delete all tracks” must delete the private `AROTracks` record zone before clearing local SQLite whenever a cloud footprint may exist. A fetched deletion of that zone is treated as a global delete and clears local tracks on the receiving device, preventing stale rows from recreating deleted cloud history. Account changes pause sync and preserve local data rather than silently assigning it to a different Apple account.
 
 ## Adaptive native background location
 
@@ -20,9 +32,9 @@
 
 **Decision:** Keep raw track points and a separate `daily_summary` table, with uniqueness enforced on timestamp and coordinates.
 
-**Reason:** History and lifetime statistics read the summary table instead of recalculating the complete track history. Deduplication allows recording and imports to coexist.
+**Reason:** History and lifetime statistics read the summary table instead of recalculating the complete track history. Deduplication allows recording, imports, and remote CloudKit changes to coexist.
 
-**Implications:** Every data mutation must preserve summary consistency. Batch imports rebuild summaries in timestamp order, and schema evolution currently belongs in `TrackDatabase.openAndMigrate()`.
+**Implications:** Every data mutation must preserve summary consistency. Batch imports and remote changes rebuild summaries when needed in timestamp order, and schema evolution currently belongs in `TrackDatabase.openAndMigrate()`. Cloud sync identity is additional metadata and does not replace the timestamp/latitude/longitude natural deduplication key.
 
 ## Actor-isolated UI state and serialized database access
 
@@ -30,7 +42,7 @@
 
 **Reason:** UI-visible state must be published on the main thread, while the shared SQLite connection must not receive concurrent unsynchronized access.
 
-**Implications:** Expensive reads are dispatched away from the main actor, then published back on it. New database APIs must continue using the database queue rather than exposing the connection.
+**Implications:** Expensive reads are dispatched away from the main actor, then published back on it. New database APIs, including CloudKit apply/delete/bookkeeping operations, must continue using the database queue rather than exposing the connection.
 
 ## Platform-native dependency set
 
@@ -38,7 +50,7 @@
 
 **Reason:** No separate rationale is recorded in the repository.
 
-**Implications:** Prefer existing Apple APIs and the current SQLite layer. Adding a package requires a concrete need plus review of binary size, privacy-manifest impact, compatibility, and maintenance cost.
+**Implications:** Prefer existing Apple APIs and the current SQLite layer. Cloud sync uses CloudKit/CKSyncEngine because they are platform-native. Adding a package requires a concrete need plus review of binary size, privacy-manifest impact, compatibility, and maintenance cost.
 
 ## One surviving iOS host with an embedded watch companion
 
@@ -46,7 +58,7 @@
 
 **Reason:** aro needs both established Traceon location history and Apple Watch battery behavior without creating a third project or replacing the source-of-truth host.
 
-**Implications:** The host depends on and embeds the watch target. Shared WatchConnectivity payload code is compiled into both targets. Location, track storage, device UI/connectivity, and watch source remain in separate directories and target memberships.
+**Implications:** The host depends on and embeds the watch target. Shared WatchConnectivity payload code is compiled into both targets. Location, track storage/cloud sync, device UI/connectivity, and watch source remain logically separate; CloudKit must not be driven by Watch battery code.
 
 ## Preserve the legacy application identity and data container (superseded)
 
@@ -72,7 +84,7 @@ This earlier decision applied while the product was being renamed without changi
 
 **Reason:** The product identity is now aro, and the user explicitly chose a new Bundle ID namespace for all three shipped targets.
 
-**Implications:** aro is a new system app identity rather than an in-place Traceon upgrade. Existing Traceon/Companio containers, UserDefaults, permissions, and SQLite history are not automatically visible to aro; users should export/import data if they need to move history. The stable Watch App Group remains a deliberate compatibility choice for the watch snapshot store, while the iOS host does not gain that entitlement.
+**Implications:** aro is a new system app identity rather than an in-place Traceon upgrade. Existing Traceon/Companio containers, UserDefaults, permissions, and SQLite history are not automatically visible to aro; users should export/import data if they need to move history. The stable Watch App Group remains a deliberate compatibility choice for the watch snapshot store, while the iOS host does not gain that group entitlement. The iOS host additionally owns the separate CloudKit container `iCloud.com.xunbo.aro` for opt-in track sync.
 
 ## Separate location and device lifecycles
 
@@ -80,7 +92,7 @@ This earlier decision applied while the product was being renamed without changi
 
 **Reason:** Adding watch battery functionality must not meaningfully increase the existing background-location energy cost, especially during a Core Location relaunch.
 
-**Implications:** Activation and connectivity callbacks may accept opportunistic application-context state but must not send live requests. The Devices tab owns its selected/refresh flow; a location-triggered launch defaults to the Today tab and does not request watch data. The watch keeps its existing foreground timer and system-scheduled background refresh because those execute on watchOS, not as added iPhone location work.
+**Implications:** Activation and connectivity callbacks may accept opportunistic application-context state but must not send live requests. The Devices tab owns its selected/refresh flow; a location-triggered launch defaults to the Today tab and does not request watch data. The watch keeps its existing foreground timer and system-scheduled background refresh because those execute on watchOS, not as added iPhone location work. CloudKit follows the same isolation principle: a launch identified as Core Location-triggered skips cloud-engine startup.
 
 ## Latest timestamped watch snapshot
 

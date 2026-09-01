@@ -58,7 +58,7 @@ final class TrackDatabase: @unchecked Sendable {
                 if insertLocked(point, updatesSummary: false, cloudSynced: true) > 0 {
                     inserted += 1
                 } else if let syncID = point.syncID {
-                    markCloudSyncedLocked(syncID: syncID)
+                    reconcileCloudPointLocked(point, syncID: syncID)
                 }
             }
             if inserted > 0 { rebuildDailySummariesLocked() }
@@ -362,6 +362,28 @@ final class TrackDatabase: @unchecked Sendable {
         let rowID = sqlite3_last_insert_rowid(database)
         if updatesSummary { updateDailySummaryLocked(with: point, previous: previous) }
         return rowID
+    }
+
+    private func reconcileCloudPointLocked(_ point: TrackPoint, syncID: String) {
+        guard let database else { return }
+        let sql = """
+            UPDATE track_points
+            SET sync_id = ?, cloud_synced = 1
+            WHERE timestamp = ? AND latitude = ? AND longitude = ? AND cloud_synced = 0
+            """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
+            markCloudSyncedLocked(syncID: syncID)
+            return
+        }
+        defer { sqlite3_finalize(statement) }
+        bindText(syncID, to: statement, index: 1)
+        sqlite3_bind_double(statement, 2, point.timestamp.timeIntervalSince1970)
+        sqlite3_bind_double(statement, 3, point.latitude)
+        sqlite3_bind_double(statement, 4, point.longitude)
+
+        if sqlite3_step(statement) == SQLITE_DONE, sqlite3_changes(database) > 0 { return }
+        markCloudSyncedLocked(syncID: syncID)
     }
 
     private func markCloudSyncedLocked(syncID: String) {
