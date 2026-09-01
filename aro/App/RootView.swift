@@ -17,12 +17,14 @@ struct RootView: View {
             repository.refresh()
             if scenePhase == .active {
                 AROShortcuts.updateAppShortcutParameters()
+                CloudSyncService.shared.appBecameActive()
             }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 repository.refresh()
                 AROShortcuts.updateAppShortcutParameters()
+                CloudSyncService.shared.appBecameActive()
             }
         }
     }
