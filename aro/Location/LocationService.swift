@@ -156,6 +156,7 @@ final class LocationService: NSObject, ObservableObject {
               authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse
         else { return }
 
+        detailManager.stopUpdatingLocation()
         detailUpdatesPaused = false
         configureDetailManager()
         detailManager.startUpdatingLocation()
