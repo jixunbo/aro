@@ -1,38 +1,31 @@
+import Foundation
 import WatchKit
 
-final class WatchExtensionDelegate: NSObject, WKExtensionDelegate {
+@MainActor
+enum WatchBackgroundRefresh {
+    static let identifier = "aro.watch.battery-refresh"
+    static let preferredInterval: TimeInterval = 15 * 60
+
+    static func scheduleNext() {
+        WKApplication.shared().scheduleBackgroundRefresh(
+            withPreferredDate: Date(timeIntervalSinceNow: preferredInterval),
+            userInfo: identifier as NSString,
+            scheduledCompletion: { _ in }
+        )
+    }
+}
+
+final class WatchExtensionDelegate: NSObject, WKApplicationDelegate {
     func applicationDidFinishLaunching() {
-        Task { @MainActor in WatchBatteryService.shared.refreshAndSend() }
-        scheduleNextRefresh()
-    }
-
-    func applicationWillResignActive() {
-        Task { @MainActor in WatchBatteryService.shared.refreshAndSend() }
-        scheduleNextRefresh()
-    }
-
-    func handle(_ backgroundTasks: Set<WKRefreshBackgroundTask>) {
-        for task in backgroundTasks {
-            guard let refreshTask = task as? WKApplicationRefreshBackgroundTask else {
-                task.setTaskCompletedWithSnapshot(false)
-                continue
-            }
-
-            Task { @MainActor in
-                WatchBatteryService.shared.refreshAndSend {
-                    self.scheduleNextRefresh()
-                    refreshTask.setTaskCompletedWithSnapshot(false)
-                }
-            }
+        Task { @MainActor in
+            WatchBackgroundRefresh.scheduleNext()
         }
     }
 
-    private func scheduleNextRefresh() {
-        let preferredDate = Date(timeIntervalSinceNow: 30 * 60)
-        WKExtension.shared().scheduleBackgroundRefresh(
-            withPreferredDate: preferredDate,
-            userInfo: nil,
-            scheduledCompletion: { _ in }
-        )
+    func applicationWillResignActive() {
+        Task { @MainActor in
+            WatchBatteryService.shared.refreshAndSend()
+            WatchBackgroundRefresh.scheduleNext()
+        }
     }
 }
