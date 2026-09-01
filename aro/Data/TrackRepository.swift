@@ -215,6 +215,7 @@ final class CloudSyncService: ObservableObject {
 
 private enum CloudSyncError: LocalizedError {
     case accountUnavailable(CKAccountStatus)
+    case zoneDeletionUnconfirmed
 
     var errorDescription: String? {
         switch self {
@@ -223,6 +224,7 @@ private enum CloudSyncError: LocalizedError {
         case .accountUnavailable(.couldNotDetermine): "无法确定 iCloud 状态"
         case .accountUnavailable(.temporarilyUnavailable): "iCloud 暂时不可用"
         case .accountUnavailable(.available): "iCloud 状态异常"
+        case .zoneDeletionUnconfirmed: "无法确认 iCloud 数据已删除，本地轨迹已保留"
         @unknown default: "iCloud 暂时不可用"
         }
     }
@@ -241,6 +243,8 @@ private actor CloudTrackSyncEngine: CKSyncEngineDelegate {
     private let database = TrackDatabase.shared
     private let stateStore = CloudSyncStateStore()
     private var syncEngine: CKSyncEngine?
+    private var zoneDeleteConfirmed = false
+    private var zoneDeleteFailure: CKError?
 
     func startIfNeeded() async throws {
         if let syncEngine {
@@ -284,11 +288,16 @@ private actor CloudTrackSyncEngine: CKSyncEngineDelegate {
         try await startIfNeeded()
         guard let syncEngine else { return }
 
+        zoneDeleteConfirmed = false
+        zoneDeleteFailure = nil
         syncEngine.state.hasPendingUntrackedChanges = false
         syncEngine.state.add(pendingDatabaseChanges: [.deleteZone(Self.zoneID)])
         try await syncEngine.sendChanges(
             CKSyncEngine.SendChangesOptions(scope: .zoneIDs([Self.zoneID]))
         )
+        if let zoneDeleteFailure { throw zoneDeleteFailure }
+        guard zoneDeleteConfirmed else { throw CloudSyncError.zoneDeletionUnconfirmed }
+
         await syncEngine.cancelOperations()
         self.syncEngine = nil
         stateStore.clear()
@@ -363,8 +372,21 @@ private actor CloudTrackSyncEngine: CKSyncEngineDelegate {
                 await MainActor.run { CloudSyncService.shared.noteAutomaticSync() }
             }
 
-        case .sentDatabaseChanges:
-            break
+        case .sentDatabaseChanges(let event):
+            if event.deletedZoneIDs.contains(Self.zoneID) {
+                zoneDeleteConfirmed = true
+                zoneDeleteFailure = nil
+            }
+            if let error = event.failedZoneDeletes[Self.zoneID] {
+                switch error.code {
+                case .zoneNotFound, .unknownItem:
+                    zoneDeleteConfirmed = true
+                    zoneDeleteFailure = nil
+                default:
+                    zoneDeleteConfirmed = false
+                    zoneDeleteFailure = error
+                }
+            }
 
         case .willFetchChanges, .willFetchRecordZoneChanges, .didFetchRecordZoneChanges,
              .didFetchChanges, .willSendChanges, .didSendChanges:
