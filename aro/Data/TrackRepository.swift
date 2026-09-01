@@ -1,6 +1,9 @@
-import CloudKit
 import Combine
 import Foundation
+
+#if ARO_CLOUDKIT_ENABLED
+import CloudKit
+#endif
 
 @MainActor
 final class TrackRepository: ObservableObject {
@@ -58,6 +61,8 @@ final class TrackRepository: ObservableObject {
         databaseBytes = 0
     }
 }
+
+#if ARO_CLOUDKIT_ENABLED
 
 @MainActor
 final class CloudSyncService: ObservableObject {
@@ -500,3 +505,5 @@ private struct CloudSyncStateStore: Sendable {
         try? FileManager.default.removeItem(at: url)
     }
 }
+
+#endif

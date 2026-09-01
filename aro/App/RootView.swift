@@ -18,7 +18,9 @@ struct RootView: View {
             if scenePhase == .active {
                 AROShortcuts.updateAppShortcutParameters()
                 PhoneConnectivity.shared.appBecameActive()
+#if ARO_CLOUDKIT_ENABLED
                 CloudSyncService.shared.appBecameActive()
+#endif
             }
         }
         .onChange(of: scenePhase) { _, phase in
@@ -26,7 +28,9 @@ struct RootView: View {
                 repository.refresh()
                 AROShortcuts.updateAppShortcutParameters()
                 PhoneConnectivity.shared.appBecameActive()
+#if ARO_CLOUDKIT_ENABLED
                 CloudSyncService.shared.appBecameActive()
+#endif
             }
         }
     }

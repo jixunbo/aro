@@ -5,7 +5,9 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @EnvironmentObject private var locationService: LocationService
     @EnvironmentObject private var repository: TrackRepository
+#if ARO_CLOUDKIT_ENABLED
     @ObservedObject private var cloudSync = CloudSyncService.shared
+#endif
     @State private var showDeleteConfirmation = false
     @State private var exportDocument: TrackDocument?
     @State private var exportType: UTType = .xml
@@ -22,7 +24,11 @@ struct SettingsView: View {
             modesSection
             permissionsSection
             dataSection
+#if ARO_CLOUDKIT_ENABLED
             iCloudSection
+#else
+            localICloudSection
+#endif
             aboutSection
         }
         .navigationTitle("设置")
@@ -133,15 +139,24 @@ struct SettingsView: View {
             Button("导出全部为 GeoJSON") { prepareExport(asGPX: false) }
                 .disabled(isExporting || repository.lifetime.pointCount == 0)
             Button("导入 GPX 或 GeoJSON") { showImporter = true }
-            Button("删除全部轨迹", role: .destructive) { showDeleteConfirmation = true }
+            Button("删除全部轨迹", role: .destructive) { beginDeleteEverything() }
+#if ARO_CLOUDKIT_ENABLED
                 .disabled((repository.lifetime.pointCount == 0 && !cloudSync.hasCloudData) || cloudSync.isSyncing)
+#else
+                .disabled(repository.lifetime.pointCount == 0)
+#endif
         } header: {
             Text("数据")
         } footer: {
+#if ARO_CLOUDKIT_ENABLED
             Text("SQLite 始终保留一份本地轨迹。关闭 iCloud 同步不会删除已有云端副本；“删除全部轨迹”会同时清理已存在的 iCloud 数据。")
+#else
+            Text("SQLite 始终保留一份本地轨迹。当前 Local / Personal Team 构建只管理本机数据。")
+#endif
         }
     }
 
+#if ARO_CLOUDKIT_ENABLED
     private var iCloudSection: some View {
         Section {
             Toggle(
@@ -168,11 +183,32 @@ struct SettingsView: View {
             Text("同步默认关闭。开启后使用你的 CloudKit 私有数据库在同一 Apple 账户的设备间同步轨迹；aro 不使用自建服务器或分析服务。")
         }
     }
+#endif
+
+    private var localICloudSection: some View {
+        Section {
+            Label("iCloud 同步", systemImage: "icloud.slash")
+            Text("当前 Local / Personal Team 构建未启用 iCloud 同步。轨迹仍会保存在本机 SQLite 中。")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+#if !ARO_CLOUDKIT_ENABLED
+            if localBuildMayHaveCloudData {
+                Label("检测到此安装曾使用 iCloud 同步。Local 构建不会删除云端副本。", systemImage: "exclamationmark.triangle")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+#endif
+        } header: {
+            Text("iCloud")
+        } footer: {
+            Text("如需使用 iCloud 私有数据库同步，请选择 CloudDebug 或 CloudRelease 构建，并使用支持 CloudKit 的开发团队签名。")
+        }
+    }
 
     private var aboutSection: some View {
         Section("关于") {
             LabeledContent("产品", value: "aro")
-            LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2")
+            LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.3")
             Button("重新查看隐私引导") { hasCompletedOnboarding = false }
         }
     }
@@ -190,14 +226,35 @@ struct SettingsView: View {
         }
     }
 
+#if !ARO_CLOUDKIT_ENABLED
+    private var localBuildMayHaveCloudData: Bool {
+        let defaults = UserDefaults.standard
+        return defaults.bool(forKey: "icloudSync.hasCloudData")
+            || defaults.double(forKey: "icloudSync.lastSyncAt") > 0
+    }
+#endif
+
+    private func beginDeleteEverything() {
+#if !ARO_CLOUDKIT_ENABLED
+        guard !localBuildMayHaveCloudData else {
+            deleteError = "此安装以前使用过 iCloud 同步，云端轨迹可能仍然存在。Local 构建无法安全完成“删除全部轨迹”；请改用 CloudDebug 或 CloudRelease 构建删除，避免以后重新启用 iCloud 时数据被同步回来。"
+            return
+        }
+#endif
+        showDeleteConfirmation = true
+    }
+
     private var deleteConfirmationMessage: String {
+#if ARO_CLOUDKIT_ENABLED
         if cloudSync.hasCloudData {
             return "这会从本机和你的 iCloud 私有数据库永久删除全部轨迹；其他已开启同步的设备收到云端删除后也会清空本地轨迹。此操作无法撤销，建议先导出备份。"
         }
+#endif
         return "此操作无法撤销，建议先导出备份。"
     }
 
     private func deleteEverything() {
+#if ARO_CLOUDKIT_ENABLED
         if cloudSync.hasCloudData {
             Task {
                 do {
@@ -209,6 +266,13 @@ struct SettingsView: View {
         } else {
             repository.deleteEverything()
         }
+#else
+        guard !localBuildMayHaveCloudData else {
+            deleteError = "此安装以前使用过 iCloud 同步，云端轨迹可能仍然存在。请切换到 CloudDebug 或 CloudRelease 构建后再删除全部轨迹。"
+            return
+        }
+        repository.deleteEverything()
+#endif
     }
 
     private func prepareExport(asGPX: Bool) {
@@ -238,7 +302,9 @@ struct SettingsView: View {
                     let count = TrackDatabase.shared.insertImported(points)
                     await MainActor.run {
                         repository.refresh(includeOverview: true)
+#if ARO_CLOUDKIT_ENABLED
                         if cloudSync.isEnabled { cloudSync.appBecameActive() }
+#endif
                         importMessage = "成功导入 \(count.formatted()) 个轨迹点。"
                     }
                 } catch {

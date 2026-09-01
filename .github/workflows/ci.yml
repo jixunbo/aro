@@ -36,6 +36,7 @@ jobs:
           xcodebuild \
             -project aro.xcodeproj \
             -scheme aro \
+            -configuration Debug \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath DerivedData \
@@ -47,6 +48,7 @@ jobs:
           xcodebuild \
             -project aro.xcodeproj \
             -scheme aro \
+            -configuration Debug \
             -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
             -derivedDataPath DerivedData \
             CODE_SIGNING_ALLOWED=NO \
@@ -57,6 +59,7 @@ jobs:
           xcodebuild \
             -project aro.xcodeproj \
             -scheme aro \
+            -configuration Debug \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath DerivedData \
@@ -68,6 +71,7 @@ jobs:
           xcodebuild \
             -project aro.xcodeproj \
             -scheme aro \
+            -configuration Debug \
             -destination 'generic/platform=iOS' \
             -derivedDataPath DerivedData-device \
             CODE_SIGNING_ALLOWED=NO \
