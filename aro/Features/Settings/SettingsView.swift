@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @EnvironmentObject private var locationService: LocationService
     @EnvironmentObject private var repository: TrackRepository
+    @ObservedObject private var cloudSync = CloudSyncService.shared
     @State private var showDeleteConfirmation = false
     @State private var exportDocument: TrackDocument?
     @State private var exportType: UTType = .xml
@@ -12,6 +13,7 @@ struct SettingsView: View {
     @State private var isExporting = false
     @State private var showImporter = false
     @State private var importMessage: String?
+    @State private var deleteError: String?
     @AppStorage("onboarding.completed") private var hasCompletedOnboarding = true
 
     var body: some View {
@@ -20,6 +22,7 @@ struct SettingsView: View {
             modesSection
             permissionsSection
             dataSection
+            iCloudSection
             aboutSection
         }
         .navigationTitle("设置")
@@ -40,11 +43,16 @@ struct SettingsView: View {
         } message: {
             Text(importMessage ?? "")
         }
+        .alert("删除失败", isPresented: Binding(get: { deleteError != nil }, set: { if !$0 { deleteError = nil } })) {
+            Button("好") { deleteError = nil }
+        } message: {
+            Text(deleteError ?? "")
+        }
         .confirmationDialog("永久删除全部轨迹？", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
-            Button("永久删除", role: .destructive) { repository.deleteEverything() }
+            Button("永久删除", role: .destructive) { deleteEverything() }
             Button("取消", role: .cancel) {}
         } message: {
-            Text("此操作无法撤销，建议先导出备份。")
+            Text(deleteConfirmationMessage)
         }
     }
 
@@ -126,11 +134,38 @@ struct SettingsView: View {
                 .disabled(isExporting || repository.lifetime.pointCount == 0)
             Button("导入 GPX 或 GeoJSON") { showImporter = true }
             Button("删除全部轨迹", role: .destructive) { showDeleteConfirmation = true }
-                .disabled(repository.lifetime.pointCount == 0)
+                .disabled(repository.lifetime.pointCount == 0 || cloudSync.isSyncing)
         } header: {
             Text("数据")
         } footer: {
-            Text("轨迹默认只存储在本机。卸载 App 会删除尚未导出的数据。")
+            Text("SQLite 始终保留一份本地轨迹。开启 iCloud 同步后，轨迹点也会保存到你的私人 iCloud 数据库。")
+        }
+    }
+
+    private var iCloudSection: some View {
+        Section {
+            Toggle(
+                "iCloud 同步",
+                isOn: Binding(
+                    get: { cloudSync.isEnabled },
+                    set: { cloudSync.setEnabled($0) }
+                )
+            )
+            LabeledContent("状态", value: cloudSync.statusText)
+            if let lastSyncAt = cloudSync.lastSyncAt {
+                LabeledContent(
+                    "最后同步",
+                    value: lastSyncAt.formatted(.dateTime.month().day().hour().minute())
+                )
+            }
+            Button("立即同步") {
+                Task { await cloudSync.syncNow() }
+            }
+            .disabled(!cloudSync.isEnabled || cloudSync.isSyncing)
+        } header: {
+            Text("iCloud")
+        } footer: {
+            Text("同步默认关闭。开启后使用你的 CloudKit 私有数据库在同一 Apple 账户的设备间同步轨迹；aro 不使用自建服务器或分析服务。")
         }
     }
 
@@ -152,6 +187,27 @@ struct SettingsView: View {
         case .denied: "关闭"
         case .restricted: "受限制"
         @unknown default: "未知"
+        }
+    }
+
+    private var deleteConfirmationMessage: String {
+        if cloudSync.isEnabled {
+            return "这会从本机和你的 iCloud 私有数据库永久删除全部轨迹，并可能同步到其他设备。此操作无法撤销，建议先导出备份。"
+        }
+        return "此操作无法撤销，建议先导出备份。"
+    }
+
+    private func deleteEverything() {
+        if cloudSync.isEnabled {
+            Task {
+                do {
+                    try await cloudSync.deleteCloudAndLocalData()
+                } catch {
+                    deleteError = error.localizedDescription
+                }
+            }
+        } else {
+            repository.deleteEverything()
         }
     }
 
@@ -182,6 +238,7 @@ struct SettingsView: View {
                     let count = TrackDatabase.shared.insertImported(points)
                     await MainActor.run {
                         repository.refresh(includeOverview: true)
+                        if cloudSync.isEnabled { cloudSync.appBecameActive() }
                         importMessage = "成功导入 \(count.formatted()) 个轨迹点。"
                     }
                 } catch {
