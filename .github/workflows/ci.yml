@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aro-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: ARO CI
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show environment
+        run: |
+          sw_vers
+          xcodebuild -version
+          xcrun simctl list devices available
+
+      - name: Simulator build
+        run: |
+          xcodebuild \
+            -project aro.xcodeproj \
+            -scheme aro \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Unit tests
+        run: |
+          xcodebuild \
+            -project aro.xcodeproj \
+            -scheme aro \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            test
+
+      - name: Static analyzer
+        run: |
+          xcodebuild \
+            -project aro.xcodeproj \
+            -scheme aro \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            analyze
+
+      - name: Generic device build
+        run: |
+          xcodebuild \
+            -project aro.xcodeproj \
+            -scheme aro \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath DerivedData-device \
+            CODE_SIGNING_ALLOWED=NO \
+            build
