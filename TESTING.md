@@ -31,6 +31,23 @@
 - 导出 GPX，再删除本地数据并重新导入，核对点数、日期和总距离。
 - 导入大文件前保留原始文件；批量导入会重建每日统计。
 
+## iCloud / CloudKit 同步
+
+这些检查必须在加入 Apple Developer Program 的真实设备上完成。GitHub Actions 使用 `CODE_SIGNING_ALLOWED=NO`，模拟器也不能验证 CKSyncEngine 的 silent push。
+
+1. **Capability / provisioning**：在 iOS `aro` target 中确认 iCloud → CloudKit 选中 `iCloud.com.xunbo.aro`，Push Notifications 已启用，Background Modes 中 Remote notifications 已选中；安装到真机后用签名后的 app entitlement 检查 `aps-environment` 与 CloudKit container 都存在。
+2. **默认关闭**：全新安装时确认 iCloud 同步默认关闭；仅记录轨迹不会创建可见的同步状态，也不会影响本地 SQLite 写入。
+3. **首次开启**：记录若干本地轨迹后开启同步，等待“已同步”；关闭网络再记录新点时本地记录必须继续成功，恢复网络/手动“立即同步”后再上传。
+4. **双设备拉取**：两台设备登录同一 Apple 账户并开启同步。A 新增轨迹后，确认 B 在系统允许的 silent push/同步时机收到；若推送被系统合并，B 前台进入或手动同步后必须最终一致。
+5. **已有相同历史**：在 A、B 分别导入包含相同 timestamp/latitude/longitude 的 GPX 后，先让 A 上传，再让 B 同步。B 的本地重复点应采用云端 `sync_id` 而不是再次上传一条不同 record ID；最终本地点数和每日统计不能翻倍。
+6. **关闭再开启**：同步成功后关闭 iCloud，同步状态应停止但云端副本保留；本地继续新增点。重新开启后应先拉取远端变化，再最终上传本地未同步点。
+7. **删除全部（同步开启）**：两台设备均已同步时，在 A 执行“删除全部轨迹”。A 应先删除 CloudKit `AROTracks` zone 再清本地；B 收到 zone 删除后也必须清空本地，而不是把旧轨迹重新上传。之后 B/A 再次进入前台，旧数据不能复活。
+8. **删除全部（同步已关闭）**：设备曾经成功使用过 iCloud 后关闭开关，再执行“删除全部轨迹”。确认删除动作仍要求访问并清理 CloudKit；若 iCloud/网络不可用，应显示失败且保留本地数据，避免只删本地后未来被云端恢复。
+9. **远端 zone 删除**：在另一台设备或 CloudKit 管理环境删除 `AROTracks` zone，接收设备应把它视为全局删除并清空本地轨迹；这是有意的数据语义，不要把 zone 删除当作无害的同步重置。
+10. **账户变化**：登出 iCloud 或切换 Apple 账户时，aro 应暂停同步并保留当前本地数据，不能自动把旧账户的数据上传到新账户。旧账户中的 CloudKit 数据仍属于旧账户；需要删除时必须切回对应账户。
+11. **位置后台隔离**：开启 iCloud 后，通过显著位置变化触发一次 Core Location 冷启动。日志/Instruments 应显示 LocationService 恢复，但该 location-triggered launch 不初始化 CloudKit；普通启动或 CloudKit 远端通知启动可以初始化同步引擎。
+12. **功耗**：分别在 iCloud 关闭与开启的情况下做至少两个路线相近的完整工作日对比；记录无线活动、后台启动和电量。不要把一次 silent push 或用户主动“立即同步”的网络活动算成持续定位回归。
+
 ## Bundle ID 变更与数据边界
 
 - 在仍有历史轨迹的 Traceon/Companio 真机上先导出 GPX/GeoJSON，再安装使用新身份的 aro；确认 aro 可以独立启动、定位授权和设置初始化正常，并将导出文件重新导入后核对点数、日期和总距离。
@@ -59,7 +76,7 @@
 
 ## 设备功能的后台能耗隔离
 
-- 在未打开“设备”页的情况下，通过显著位置变化触发一次 iOS 后台定位唤醒；用 Instruments/日志确认这次启动没有向 Apple Watch 发送实时电量请求。
+- 在未打开“设备”页的情况下，通过显著位置变化触发一次 iOS 后台定位唤醒；用 Instruments/日志确认这次启动没有向 Apple Watch 发送实时电量请求，也没有因为 iCloud 功能初始化 CloudKit。
 - 确认 iPhone 端没有电量轮询计时器、仅为电池监控注册的 `BGTaskScheduler` 任务或其他周期后台任务。
 - 分别对合并前基线与合并版本做至少两个路线和使用方式接近的完整工作日对比，并用 Instruments Energy Log 做 30–60 分钟步行/驾车样本。比较定位唤醒、CPU、无线活动和“设置 → 电池”后台活动；模拟器结果不能替代此项。
-- 在“设备”页前台停留、频繁手动刷新和运行快捷指令时单独测量，避免把用户主动设备请求的无线活动误算成后台定位回归。
+- 在“设备”页前台停留、频繁手动刷新、运行快捷指令和手动 iCloud 同步时单独测量，避免把用户主动设备/云端请求的无线活动误算成后台定位回归。

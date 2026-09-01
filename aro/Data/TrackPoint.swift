@@ -3,6 +3,7 @@ import Foundation
 
 struct TrackPoint: Identifiable, Hashable, Sendable {
     let id: Int64
+    let syncID: String?
     let timestamp: Date
     let latitude: Double
     let longitude: Double
@@ -15,6 +16,7 @@ struct TrackPoint: Identifiable, Hashable, Sendable {
 
     init(
         id: Int64 = 0,
+        syncID: String? = nil,
         timestamp: Date,
         latitude: Double,
         longitude: Double,
@@ -26,6 +28,7 @@ struct TrackPoint: Identifiable, Hashable, Sendable {
         activity: String? = nil
     ) {
         self.id = id
+        self.syncID = syncID
         self.timestamp = timestamp
         self.latitude = latitude
         self.longitude = longitude
@@ -87,4 +90,3 @@ struct LifetimeStats: Sendable {
 
     static let empty = LifetimeStats(pointCount: 0, dayCount: 0, distance: 0, firstDate: nil, lastDate: nil)
 }
-
