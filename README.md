@@ -27,7 +27,7 @@ aro（Everything Around You）是一款隐私优先的 iOS + watchOS App：在 i
 
 `CKSyncEngine` 的自动同步依赖 CloudKit silent push，因此模拟器只能验证编译和本地数据库逻辑，不能证明多设备远端更新。只有 Cloud 版真机在开启“设置 → iCloud 同步”后才会创建/使用 CloudKit 私有数据库；Local 版不会初始化 CloudKit。Core Location 触发的后台冷启动会刻意跳过 CloudKit 初始化，避免把定位唤醒变成额外网络工作；Cloud 版普通启动和 CloudKit 远端通知启动则可以恢复同步引擎。
 
-“关闭 iCloud 同步”只停止后续同步，不删除已经存在的 iCloud 副本；“删除全部轨迹”会在检测到曾使用 iCloud 时先删除 CloudKit `AROTracks` zone，再删除本地 SQLite。其他已开启同步的设备收到 zone 删除后也会清空对应本地轨迹，防止旧数据重新上传。
+“关闭 iCloud 同步”只停止后续同步，不删除已经存在的 iCloud 副本。Cloud 版的“删除全部轨迹”会在检测到曾使用 iCloud 时先删除 CloudKit `AROTracks` zone，再删除本地 SQLite；其他已开启同步的设备收到 zone 删除后也会清空对应本地轨迹，防止旧数据重新上传。Local 版如果检测到当前安装曾经使用过 iCloud 同步，会拒绝执行仅本地的“删除全部轨迹”，并要求切换到 Cloud 构建完成删除，避免以后重新启用 iCloud 时旧轨迹被同步回来。
 
 如果表盘编辑器中没有 `aro 电量`：确认手表系统为 watchOS 10 或更新版本，并且是从配对 iPhone 的 `aro` scheme 安装了完整的 Watch App（其中包含 `ARO Watch Widget Extension`），而不是只安装 iOS App。先在手表上打开一次 aro，再退出表盘编辑器并重新进入；复杂功能只会出现在支持相应 accessory family 的表盘位置。仍未出现时，重新从 Xcode 安装 Watch App 与 Widget Extension，检查两个 watch target 都使用同一个 App Group，并确认 Widget Extension 的 bundle identifier 为 `com.xunbo.aro.watchkitapp.widget`。模拟器只能验证编译，不能验证复杂功能是否出现在已配对手表的表盘编辑器中。
 
