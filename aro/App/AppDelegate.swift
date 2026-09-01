@@ -9,10 +9,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         LocationService.shared.handleApplicationLaunch(locationTriggered: locationTriggered)
         if !locationTriggered {
             Task { @MainActor in
+                PhoneConnectivity.shared.activate()
                 CloudSyncService.shared.prepareForLaunch()
             }
         }
         return true
     }
 }
-
