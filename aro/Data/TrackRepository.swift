@@ -309,9 +309,9 @@ private actor CloudTrackSyncEngine: CKSyncEngineDelegate {
             if event.deletions.contains(where: { $0.zoneID == Self.zoneID }) {
                 syncEngine.state.remove(pendingDatabaseChanges: [.saveZone(Self.zone)])
                 syncEngine.state.hasPendingUntrackedChanges = false
-                await syncEngine.cancelOperations()
                 stateStore.clear()
                 self.syncEngine = nil
+                Task { await syncEngine.cancelOperations() }
                 await MainActor.run { CloudSyncService.shared.handleRemoteZoneDeletion() }
             }
 
