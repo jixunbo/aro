@@ -214,7 +214,7 @@ private actor CloudTrackSyncEngine: CKSyncEngineDelegate {
     private static let zone = CKRecordZone(zoneName: zoneName)
     private static let zoneID = zone.zoneID
 
-    private let container = CKContainer(identifier: containerIdentifier)
+    private lazy var container = CKContainer(identifier: Self.containerIdentifier)
     private let database = TrackDatabase.shared
     private let stateStore = CloudSyncStateStore()
     private var syncEngine: CKSyncEngine?
