@@ -34,6 +34,14 @@
 - 导出 GPX，再删除本地数据并重新导入，核对点数、日期和总距离。
 - 导入大文件前保留原始文件；批量导入会重建每日统计。
 
+## Local / Cloud 构建配置
+
+1. **Local 编译检查**：使用共享 `aro` scheme 的 `Debug` 或 `Release` configuration。确认构建使用 `aro/aro.local.entitlements`，签名后的 app 不包含 `com.apple.developer.icloud-container-identifiers`、`com.apple.developer.icloud-services` 或 `aps-environment`。
+2. **Personal Team 真机安装**：使用 Apple Personal Team 的 `Debug` configuration 安装到 iPhone，再确认嵌入的 Watch App 和 Widget Extension 也能安装到已配对 Apple Watch。验证定位记录、后台定位授权、SQLite、GPX/GeoJSON、Watch battery 和 Widget/复杂功能均可使用。
+3. **Local iCloud UI**：在 Local 版设置页确认 iCloud 区块明确显示“当前构建未启用 iCloud 同步”，没有可操作的开关、立即同步按钮或 CloudKit 错误；普通启动、回前台和 Core Location 冷启动都不初始化 CloudKit。
+4. **Cloud 编译检查**：使用 `CloudDebug` 或 `CloudRelease` configuration。确认构建使用 `aro/aro.entitlements`，保留 `iCloud.com.xunbo.aro`、CloudKit、`aps-environment` 和 `remote-notification`；Watch App 与 Widget 仍只使用现有 App Group。
+5. **Cloud 真机安装与同步**：使用加入 Apple Developer Program 的团队和匹配 profile 安装 Cloud 版，按下面的 iCloud / CloudKit 清单验证首次开启、silent push、离线本地优先、重复合并、删除传播、账户变化和后台冷启动隔离。Local 版不执行这些 CloudKit 行为测试。
+
 ## iCloud / CloudKit 同步
 
 这些检查必须在加入 Apple Developer Program 的真实设备上完成。GitHub Actions 使用 `CODE_SIGNING_ALLOWED=NO`，模拟器也不能验证 CKSyncEngine 的 silent push。

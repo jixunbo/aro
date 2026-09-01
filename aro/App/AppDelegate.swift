@@ -10,7 +10,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         if !locationTriggered {
             Task { @MainActor in
                 PhoneConnectivity.shared.activate()
+#if ARO_CLOUDKIT_ENABLED
                 CloudSyncService.shared.prepareForLaunch()
+#endif
             }
         }
         return true

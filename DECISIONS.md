@@ -20,6 +20,14 @@ This decision was superseded by “Opt-in private CloudKit sync” below.
 
 Disabling sync stops future synchronization but does not delete existing CloudKit data. “Delete all tracks” must delete the private `AROTracks` record zone before clearing local SQLite whenever a cloud footprint may exist. A fetched deletion of that zone is treated as a global delete and clears local tracks on the receiving device, preventing stale rows from recreating deleted cloud history. Account changes pause sync and preserve local data rather than silently assigning it to a different Apple account.
 
+## CloudKit optional build capability
+
+**Decision:** CloudKit capability must not be required for the local/self-signed build. Keep `Debug`/`Release` as Local configurations with an empty iOS entitlements file and compile out the CloudKit service; provide `CloudDebug`/`CloudRelease` configurations that retain the existing CloudKit/APNs entitlements and `ARO_CLOUDKIT_ENABLED` condition.
+
+**Reason:** Apple Personal Teams cannot provision iCloud/CloudKit or Push Notifications, while the app's local SQLite, Core Location, Watch, and Widget features must remain installable and usable with free development signing.
+
+**Implications:** The Local build has no CloudKit runtime or iCloud controls beyond a clear unavailable status in Settings. The Cloud build still requires the `iCloud.com.xunbo.aro` container, Push Notifications, Remote notifications, and a matching paid-team provisioning profile. Both builds preserve the same local-first SQLite data model, bundle identifiers, Watch App Group, and Watch battery architecture.
+
 ## Adaptive native background location
 
 **Decision:** Combine significant-location-change and visit monitoring with mode-dependent standard location updates. Balanced and Precise allow Core Location to automatically pause the standard service when the device appears stationary; motion activity is used for activity labeling and `activityType` while detail updates are active, not to downgrade Balanced/Precise accuracy to kilometer scale. When Core Location pauses detail updates, stop motion updates and explicitly restart the standard location service after a significant-location wake or a visit departure.
