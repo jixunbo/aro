@@ -95,6 +95,49 @@ final class TrackDatabaseTests: XCTestCase {
         XCTAssertEqual(Set(stored.compactMap(\.syncID)).count, 2)
     }
 
+    func testCloudSyncBookkeepingSeparatesLocalAndRemotePoints() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("TrackDatabaseTests-Cloud-\(UUID().uuidString)", isDirectory: true)
+        var database: TrackDatabase? = TrackDatabase(databaseURL: folder.appendingPathComponent("tracks.sqlite3"))
+        defer {
+            database = nil
+            try? FileManager.default.removeItem(at: folder)
+        }
+        let db = try XCTUnwrap(database)
+
+        XCTAssertGreaterThan(
+            db.insert(TrackPoint(timestamp: Date(timeIntervalSince1970: 1), latitude: 52.52, longitude: 13.405)),
+            0
+        )
+        let local = try XCTUnwrap(db.allPoints().first)
+        let localSyncID = try XCTUnwrap(local.syncID)
+        XCTAssertEqual(db.unsyncedPoints().map(\.syncID), [localSyncID])
+
+        db.markCloudSynced(syncIDs: [localSyncID])
+        XCTAssertTrue(db.unsyncedPoints().isEmpty)
+
+        let remoteSyncID = "remote-record-id"
+        XCTAssertEqual(
+            db.applyCloudPoints([
+                TrackPoint(
+                    syncID: remoteSyncID,
+                    timestamp: Date(timeIntervalSince1970: 2),
+                    latitude: 52.521,
+                    longitude: 13.406
+                )
+            ]),
+            1
+        )
+        XCTAssertNotNil(db.point(syncID: remoteSyncID))
+        XCTAssertTrue(db.unsyncedPoints().isEmpty)
+
+        db.resetCloudSyncState()
+        XCTAssertEqual(Set(db.unsyncedPoints().compactMap(\.syncID)), Set([localSyncID, remoteSyncID]))
+
+        XCTAssertEqual(db.deleteCloudPoints(syncIDs: [remoteSyncID]), 1)
+        XCTAssertNil(db.point(syncID: remoteSyncID))
+    }
+
     func testLegacyDatabaseMigrationBackfillsUniqueSyncIDs() throws {
         let folder = FileManager.default.temporaryDirectory
             .appendingPathComponent("TrackDatabaseTests-Legacy-\(UUID().uuidString)", isDirectory: true)
@@ -135,5 +178,6 @@ final class TrackDatabaseTests: XCTestCase {
         XCTAssertEqual(points.count, 2)
         XCTAssertTrue(points.allSatisfy { !($0.syncID ?? "").isEmpty })
         XCTAssertEqual(Set(points.compactMap(\.syncID)).count, 2)
+        XCTAssertEqual(migratedDatabase.unsyncedPoints().count, 2)
     }
 }
