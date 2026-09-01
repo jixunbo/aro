@@ -195,7 +195,7 @@ final class TrackDatabase: @unchecked Sendable {
     }
 
     private var pointColumns: String {
-        "id, timestamp, latitude, longitude, altitude, horizontal_accuracy, speed, course, source, activity"
+        "id, timestamp, latitude, longitude, altitude, horizontal_accuracy, speed, course, source, activity, sync_id"
     }
 
     private func openAndMigrate() {
@@ -219,9 +219,15 @@ final class TrackDatabase: @unchecked Sendable {
                 speed REAL NOT NULL DEFAULT -1,
                 course REAL NOT NULL DEFAULT -1,
                 source TEXT NOT NULL,
-                activity TEXT
+                activity TEXT,
+                sync_id TEXT
             )
             """)
+        if !columnExists("sync_id", in: "track_points") {
+            execute("ALTER TABLE track_points ADD COLUMN sync_id TEXT")
+        }
+        execute("UPDATE track_points SET sync_id = lower(hex(randomblob(16))) WHERE sync_id IS NULL OR sync_id = ''")
+        execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_track_points_sync_id ON track_points(sync_id)")
         try? FileManager.default.setAttributes(
             [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication],
             ofItemAtPath: databaseURL.path
@@ -248,10 +254,11 @@ final class TrackDatabase: @unchecked Sendable {
     private func insertLocked(_ point: TrackPoint, updatesSummary: Bool) -> Int64 {
         guard let database else { return 0 }
         let previous = updatesSummary ? latestPointLocked() : nil
+        let syncID = point.syncID.flatMap { $0.isEmpty ? nil : $0 } ?? UUID().uuidString.lowercased()
         let sql = """
             INSERT OR IGNORE INTO track_points
-            (timestamp, latitude, longitude, altitude, horizontal_accuracy, speed, course, source, activity)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (timestamp, latitude, longitude, altitude, horizontal_accuracy, speed, course, source, activity, sync_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else { return 0 }
@@ -266,6 +273,7 @@ final class TrackDatabase: @unchecked Sendable {
         sqlite3_bind_double(statement, 7, point.course)
         bindText(point.source, to: statement, index: 8)
         bindText(point.activity, to: statement, index: 9)
+        bindText(syncID, to: statement, index: 10)
 
         guard sqlite3_step(statement) == SQLITE_DONE, sqlite3_changes(database) > 0 else { return 0 }
         let rowID = sqlite3_last_insert_rowid(database)
@@ -330,6 +338,7 @@ final class TrackDatabase: @unchecked Sendable {
         while sqlite3_step(statement) == SQLITE_ROW {
             result.append(TrackPoint(
                 id: sqlite3_column_int64(statement, 0),
+                syncID: string(statement, 10),
                 timestamp: Date(timeIntervalSince1970: sqlite3_column_double(statement, 1)),
                 latitude: sqlite3_column_double(statement, 2),
                 longitude: sqlite3_column_double(statement, 3),
@@ -342,6 +351,17 @@ final class TrackDatabase: @unchecked Sendable {
             ))
         }
         return result
+    }
+
+    private func columnExists(_ column: String, in table: String) -> Bool {
+        guard let database else { return false }
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, "PRAGMA table_info(\(table))", -1, &statement, nil) == SQLITE_OK else { return false }
+        defer { sqlite3_finalize(statement) }
+        while sqlite3_step(statement) == SQLITE_ROW {
+            if string(statement, 1) == column { return true }
+        }
+        return false
     }
 
     private func scalarInt(_ sql: String) -> Int {
