@@ -22,11 +22,11 @@ Disabling sync stops future synchronization but does not delete existing CloudKi
 
 ## Adaptive native background location
 
-**Decision:** Combine significant-location-change and visit monitoring with mode-dependent standard location updates, adapting standard updates using motion activity.
+**Decision:** Combine significant-location-change and visit monitoring with mode-dependent standard location updates. Balanced and Precise allow Core Location to automatically pause the standard service when the device appears stationary; motion activity is used for activity labeling and `activityType` while detail updates are active, not to downgrade Balanced/Precise accuracy to kilometer scale. When Core Location pauses detail updates, stop motion updates and explicitly restart the standard location service after a significant-location wake or a visit departure.
 
-**Reason:** The app must continue collecting while not foregrounded while offering explicit battery-versus-detail trade-offs.
+**Reason:** The app needs route detail closer to the configured mode while moving, but should let Core Location power down location hardware during genuine stationary periods. The previous manual stationary downgrade could leave the detail manager at very coarse accuracy, while an unhandled automatic pause could leave the route relying mostly on sparse significant-change events after movement resumed.
 
-**Implications:** Always authorization and the location background mode are required for the strongest background behavior. Eco mode is intentionally coarse; Workout mode is intentionally more power intensive. Core Location delivery remains system-scheduled and must be verified on real hardware.
+**Implications:** Always authorization and the location background mode are required for the strongest background behavior. Eco mode remains intentionally coarse and does not run standard updates; Workout mode remains intentionally more power intensive and does not auto-pause. Balanced and Precise preserve their configured accuracy/distance filters when active. A paused app still depends on a low-power movement/departure signal before detail tracking restarts, so the first segment after a long stop can remain coarser than a continuously running navigation/workout session. Route density, pause/resume behavior, and energy use must be verified on real hardware.
 
 ## Raw points plus daily summaries
 
@@ -88,11 +88,11 @@ This earlier decision applied while the product was being renamed without changi
 
 ## Separate location and device lifecycles
 
-**Decision:** WatchConnectivity activation is passive, and iPhone live battery requests are limited to explicit Devices UI use or the App Intent. Device connectivity is not initialized or driven by `LocationService`, does not poll on iPhone, and does not add periodic iPhone background work.
+**Decision:** WatchConnectivity activation is passive, and iPhone live battery requests are limited to explicit Devices UI use or the App Intent. Ordinary iPhone launch and foreground activation may activate the WatchConnectivity session to receive queued application context, but a Core Location-triggered cold launch skips WatchConnectivity startup. Device connectivity is not driven by `LocationService`, does not poll on iPhone, and does not add periodic iPhone background work.
 
-**Reason:** Adding watch battery functionality must not meaningfully increase the existing background-location energy cost, especially during a Core Location relaunch.
+**Reason:** Opportunistic Watch battery snapshots need to be ingested without requiring the Devices tab to have been opened, while adding watch battery functionality must not meaningfully increase background-location energy cost or turn a location relaunch into device communication work.
 
-**Implications:** Activation and connectivity callbacks may accept opportunistic application-context state but must not send live requests. The Devices tab owns its selected/refresh flow; a location-triggered launch defaults to the Today tab and does not request watch data. The watch keeps its existing foreground timer and system-scheduled background refresh because those execute on watchOS, not as added iPhone location work. CloudKit follows the same isolation principle: a launch identified as Core Location-triggered skips cloud-engine startup.
+**Implications:** Session activation and connectivity callbacks may accept opportunistic application-context state but must not send live requests. The Devices tab and App Intent own explicit live requests. The watch performs its own system-scheduled background sampling on watchOS. CloudKit follows the same cold-launch isolation principle: a launch identified as Core Location-triggered skips cloud-engine startup.
 
 ## Latest timestamped watch snapshot
 
@@ -104,16 +104,16 @@ This earlier decision applied while the product was being renamed without changi
 
 ## Watch-owned snapshot and WidgetKit complication
 
-**Decision:** Keep `WatchBatteryService` as the only component that reads `WKInterfaceDevice.current().batteryLevel`. Persist its newest valid `BatterySnapshot` in the Watch App Group `group.com.xunbo.traceon.watch`, and have the WidgetKit complication display that shared snapshot.
+**Decision:** Keep `WatchBatteryService` as the only component that reads `WKInterfaceDevice.current().batteryLevel`. Persist its newest valid `BatterySnapshot` in the Watch App Group `group.com.xunbo.traceon.watch`, have the WidgetKit complication display that shared snapshot, and use watchOS SwiftUI `backgroundTask(.appRefresh(...))` with `WKApplication.scheduleBackgroundRefresh` to request autonomous sampling. Schedule the next task before sampling and await the battery read before the background task returns.
 
-**Reason:** The complication should improve watch-face visibility and provide another watchOS refresh opportunity without creating a second battery-monitoring architecture or an iPhone polling path.
+**Reason:** The complication should improve watch-face visibility and provide legitimate watchOS background budget without creating a second battery-monitoring architecture, cloud path, or iPhone polling path. The previous legacy extension-delegate scheduling path did not reliably execute in the modern single-target SwiftUI Watch app.
 
-**Implications:** Battery samples continue to use application context and explicit reachable replies. Autonomous watch refreshes do not send unsolicited `sendMessage` calls that could wake the iPhone; only an explicit iPhone request receives a live reply. The watch app persists every newer timestamp but reloads the complication timeline only when displayed battery/status values meaningfully change. The original WidgetKit kind string stays stable so an installed complication survives the aro display-name rename. WidgetKit and watchOS background refresh are system scheduled; a preferred interval is not a guarantee.
+**Implications:** Battery samples continue to use application context and explicit reachable replies. Autonomous watch refreshes do not send unsolicited `sendMessage` calls that could wake the iPhone; only an explicit iPhone request receives a live reply. The watch app persists every newer timestamp but reloads the complication timeline only when displayed battery/status values meaningfully change. The original WidgetKit kind string stays stable so an installed complication survives the aro display-name rename. The preferred app-refresh interval is 15 minutes, matching the useful budget of an app with an active complication, but watchOS may defer or throttle tasks and no fixed refresh interval is guaranteed.
 
 ## Freshness and retryable WatchConnectivity activation
 
-**Decision:** After activation, ingest `WCSession.receivedApplicationContext` through the existing newest-timestamp-wins `BatteryStore` path before checking reachability or falling back to cache. Track activation-in-progress separately so an explicit call retries `.notActivated` sessions after an activation error, while avoiding duplicate activation calls and continuation resumes.
+**Decision:** After activation, ingest `WCSession.receivedApplicationContext` through the existing newest-timestamp-wins `BatteryStore` path before checking reachability or falling back to cache. Track activation-in-progress separately so an explicit call retries `.notActivated` sessions after an activation error, while avoiding duplicate activation calls and continuation resumes. Also activate the session passively on ordinary iPhone launch and foreground activation so a background-produced Watch snapshot is not unnecessarily left unread until the Devices UI is opened.
 
-**Reason:** A newer opportunistic Watch sample can already be available when a Shortcut or Devices refresh starts, and failed activation must not permanently disable later explicit refreshes.
+**Reason:** A newer opportunistic Watch sample can already be available when the app starts, a Shortcut runs, or a Devices refresh begins, and failed activation must not permanently disable later explicit refreshes.
 
-**Implications:** Reachable sessions still receive an explicit live request; unreachable sessions return the newest cache available after context ingestion. Location lifecycle and background energy behavior remain unchanged.
+**Implications:** Reachable sessions still receive an explicit live request; unreachable sessions return the newest cache available after context ingestion. Passive activation never sends a live message and remains excluded from Core Location-triggered cold launches.
