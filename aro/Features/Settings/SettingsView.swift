@@ -229,8 +229,7 @@ struct SettingsView: View {
 #if !ARO_CLOUDKIT_ENABLED
     private var localBuildMayHaveCloudData: Bool {
         let defaults = UserDefaults.standard
-        return defaults.bool(forKey: "icloudSync.enabled")
-            || defaults.bool(forKey: "icloudSync.hasCloudData")
+        return defaults.bool(forKey: "icloudSync.hasCloudData")
             || defaults.double(forKey: "icloudSync.lastSyncAt") > 0
     }
 #endif
