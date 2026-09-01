@@ -28,4 +28,19 @@ final class WatchExtensionDelegate: NSObject, WKApplicationDelegate {
             WatchBackgroundRefresh.scheduleNext()
         }
     }
+
+    func handle(_ backgroundTasks: Set<WKRefreshBackgroundTask>) {
+        for task in backgroundTasks {
+            guard let refreshTask = task as? WKApplicationRefreshBackgroundTask else {
+                task.setTaskCompletedWithSnapshot(false)
+                continue
+            }
+
+            Task { @MainActor in
+                WatchBackgroundRefresh.scheduleNext()
+                await WatchBatteryService.shared.refreshAndSendAsync()
+                refreshTask.setTaskCompletedWithSnapshot(false)
+            }
+        }
+    }
 }

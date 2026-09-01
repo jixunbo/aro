@@ -11,11 +11,5 @@ struct AROWatchApp: App {
             WatchContentView()
                 .environmentObject(reporter)
         }
-        .backgroundTask(.appRefresh(WatchBackgroundRefresh.identifier)) {
-            await MainActor.run {
-                WatchBackgroundRefresh.scheduleNext()
-            }
-            await WatchBatteryService.shared.refreshAndSendAsync()
-        }
     }
 }
