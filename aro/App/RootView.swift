@@ -18,16 +18,21 @@ struct RootView: View {
             if scenePhase == .active {
                 AROShortcuts.updateAppShortcutParameters()
                 PhoneConnectivity.shared.appBecameActive()
+                PhoneConnectivity.shared.publishTrackComplication(points: repository.todayPoints, force: true)
 #if ARO_CLOUDKIT_ENABLED
                 CloudSyncService.shared.appBecameActive()
 #endif
             }
+        }
+        .onChange(of: repository.todayPoints) { _, points in
+            PhoneConnectivity.shared.publishTrackComplication(points: points, force: scenePhase == .active)
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 repository.refresh()
                 AROShortcuts.updateAppShortcutParameters()
                 PhoneConnectivity.shared.appBecameActive()
+                PhoneConnectivity.shared.publishTrackComplication(points: repository.todayPoints, force: true)
 #if ARO_CLOUDKIT_ENABLED
                 CloudSyncService.shared.appBecameActive()
 #endif
