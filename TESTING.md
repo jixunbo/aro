@@ -1,5 +1,7 @@
 # aro 真机验收清单
 
+安装或分发改动后的构建前，确认 iOS App、Watch App、Widget Extension 以及全部 Local/Cloud 配置使用同一个预期版本。Bug 修复通常递增 patch 版本；向后兼容的新功能通常递增 minor 版本。
+
 ## 后台记录
 
 每次测试前在“设置”页确认：自动记录已开启、定位权限为“始终”、精确位置已开启。
@@ -72,7 +74,7 @@
 3. 手表可达时进入“设备”页并点刷新，确认产生新的同步时间；不要只依据数值相同判断是否刷新。
 4. 关闭蓝牙、让手表离线或拉开距离后再次查看，确认 iPhone 明确标注“使用缓存/不代表实时电量”，并保留较新的快照而不被旧时间戳覆盖。
 5. 在快捷指令中运行“获取设备电量”：可达时确认先尝试实时请求；不可达时确认返回最近缓存及同步时间；从未收到快照时确认给出可操作的错误提示。
-6. 在活动表盘上保留 aro 复杂功能，打开 Watch App 一次后退出，随后至少 2–3 小时不要再次打开 Watch App。每隔约 15–30 分钟查看 iPhone 端最近同步时间；当 watchOS 分配后台预算时，时间戳应能在不打开 Watch App 的情况下推进。记录真实间隔，但不要把 15 分钟的 preferred date 当作保证。
+6. 在活动表盘上保留 aro 复杂功能，打开 Watch App 一次后退出，随后至少 2–3 小时不要再次打开 Watch App。每隔约 30–60 分钟查看 iPhone 端最近同步时间；当 watchOS 分配后台预算时，时间戳应能在不打开 Watch App 的情况下推进。记录真实间隔，但不要把一小时的 preferred date 当作保证。
 7. 重复上一步但移除活动复杂功能，比较后台更新时间戳的变化；这用于确认复杂功能带来的 watchOS 预算差异，不要求固定次数。
 8. 确认 iPhone 普通启动或回前台后可以被动吸收 Watch 的较新 application context，即使用户没有先打开“设备”页；同时通过 Core Location 冷启动时仍不得因此主动初始化 WatchConnectivity 或发送实时请求。
 
@@ -81,9 +83,10 @@
 1. 在同一开发团队下安装 `ARO Watch App` 与 `ARO Watch Widget Extension`，并确认两者都使用 `group.com.xunbo.traceon.watch` App Group。
 2. 在活动 Apple Watch 表盘上添加 aro 复杂功能，分别检查圆形、角落、行内和矩形样式；首次没有快照时应显示 `--%`，不能出现伪造电量。
 3. 打开一次 Watch App，确认表盘复杂功能与 Watch App 显示同一电量和状态；在 iPhone“设备”页记录收到的时间戳。
-4. 关闭 Watch App 并保持手表闲置数小时，周期性记录 Watch 复杂功能和 iPhone 快照时间戳；Watch App 会以 15 分钟为 preferred date 请求下一次 app refresh，但 watchOS 可以延后或节流。重点验证“无需重新打开 Watch App 仍出现新时间戳”，而不是要求每 15 分钟严格执行。
+4. 关闭 Watch App 并保持手表闲置数小时，周期性记录 Watch 复杂功能和 iPhone 快照时间戳；Watch App 会以一小时为 preferred date 请求下一次 app refresh，Widget 会请求约 30 分钟后的新 Timeline，但 watchOS 可以分别延后或节流。重点验证复杂功能无需重新打开 Watch App 仍能显示新的电量；Widget 自己采样不会同步推进 iPhone 时间戳，只有 Watch App 获得执行机会且显示值发生变化时才会发布新的 WatchConnectivity context。
 5. 移除活动复杂功能后重复相同观察，作为对照；至少观察完整一天再判断 watchOS 调度差异。
-6. 确认复杂功能只显示 Watch App 写入的 App Group 快照，没有自己的 `WKInterfaceDevice` 读取、前台计时器或 iPhone 网络请求；Watch App 的自主刷新只更新 application context，不应产生无请求对应的 `sendMessage`。模拟器只能验证编译和静态布局，不能验证复杂功能刷新频率。
+6. 确认 Widget Extension 只在 WidgetKit 请求新 Timeline 时读取一次 `WKInterfaceDevice` 并写入 App Group，没有前台计时器、持续轮询或 iPhone 网络请求；若暂时读不到有效电量，应回退到最新有效快照而不是显示伪造值。Watch App 的自主刷新只更新 application context，不应产生无请求对应的 `sendMessage`。模拟器只能验证编译和静态布局，不能验证复杂功能刷新频率。
+7. 打开 Watch App 后确认交互前台每五分钟才允许一次周期采样；放下手腕或按下数码表冠后，场景离开 `.active`、计时器停止，电量监控回到关闭状态。确认 aro 页面不会在 Always On 状态持续显示。
 
 如果表盘编辑器中找不到 `aro 电量`，记录手表型号和 watchOS 版本，确认已安装完整的 `ARO Watch App`（不是只有 iOS App），并核对 Widget Extension 已随 Watch App 嵌入、bundle identifier 为 `com.xunbo.aro.watchkitapp.widget`、App Group 为 `group.com.xunbo.traceon.watch`。在手表上打开一次 aro 后退出并重新打开表盘编辑器；确认当前表盘位置支持所选 accessory family，再重新安装一次 Watch App 做对照。不要把模拟器中能编译或能预览 Widget 当作真机表盘可发现性的证明。
 

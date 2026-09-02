@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 import WidgetKit
 
 struct AROBatteryWidgetEntry: TimelineEntry {
@@ -16,9 +17,55 @@ struct AROBatteryWidgetProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<AROBatteryWidgetEntry>) -> Void) {
-        let entry = AROBatteryWidgetEntry(date: .now, snapshot: WatchSnapshotStore.load())
-        let nextRefresh = Date(timeIntervalSinceNow: 30 * 60)
-        completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
+        loadFreshSnapshot { freshSnapshot in
+            if let freshSnapshot {
+                WatchSnapshotStore.save(freshSnapshot)
+            }
+
+            let entry = AROBatteryWidgetEntry(
+                date: .now,
+                snapshot: freshSnapshot ?? WatchSnapshotStore.load()
+            )
+            let nextRefresh = Date(timeIntervalSinceNow: 30 * 60)
+            completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
+        }
+    }
+
+    private func loadFreshSnapshot(completion: @escaping (BatterySnapshot?) -> Void) {
+        DispatchQueue.main.async {
+            let device = WKInterfaceDevice.current()
+            device.isBatteryMonitoringEnabled = true
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                let rawLevel = device.batteryLevel
+                defer { device.isBatteryMonitoringEnabled = false }
+
+                guard rawLevel >= 0 else {
+                    completion(nil)
+                    return
+                }
+
+                completion(
+                    BatterySnapshot(
+                        level: Int((rawLevel * 100).rounded()),
+                        state: BatteryChargeState(widgetState: device.batteryState),
+                        deviceName: device.name
+                    )
+                )
+            }
+        }
+    }
+}
+
+private extension BatteryChargeState {
+    init(widgetState state: WKInterfaceDeviceBatteryState) {
+        switch state {
+        case .unknown: self = .unknown
+        case .unplugged: self = .unplugged
+        case .charging: self = .charging
+        case .full: self = .full
+        @unknown default: self = .unknown
+        }
     }
 }
 

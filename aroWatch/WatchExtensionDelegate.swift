@@ -4,7 +4,7 @@ import WatchKit
 @MainActor
 enum WatchBackgroundRefresh {
     static let identifier = "aro.watch.battery-refresh"
-    static let preferredInterval: TimeInterval = 15 * 60
+    static let preferredInterval: TimeInterval = 60 * 60
 
     static func scheduleNext() {
         WKApplication.shared().scheduleBackgroundRefresh(

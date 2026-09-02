@@ -1,5 +1,13 @@
 # Architectural decisions
 
+## Semantic versioning for every delivered change
+
+**Decision:** Every user-visible change or bug fix includes an appropriate marketing-version bump before delivery. Use a patch increment for fixes, a minor increment for backward-compatible features, and a major increment for breaking changes. Keep every target and Local/Cloud build configuration on the same marketing version.
+
+**Reason:** Installed iPhone, Watch, and Widget builds must be distinguishable during testing and distribution, especially when validating fixes that require reinstalling the Watch App.
+
+**Implications:** A code or behavior change is not considered delivery-ready until the version has been reviewed and updated. Documentation-only edits may retain the current version when they do not alter the shipped product. The Watch energy and complication refresh fixes advance the project from `1.3.1` to `1.3.2`.
+
 ## Local-only persistence (superseded)
 
 This decision was superseded by “Opt-in private CloudKit sync” below.
@@ -112,11 +120,11 @@ This earlier decision applied while the product was being renamed without changi
 
 ## Watch-owned snapshot and WidgetKit complication
 
-**Decision:** Keep `WatchBatteryService` as the only component that reads `WKInterfaceDevice.current().batteryLevel`. Persist its newest valid `BatterySnapshot` in the Watch App Group `group.com.xunbo.traceon.watch`, have the WidgetKit complication display that shared snapshot, and use the single-target watch app's `WKApplicationDelegate.handle(_:)` with `WKApplication.scheduleBackgroundRefresh` to request autonomous sampling. Schedule the next task before sampling, await the battery read, and explicitly complete every delivered WatchKit background task.
+**Decision:** Persist the newest valid `BatterySnapshot` in the Watch App Group `group.com.xunbo.traceon.watch`. `WatchBatteryService` samples for the Watch App UI and WatchConnectivity, while the WidgetKit timeline provider takes one local `WKInterfaceDevice` battery sample whenever WidgetKit grants it a timeline refresh and writes that sample to the same store. Continue using the single-target watch app's `WKApplicationDelegate.handle(_:)` with `WKApplication.scheduleBackgroundRefresh` for opportunistic Watch App background sampling. Schedule the next app task before sampling, await the battery read, and explicitly complete every delivered WatchKit background task.
 
-**Reason:** The complication should improve watch-face visibility and provide legitimate watchOS background budget without creating a second battery-monitoring architecture, cloud path, or iPhone polling path. The previous legacy extension-delegate scheduling path did not reliably execute in the modern single-target SwiftUI Watch app, while SwiftUI's app-refresh closure has also proved unreliable on current watchOS releases. The single-target `WKApplicationDelegate` path provides the modern delegate entry point and explicit task completion.
+**Reason:** The complication must remain useful when current watchOS releases decline to deliver requested Watch App background refreshes. WidgetKit's separately budgeted timeline execution is the reliable opportunity to sample the same local device for complication display. The fallback remains local, system-triggered, and short-lived, without a timer, cloud path, iPhone polling path, or fabricated value.
 
-**Implications:** Battery samples continue to use application context and explicit reachable replies. Autonomous watch refreshes do not send unsolicited `sendMessage` calls that could wake the iPhone; only an explicit iPhone request receives a live reply. The watch app persists every newer timestamp but reloads the complication timeline only when displayed battery/status values meaningfully change. The original WidgetKit kind string stays stable so an installed complication survives the aro display-name rename. The preferred app-refresh interval is 15 minutes, matching the useful budget of an app with an active complication, but watchOS may defer or throttle tasks and no fixed refresh interval is guaranteed.
+**Implications:** Battery monitoring is enabled only during a one-shot read and disabled immediately afterward in both the Watch App and Widget Extension. Watch App foreground sampling runs every five minutes only while `scenePhase` is active, persists newer timestamps locally, and suppresses unchanged WatchConnectivity application-context writes. Autonomous watch refreshes and WidgetKit timeline refreshes do not send unsolicited `sendMessage` calls that could wake the iPhone; only an explicit iPhone request receives a live reply. The Widget extension can advance the shared Watch snapshot without advancing the iPhone cache until WatchConnectivity next publishes from the Watch App. The original WidgetKit kind string stays stable so an installed complication survives the aro display-name rename. The one-hour preferred app refresh and the complication's 30-minute requested timeline refresh remain system-controlled and may be deferred or throttled. The Watch App disables Always On display because its battery dashboard has no continuous-display use case.
 
 ## Freshness and retryable WatchConnectivity activation
 

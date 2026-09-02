@@ -1,34 +1,35 @@
 // !$*UTF8*$!
 {
 	archiveVersion = 1;
-	classes = {};
+	classes = {
+	};
 	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A00000000000000000000001 = {isa = PBXBuildFile; fileRef = B00000000000000000000001; };
-		A00000000000000000000002 = {isa = PBXBuildFile; fileRef = B00000000000000000000002; };
-		A00000000000000000000003 = {isa = PBXBuildFile; fileRef = B00000000000000000000003; };
-		A00000000000000000000004 = {isa = PBXBuildFile; fileRef = B00000000000000000000004; };
-		A00000000000000000000005 = {isa = PBXBuildFile; fileRef = B00000000000000000000005; };
-		A00000000000000000000006 = {isa = PBXBuildFile; fileRef = B00000000000000000000006; };
-		A00000000000000000000007 = {isa = PBXBuildFile; fileRef = B00000000000000000000007; };
-		A00000000000000000000008 = {isa = PBXBuildFile; fileRef = B00000000000000000000008; };
-		A00000000000000000000009 = {isa = PBXBuildFile; fileRef = B00000000000000000000009; };
-		A0000000000000000000000A = {isa = PBXBuildFile; fileRef = B0000000000000000000000A; };
-		A0000000000000000000000B = {isa = PBXBuildFile; fileRef = B0000000000000000000000B; };
-		A0000000000000000000000C = {isa = PBXBuildFile; fileRef = B0000000000000000000000C; };
-		A0000000000000000000000D = {isa = PBXBuildFile; fileRef = B0000000000000000000000D; };
-		A0000000000000000000000E = {isa = PBXBuildFile; fileRef = B0000000000000000000000E; };
-		A0000000000000000000000F = {isa = PBXBuildFile; fileRef = B0000000000000000000000F; };
-		A00000000000000000000010 = {isa = PBXBuildFile; fileRef = B00000000000000000000010; };
-		A00000000000000000000011 = {isa = PBXBuildFile; fileRef = B00000000000000000000011; };
-		A00000000000000000000012 = {isa = PBXBuildFile; fileRef = B00000000000000000000012; };
-		A00000000000000000000013 = {isa = PBXBuildFile; fileRef = B00000000000000000000013; };
-		A00000000000000000000014 = {isa = PBXBuildFile; fileRef = B00000000000000000000014; };
-		A00000000000000000000015 = {isa = PBXBuildFile; fileRef = B00000000000000000000018; };
-		A00000000000000000000016 = {isa = PBXBuildFile; fileRef = B0000000000000000000001A; };
-		A00000000000000000000017 = {isa = PBXBuildFile; fileRef = B0000000000000000000001B; };
+		A00000000000000000000001 /* AROApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000001 /* AROApp.swift */; };
+		A00000000000000000000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000002 /* AppDelegate.swift */; };
+		A00000000000000000000003 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000003 /* RootView.swift */; };
+		A00000000000000000000004 /* TrackingMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000004 /* TrackingMode.swift */; };
+		A00000000000000000000005 /* TrackPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000005 /* TrackPoint.swift */; };
+		A00000000000000000000006 /* TrackMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000006 /* TrackMath.swift */; };
+		A00000000000000000000007 /* TrackExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000007 /* TrackExport.swift */; };
+		A00000000000000000000008 /* TrackDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000008 /* TrackDatabase.swift */; };
+		A00000000000000000000009 /* TrackRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000009 /* TrackRepository.swift */; };
+		A0000000000000000000000A /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000A /* LocationService.swift */; };
+		A0000000000000000000000B /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000B /* TodayView.swift */; };
+		A0000000000000000000000C /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000C /* HistoryView.swift */; };
+		A0000000000000000000000D /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000D /* InsightsView.swift */; };
+		A0000000000000000000000E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000E /* SettingsView.swift */; };
+		A0000000000000000000000F /* TrackDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000F /* TrackDocument.swift */; };
+		A00000000000000000000010 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000010 /* OnboardingView.swift */; };
+		A00000000000000000000011 /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000011 /* Formatters.swift */; };
+		A00000000000000000000012 /* TrackMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000012 /* TrackMapView.swift */; };
+		A00000000000000000000013 /* MetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000013 /* MetricCard.swift */; };
+		A00000000000000000000014 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000014 /* Assets.xcassets */; };
+		A00000000000000000000015 /* TrackMathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000018 /* TrackMathTests.swift */; };
+		A00000000000000000000016 /* TrackImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000001A /* TrackImport.swift */; };
+		A00000000000000000000017 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000001B /* PrivacyInfo.xcprivacy */; };
 		A10000000000000000000001 /* DevicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* DevicesView.swift */; };
 		A10000000000000000000002 /* BatteryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* BatteryStore.swift */; };
 		A10000000000000000000003 /* PhoneConnectivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* PhoneConnectivity.swift */; };
@@ -44,16 +45,34 @@
 		A1000000000000000000000D /* BatterySnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000B /* BatterySnapshotTests.swift */; };
 		A1000000000000000000000E /* WatchSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* WatchSnapshotStore.swift */; };
 		A1000000000000000000000F /* AROBatteryWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000D /* AROBatteryWidget.swift */; };
-		A10000000000000000000010 /* BatterySnapshot.swift in Widget Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* BatterySnapshot.swift */; };
-		A10000000000000000000011 /* WatchSnapshotStore.swift in Widget Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* WatchSnapshotStore.swift */; };
+		A10000000000000000000010 /* BatterySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* BatterySnapshot.swift */; };
+		A10000000000000000000011 /* WatchSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* WatchSnapshotStore.swift */; };
 		A10000000000000000000012 /* ARO Watch Widget Extension.appex in Embed Watch Widget */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* ARO Watch Widget Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A20000000000000000000001 /* TrackDatabaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000001 /* TrackDatabaseTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		C00000000000000000000001 = {isa = PBXContainerItemProxy; containerPortal = E00000000000000000000001; proxyType = 1; remoteGlobalIDString = D00000000000000000000001; remoteInfo = aro; };
-		C10000000000000000000001 /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = E00000000000000000000001 /* Project object */; proxyType = 1; remoteGlobalIDString = D10000000000000000000001; remoteInfo = "ARO Watch App"; };
-		C10000000000000000000002 /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = E00000000000000000000001 /* Project object */; proxyType = 1; remoteGlobalIDString = D20000000000000000000001; remoteInfo = "ARO Watch Widget Extension"; };
+		C00000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E00000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D00000000000000000000001;
+			remoteInfo = aro;
+		};
+		C10000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E00000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D10000000000000000000001;
+			remoteInfo = "ARO Watch App";
+		};
+		C10000000000000000000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E00000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D20000000000000000000001;
+			remoteInfo = "ARO Watch Widget Extension";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -62,7 +81,9 @@
 			buildActionMask = 2147483647;
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
 			dstSubfolderSpec = 16;
-			files = (A1000000000000000000000B /* ARO Watch App.app in Embed Watch Content */, );
+			files = (
+				A1000000000000000000000B /* ARO Watch App.app in Embed Watch Content */,
+			);
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,40 +92,42 @@
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
-			files = (A10000000000000000000012 /* ARO Watch Widget Extension.appex in Embed Watch Widget */, );
+			files = (
+				A10000000000000000000012 /* ARO Watch Widget Extension.appex in Embed Watch Widget */,
+			);
 			name = "Embed Watch Widget";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		B00000000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AROApp.swift; sourceTree = "<group>"; };
-		B00000000000000000000002 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		B00000000000000000000003 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		B00000000000000000000004 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingMode.swift; sourceTree = "<group>"; };
-		B00000000000000000000005 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackPoint.swift; sourceTree = "<group>"; };
-		B00000000000000000000006 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMath.swift; sourceTree = "<group>"; };
-		B00000000000000000000007 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackExport.swift; sourceTree = "<group>"; };
-		B00000000000000000000008 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackDatabase.swift; sourceTree = "<group>"; };
-		B00000000000000000000009 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackRepository.swift; sourceTree = "<group>"; };
-		B0000000000000000000000A = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
-		B0000000000000000000000B = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
-		B0000000000000000000000C = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
-		B0000000000000000000000D = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsView.swift; sourceTree = "<group>"; };
-		B0000000000000000000000E = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		B0000000000000000000000F = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackDocument.swift; sourceTree = "<group>"; };
-		B00000000000000000000010 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
-		B00000000000000000000011 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatters.swift; sourceTree = "<group>"; };
-		B00000000000000000000012 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMapView.swift; sourceTree = "<group>"; };
-		B00000000000000000000013 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCard.swift; sourceTree = "<group>"; };
-		B00000000000000000000014 = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		B00000000000000000000015 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B00000000000000000000016 = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		B00000000000000000000017 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = aro.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B00000000000000000000018 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMathTests.swift; sourceTree = "<group>"; };
-		B00000000000000000000019 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = aroTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		B0000000000000000000001A = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackImport.swift; sourceTree = "<group>"; };
-		B0000000000000000000001B = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		B00000000000000000000001 /* AROApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AROApp.swift; sourceTree = "<group>"; };
+		B00000000000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		B00000000000000000000003 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		B00000000000000000000004 /* TrackingMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingMode.swift; sourceTree = "<group>"; };
+		B00000000000000000000005 /* TrackPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackPoint.swift; sourceTree = "<group>"; };
+		B00000000000000000000006 /* TrackMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMath.swift; sourceTree = "<group>"; };
+		B00000000000000000000007 /* TrackExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackExport.swift; sourceTree = "<group>"; };
+		B00000000000000000000008 /* TrackDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackDatabase.swift; sourceTree = "<group>"; };
+		B00000000000000000000009 /* TrackRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackRepository.swift; sourceTree = "<group>"; };
+		B0000000000000000000000A /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
+		B0000000000000000000000B /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
+		B0000000000000000000000C /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		B0000000000000000000000D /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsView.swift; sourceTree = "<group>"; };
+		B0000000000000000000000E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B0000000000000000000000F /* TrackDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackDocument.swift; sourceTree = "<group>"; };
+		B00000000000000000000010 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		B00000000000000000000011 /* Formatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatters.swift; sourceTree = "<group>"; };
+		B00000000000000000000012 /* TrackMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMapView.swift; sourceTree = "<group>"; };
+		B00000000000000000000013 /* MetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCard.swift; sourceTree = "<group>"; };
+		B00000000000000000000014 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B00000000000000000000015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B00000000000000000000016 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		B00000000000000000000017 /* aro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = aro.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B00000000000000000000018 /* TrackMathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMathTests.swift; sourceTree = "<group>"; };
+		B00000000000000000000019 /* aroTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = aroTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0000000000000000000001A /* TrackImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackImport.swift; sourceTree = "<group>"; };
+		B0000000000000000000001B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		B10000000000000000000001 /* DevicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicesView.swift; sourceTree = "<group>"; };
 		B10000000000000000000002 /* BatteryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryStore.swift; sourceTree = "<group>"; };
 		B10000000000000000000003 /* PhoneConnectivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneConnectivity.swift; sourceTree = "<group>"; };
@@ -118,77 +141,286 @@
 		B1000000000000000000000B /* BatterySnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatterySnapshotTests.swift; sourceTree = "<group>"; };
 		B1000000000000000000000C /* WatchSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSnapshotStore.swift; sourceTree = "<group>"; };
 		B1000000000000000000000D /* AROBatteryWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AROBatteryWidget.swift; sourceTree = "<group>"; };
-		B1000000000000000000000E /* Widget Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B1000000000000000000000E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B1000000000000000000000F /* AROWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AROWatch.entitlements; sourceTree = "<group>"; };
-		B10000000000000000000010 /* ARO Watch Widget Extension.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = "ARO Watch Widget Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000010 /* ARO Watch Widget Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "ARO Watch Widget Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000011 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B20000000000000000000001 /* TrackDatabaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackDatabaseTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		F00000000000000000000001 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		F00000000000000000000005 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		F00000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F00000000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F60000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		G00000000000000000000001 = {
 			isa = PBXGroup;
-			children = (G00000000000000000000002, G10000000000000000000002, G00000000000000000000011, B00000000000000000000016, G0000000000000000000000B);
+			children = (
+				G00000000000000000000002 /* aro */,
+				G10000000000000000000002 /* aroWatch */,
+				G00000000000000000000011 /* aroTests */,
+				B00000000000000000000016 /* README.md */,
+				G0000000000000000000000B /* Products */,
+			);
 			sourceTree = "<group>";
 		};
-		G00000000000000000000002 = {
+		G00000000000000000000002 /* aro */ = {
 			isa = PBXGroup;
-			children = (G00000000000000000000003, G00000000000000000000004, G00000000000000000000005, G00000000000000000000006, G00000000000000000000007, G0000000000000000000000A, G00000000000000000000008);
+			children = (
+				G00000000000000000000003 /* App */,
+				G00000000000000000000004 /* Core */,
+				G00000000000000000000005 /* Data */,
+				G00000000000000000000006 /* Location */,
+				G00000000000000000000007 /* Features */,
+				G0000000000000000000000A /* Shared */,
+				G00000000000000000000008 /* Resources */,
+			);
 			path = aro;
 			sourceTree = "<group>";
 		};
-		G00000000000000000000003 /* App */ = {isa = PBXGroup; children = (B00000000000000000000001, B00000000000000000000002, B00000000000000000000003); path = App; sourceTree = "<group>"; };
-		G00000000000000000000004 /* Core */ = {isa = PBXGroup; children = (B00000000000000000000004); path = Core; sourceTree = "<group>"; };
-		G00000000000000000000005 /* Data */ = {isa = PBXGroup; children = (B00000000000000000000005, B00000000000000000000006, B00000000000000000000007, B0000000000000000000001A, B00000000000000000000008, B00000000000000000000009); path = Data; sourceTree = "<group>"; };
-		G00000000000000000000006 /* Location */ = {isa = PBXGroup; children = (B0000000000000000000000A); path = Location; sourceTree = "<group>"; };
-		G00000000000000000000007 /* Features */ = {isa = PBXGroup; children = (G0000000000000000000000C, G0000000000000000000000D, G0000000000000000000000E, G10000000000000000000001, G0000000000000000000000F, G00000000000000000000010); path = Features; sourceTree = "<group>"; };
-		G00000000000000000000008 /* Resources */ = {isa = PBXGroup; children = (B00000000000000000000014, B00000000000000000000015, B0000000000000000000001B); path = Resources; sourceTree = "<group>"; };
-		G0000000000000000000000A /* Shared */ = {isa = PBXGroup; children = (B00000000000000000000011, B00000000000000000000012, B00000000000000000000013, B10000000000000000000005); path = Shared; sourceTree = "<group>"; };
-		G0000000000000000000000B /* Products */ = {isa = PBXGroup; children = (B00000000000000000000017, B1000000000000000000000A, B10000000000000000000010, B00000000000000000000019); name = Products; sourceTree = "<group>"; };
-		G0000000000000000000000C /* Today */ = {isa = PBXGroup; children = (B0000000000000000000000B); path = Today; sourceTree = "<group>"; };
-		G0000000000000000000000D /* History */ = {isa = PBXGroup; children = (B0000000000000000000000C); path = History; sourceTree = "<group>"; };
-		G0000000000000000000000E /* Insights */ = {isa = PBXGroup; children = (B0000000000000000000000D); path = Insights; sourceTree = "<group>"; };
-		G0000000000000000000000F /* Settings */ = {isa = PBXGroup; children = (B0000000000000000000000E, B0000000000000000000000F); path = Settings; sourceTree = "<group>"; };
-		G00000000000000000000010 /* Onboarding */ = {isa = PBXGroup; children = (B00000000000000000000010); path = Onboarding; sourceTree = "<group>"; };
-		G00000000000000000000011 /* aroTests */ = {isa = PBXGroup; children = (B00000000000000000000018, B1000000000000000000000B, B20000000000000000000001); path = aroTests; sourceTree = "<group>"; };
-		G10000000000000000000001 /* Devices */ = {isa = PBXGroup; children = (B10000000000000000000001, B10000000000000000000002, B10000000000000000000003, B10000000000000000000004); path = Devices; sourceTree = "<group>"; };
-		G10000000000000000000002 /* aroWatch */ = {isa = PBXGroup; children = (B10000000000000000000006, B10000000000000000000007, B10000000000000000000008, B10000000000000000000009, B1000000000000000000000C, B1000000000000000000000F, G10000000000000000000003); path = aroWatch; sourceTree = "<group>"; };
-		G10000000000000000000003 /* Widget */ = {isa = PBXGroup; children = (B1000000000000000000000D, B1000000000000000000000E); path = Widget; sourceTree = "<group>"; };
+		G00000000000000000000003 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000001 /* AROApp.swift */,
+				B00000000000000000000002 /* AppDelegate.swift */,
+				B00000000000000000000003 /* RootView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000004 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000004 /* TrackingMode.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000005 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000005 /* TrackPoint.swift */,
+				B00000000000000000000006 /* TrackMath.swift */,
+				B00000000000000000000007 /* TrackExport.swift */,
+				B0000000000000000000001A /* TrackImport.swift */,
+				B00000000000000000000008 /* TrackDatabase.swift */,
+				B00000000000000000000009 /* TrackRepository.swift */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000006 /* Location */ = {
+			isa = PBXGroup;
+			children = (
+				B0000000000000000000000A /* LocationService.swift */,
+			);
+			path = Location;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000007 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				G0000000000000000000000C /* Today */,
+				G0000000000000000000000D /* History */,
+				G0000000000000000000000E /* Insights */,
+				G10000000000000000000001 /* Devices */,
+				G0000000000000000000000F /* Settings */,
+				G00000000000000000000010 /* Onboarding */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000008 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000014 /* Assets.xcassets */,
+				B00000000000000000000015 /* Info.plist */,
+				B0000000000000000000001B /* PrivacyInfo.xcprivacy */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		G0000000000000000000000A /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000011 /* Formatters.swift */,
+				B00000000000000000000012 /* TrackMapView.swift */,
+				B00000000000000000000013 /* MetricCard.swift */,
+				B10000000000000000000005 /* BatterySnapshot.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		G0000000000000000000000B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000017 /* aro.app */,
+				B1000000000000000000000A /* ARO Watch App.app */,
+				B10000000000000000000010 /* ARO Watch Widget Extension.appex */,
+				B00000000000000000000019 /* aroTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		G0000000000000000000000C /* Today */ = {
+			isa = PBXGroup;
+			children = (
+				B0000000000000000000000B /* TodayView.swift */,
+			);
+			path = Today;
+			sourceTree = "<group>";
+		};
+		G0000000000000000000000D /* History */ = {
+			isa = PBXGroup;
+			children = (
+				B0000000000000000000000C /* HistoryView.swift */,
+			);
+			path = History;
+			sourceTree = "<group>";
+		};
+		G0000000000000000000000E /* Insights */ = {
+			isa = PBXGroup;
+			children = (
+				B0000000000000000000000D /* InsightsView.swift */,
+			);
+			path = Insights;
+			sourceTree = "<group>";
+		};
+		G0000000000000000000000F /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				B0000000000000000000000E /* SettingsView.swift */,
+				B0000000000000000000000F /* TrackDocument.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000010 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000010 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000011 /* aroTests */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000018 /* TrackMathTests.swift */,
+				B1000000000000000000000B /* BatterySnapshotTests.swift */,
+				B20000000000000000000001 /* TrackDatabaseTests.swift */,
+			);
+			path = aroTests;
+			sourceTree = "<group>";
+		};
+		G10000000000000000000001 /* Devices */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000001 /* DevicesView.swift */,
+				B10000000000000000000002 /* BatteryStore.swift */,
+				B10000000000000000000003 /* PhoneConnectivity.swift */,
+				B10000000000000000000004 /* AROIntents.swift */,
+			);
+			path = Devices;
+			sourceTree = "<group>";
+		};
+		G10000000000000000000002 /* aroWatch */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000006 /* AROWatchApp.swift */,
+				B10000000000000000000007 /* WatchContentView.swift */,
+				B10000000000000000000008 /* WatchBatteryService.swift */,
+				B10000000000000000000009 /* WatchExtensionDelegate.swift */,
+				B1000000000000000000000C /* WatchSnapshotStore.swift */,
+				B1000000000000000000000F /* AROWatch.entitlements */,
+				B10000000000000000000011 /* Info.plist */,
+				G10000000000000000000003 /* Widget */,
+			);
+			path = aroWatch;
+			sourceTree = "<group>";
+		};
+		G10000000000000000000003 /* Widget */ = {
+			isa = PBXGroup;
+			children = (
+				B1000000000000000000000D /* AROBatteryWidget.swift */,
+				B1000000000000000000000E /* Info.plist */,
+			);
+			path = Widget;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
 		D00000000000000000000001 /* aro */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = H00000000000000000000002;
-			buildPhases = (F00000000000000000000002, F00000000000000000000001, F00000000000000000000003, F10000000000000000000001);
-			buildRules = ();
-			dependencies = (C20000000000000000000001 /* PBXTargetDependency */);
+			buildConfigurationList = H00000000000000000000002 /* Build configuration list for PBXNativeTarget "aro" */;
+			buildPhases = (
+				F00000000000000000000002 /* Sources */,
+				F00000000000000000000001 /* Frameworks */,
+				F00000000000000000000003 /* Resources */,
+				F10000000000000000000001 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C20000000000000000000001 /* PBXTargetDependency */,
+			);
 			name = aro;
 			productName = aro;
-			productReference = B00000000000000000000017;
+			productReference = B00000000000000000000017 /* aro.app */;
 			productType = "com.apple.product-type.application";
 		};
 		D00000000000000000000002 /* aroTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = H00000000000000000000003;
-			buildPhases = (F00000000000000000000004, F00000000000000000000005, F00000000000000000000006);
-			buildRules = ();
-			dependencies = (C00000000000000000000002);
+			buildConfigurationList = H00000000000000000000003 /* Build configuration list for PBXNativeTarget "aroTests" */;
+			buildPhases = (
+				F00000000000000000000004 /* Sources */,
+				F00000000000000000000005 /* Frameworks */,
+				F00000000000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C00000000000000000000002 /* PBXTargetDependency */,
+			);
 			name = aroTests;
 			productName = aroTests;
-			productReference = B00000000000000000000019;
+			productReference = B00000000000000000000019 /* aroTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		D10000000000000000000001 /* ARO Watch App */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = H10000000000000000000001 /* Build configuration list for PBXNativeTarget "ARO Watch App" */;
-			buildPhases = (F30000000000000000000001 /* Sources */, F20000000000000000000001 /* Frameworks */, F40000000000000000000001 /* Resources */, F10000000000000000000002 /* Embed Watch Widget */);
-			buildRules = ();
-			dependencies = (C30000000000000000000001 /* PBXTargetDependency */);
+			buildPhases = (
+				F30000000000000000000001 /* Sources */,
+				F40000000000000000000001 /* Resources */,
+				F10000000000000000000002 /* Embed Watch Widget */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C30000000000000000000001 /* PBXTargetDependency */,
+			);
 			name = "ARO Watch App";
 			productName = "ARO Watch App";
 			productReference = B1000000000000000000000A /* ARO Watch App.app */;
@@ -197,9 +429,15 @@
 		D20000000000000000000001 /* ARO Watch Widget Extension */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = H20000000000000000000001 /* Build configuration list for PBXNativeTarget "ARO Watch Widget Extension" */;
-			buildPhases = (F50000000000000000000001 /* Sources */, F60000000000000000000001 /* Frameworks */, F70000000000000000000001 /* Resources */);
-			buildRules = ();
-			dependencies = ();
+			buildPhases = (
+				F50000000000000000000001 /* Sources */,
+				F60000000000000000000001 /* Frameworks */,
+				F70000000000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
 			name = "ARO Watch Widget Extension";
 			productName = "ARO Watch Widget Extension";
 			productReference = B10000000000000000000010 /* ARO Watch Widget Extension.appex */;
@@ -210,76 +448,753 @@
 /* Begin PBXProject section */
 		E00000000000000000000001 /* Project object */ = {
 			isa = PBXProject;
-			attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 2630; LastUpgradeCheck = 2630; TargetAttributes = {D00000000000000000000001 = {CreatedOnToolsVersion = 26.3; ProvisioningStyle = Automatic; }; D00000000000000000000002 = {CreatedOnToolsVersion = 26.3; }; D10000000000000000000001 = {CreatedOnToolsVersion = 26.3; ProvisioningStyle = Automatic; SystemCapabilities = { com.apple.ApplicationGroups.iOS = { enabled = 1; }; }; }; D20000000000000000000001 = {CreatedOnToolsVersion = 26.3; ProvisioningStyle = Automatic; SystemCapabilities = { com.apple.ApplicationGroups.iOS = { enabled = 1; }; }; }; }; };
-			buildConfigurationList = H00000000000000000000001;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2630;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+					D00000000000000000000001 = {
+						CreatedOnToolsVersion = 26.3;
+						ProvisioningStyle = Automatic;
+					};
+					D00000000000000000000002 = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					D10000000000000000000001 = {
+						CreatedOnToolsVersion = 26.3;
+						ProvisioningStyle = Automatic;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+						};
+					};
+					D20000000000000000000001 = {
+						CreatedOnToolsVersion = 26.3;
+						ProvisioningStyle = Automatic;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+						};
+					};
+				};
+			};
+			buildConfigurationList = H00000000000000000000001 /* Build configuration list for PBXProject "aro" */;
 			compatibilityVersion = "Xcode 14.0";
-			developmentRegion = zh-Hans;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
-			knownRegions = (zh-Hans, en, Base);
+			knownRegions = (
+				"zh-Hans",
+				en,
+				Base,
+			);
 			mainGroup = G00000000000000000000001;
-			productRefGroup = G0000000000000000000000B;
+			productRefGroup = G0000000000000000000000B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
-			targets = (D00000000000000000000001 /* aro */, D10000000000000000000001 /* ARO Watch App */, D20000000000000000000001 /* ARO Watch Widget Extension */, D00000000000000000000002 /* aroTests */);
+			targets = (
+				D00000000000000000000001 /* aro */,
+				D10000000000000000000001 /* ARO Watch App */,
+				D20000000000000000000001 /* ARO Watch Widget Extension */,
+				D00000000000000000000002 /* aroTests */,
+			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		F00000000000000000000003 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000014, A00000000000000000000017); runOnlyForDeploymentPostprocessing = 0; };
-		F00000000000000000000006 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		F40000000000000000000001 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000C /* Assets.xcassets in Resources */, ); runOnlyForDeploymentPostprocessing = 0; };
-		F50000000000000000000001 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000F /* AROBatteryWidget.swift in Sources */, A10000000000000000000010 /* BatterySnapshot.swift in Widget Sources */, A10000000000000000000011 /* WatchSnapshotStore.swift in Widget Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
-		F60000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
-		F70000000000000000000001 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		F00000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000014 /* Assets.xcassets in Resources */,
+				A00000000000000000000017 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F00000000000000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F40000000000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000000000000000000C /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F70000000000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		F00000000000000000000002 = {
+		F00000000000000000000002 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
-			files = (A00000000000000000000001, A00000000000000000000002, A00000000000000000000003, A00000000000000000000004, A00000000000000000000005, A00000000000000000000006, A00000000000000000000007, A00000000000000000000016, A00000000000000000000008, A00000000000000000000009, A0000000000000000000000A, A0000000000000000000000B, A0000000000000000000000C, A0000000000000000000000D, A0000000000000000000000E, A0000000000000000000000F, A00000000000000000000010, A00000000000000000000011, A00000000000000000000012, A00000000000000000000013, A10000000000000000000001, A10000000000000000000002, A10000000000000000000003, A10000000000000000000004, A10000000000000000000005);
+			files = (
+				A00000000000000000000001 /* AROApp.swift in Sources */,
+				A00000000000000000000002 /* AppDelegate.swift in Sources */,
+				A00000000000000000000003 /* RootView.swift in Sources */,
+				A00000000000000000000004 /* TrackingMode.swift in Sources */,
+				A00000000000000000000005 /* TrackPoint.swift in Sources */,
+				A00000000000000000000006 /* TrackMath.swift in Sources */,
+				A00000000000000000000007 /* TrackExport.swift in Sources */,
+				A00000000000000000000016 /* TrackImport.swift in Sources */,
+				A00000000000000000000008 /* TrackDatabase.swift in Sources */,
+				A00000000000000000000009 /* TrackRepository.swift in Sources */,
+				A0000000000000000000000A /* LocationService.swift in Sources */,
+				A0000000000000000000000B /* TodayView.swift in Sources */,
+				A0000000000000000000000C /* HistoryView.swift in Sources */,
+				A0000000000000000000000D /* InsightsView.swift in Sources */,
+				A0000000000000000000000E /* SettingsView.swift in Sources */,
+				A0000000000000000000000F /* TrackDocument.swift in Sources */,
+				A00000000000000000000010 /* OnboardingView.swift in Sources */,
+				A00000000000000000000011 /* Formatters.swift in Sources */,
+				A00000000000000000000012 /* TrackMapView.swift in Sources */,
+				A00000000000000000000013 /* MetricCard.swift in Sources */,
+				A10000000000000000000001 /* DevicesView.swift in Sources */,
+				A10000000000000000000002 /* BatteryStore.swift in Sources */,
+				A10000000000000000000003 /* PhoneConnectivity.swift in Sources */,
+				A10000000000000000000004 /* AROIntents.swift in Sources */,
+				A10000000000000000000005 /* BatterySnapshot.swift in Sources */,
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		F00000000000000000000004 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A00000000000000000000015, A1000000000000000000000D, A20000000000000000000001); runOnlyForDeploymentPostprocessing = 0; };
-		F30000000000000000000001 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000006, A10000000000000000000007, A10000000000000000000008, A10000000000000000000009, A1000000000000000000000A, A1000000000000000000000E); runOnlyForDeploymentPostprocessing = 0; };
+		F00000000000000000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000015 /* TrackMathTests.swift in Sources */,
+				A1000000000000000000000D /* BatterySnapshotTests.swift in Sources */,
+				A20000000000000000000001 /* TrackDatabaseTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F30000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000006 /* AROWatchApp.swift in Sources */,
+				A10000000000000000000007 /* WatchContentView.swift in Sources */,
+				A10000000000000000000008 /* WatchBatteryService.swift in Sources */,
+				A10000000000000000000009 /* WatchExtensionDelegate.swift in Sources */,
+				A1000000000000000000000A /* BatterySnapshot.swift in Sources */,
+				A1000000000000000000000E /* WatchSnapshotStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F50000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000000000000000000F /* AROBatteryWidget.swift in Sources */,
+				A10000000000000000000010 /* BatterySnapshot.swift in Sources */,
+				A10000000000000000000011 /* WatchSnapshotStore.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		C00000000000000000000002 = {isa = PBXTargetDependency; target = D00000000000000000000001; targetProxy = C00000000000000000000001; };
-		C20000000000000000000001 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = D10000000000000000000001 /* ARO Watch App */; targetProxy = C10000000000000000000001 /* PBXContainerItemProxy */; };
-		C30000000000000000000001 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = D20000000000000000000001 /* ARO Watch Widget Extension */; targetProxy = C10000000000000000000002 /* PBXContainerItemProxy */; };
+		C00000000000000000000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D00000000000000000000001 /* aro */;
+			targetProxy = C00000000000000000000001 /* PBXContainerItemProxy */;
+		};
+		C20000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D10000000000000000000001 /* ARO Watch App */;
+			targetProxy = C10000000000000000000001 /* PBXContainerItemProxy */;
+		};
+		C30000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D20000000000000000000001 /* ARO Watch Widget Extension */;
+			targetProxy = C10000000000000000000002 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		I00000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = dwarf; ENABLE_TESTABILITY = YES; GCC_C_LANGUAGE_STANDARD = gnu17; GCC_OPTIMIZATION_LEVEL = 0; IPHONEOS_DEPLOYMENT_TARGET = 17.0; ONLY_ACTIVE_ARCH = YES; SDKROOT = iphoneos; SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)"; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = Debug; };
-		I00000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; ENABLE_NS_ASSERTIONS = NO; GCC_C_LANGUAGE_STANDARD = gnu17; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_COMPILATION_MODE = wholemodule; VALIDATE_PRODUCT = YES; }; name = Release; };
-		I00000000000000000000007 /* CloudDebug */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = dwarf; ENABLE_TESTABILITY = YES; GCC_C_LANGUAGE_STANDARD = gnu17; GCC_OPTIMIZATION_LEVEL = 0; IPHONEOS_DEPLOYMENT_TARGET = 17.0; ONLY_ACTIVE_ARCH = YES; SDKROOT = iphoneos; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = CloudDebug; };
-		I00000000000000000000008 /* CloudRelease */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; ENABLE_NS_ASSERTIONS = NO; GCC_C_LANGUAGE_STANDARD = gnu17; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_COMPILATION_MODE = wholemodule; VALIDATE_PRODUCT = YES; }; name = CloudRelease; };
-		I00000000000000000000003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_ENTITLEMENTS = aro/aro.local.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = aro/Resources/Info.plist; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel"; INFOPLIST_KEY_UILaunchScreen_Generation = YES; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.3.1; OTHER_LDFLAGS = "-lsqlite3"; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
-		I00000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_ENTITLEMENTS = aro/aro.local.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = aro/Resources/Info.plist; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel"; INFOPLIST_KEY_UILaunchScreen_Generation = YES; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.3.1; OTHER_LDFLAGS = "-lsqlite3"; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
-		I00000000000000000000009 /* CloudDebug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_ENTITLEMENTS = aro/aro.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = aro/Resources/Info.plist; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel"; INFOPLIST_KEY_UILaunchScreen_Generation = YES; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.3.1; OTHER_LDFLAGS = "-lsqlite3"; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG ARO_CLOUDKIT_ENABLED $(inherited)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = CloudDebug; };
-		I0000000000000000000000A /* CloudRelease */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_ENTITLEMENTS = aro/aro.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = aro/Resources/Info.plist; INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel"; INFOPLIST_KEY_UILaunchScreen_Generation = YES; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.3.1; OTHER_LDFLAGS = "-lsqlite3"; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SWIFT_ACTIVE_COMPILATION_CONDITIONS = "ARO_CLOUDKIT_ENABLED $(inherited)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = CloudRelease; };
-		I00000000000000000000005 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aroTests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/aro.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/aro"; }; name = Debug; };
-		I00000000000000000000006 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aroTests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/aro.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/aro"; }; name = Release; };
-		I0000000000000000000000B /* CloudDebug */ = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aroTests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/aro.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/aro"; }; name = CloudDebug; };
-		I0000000000000000000000C /* CloudRelease */ = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aroTests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/aro.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/aro"; }; name = CloudRelease; };
-		I10000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = aro; INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown"; INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.xunbo.aro; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.3.1; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp; PRODUCT_NAME = "$(TARGET_NAME)"; REGISTER_APP_GROUPS = YES; SDKROOT = watchos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "watchos watchsimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 4; WATCHOS_DEPLOYMENT_TARGET = 10.0; }; name = Debug; };
-		I10000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = aro; INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown"; INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.xunbo.aro; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.3.1; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp; PRODUCT_NAME = "$(TARGET_NAME)"; REGISTER_APP_GROUPS = YES; SDKROOT = watchos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "watchos watchsimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 4; WATCHOS_DEPLOYMENT_TARGET = 10.0; }; name = Release; };
-		I10000000000000000000003 /* CloudDebug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = aro; INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown"; INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.xunbo.aro; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.3.1; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp; PRODUCT_NAME = "$(TARGET_NAME)"; REGISTER_APP_GROUPS = YES; SDKROOT = watchos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "watchos watchsimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 4; WATCHOS_DEPLOYMENT_TARGET = 10.0; }; name = CloudDebug; };
-		I10000000000000000000004 /* CloudRelease */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = aro; INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown"; INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.xunbo.aro; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.3.1; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp; PRODUCT_NAME = "$(TARGET_NAME)"; REGISTER_APP_GROUPS = YES; SDKROOT = watchos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "watchos watchsimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 4; WATCHOS_DEPLOYMENT_TARGET = 10.0; }; name = CloudRelease; };
-		I20000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = aroWatch/Widget/Info.plist; INFOPLIST_KEY_CFBundleDisplayName = aro; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.3.1; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp.widget; PRODUCT_NAME = "$(TARGET_NAME)"; REGISTER_APP_GROUPS = YES; SDKROOT = watchos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "watchos watchsimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 4; WATCHOS_DEPLOYMENT_TARGET = 10.0; }; name = Debug; };
-		I20000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = aroWatch/Widget/Info.plist; INFOPLIST_KEY_CFBundleDisplayName = aro; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.3.1; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp.widget; PRODUCT_NAME = "$(TARGET_NAME)"; REGISTER_APP_GROUPS = YES; SDKROOT = watchos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "watchos watchsimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 4; WATCHOS_DEPLOYMENT_TARGET = 10.0; }; name = Release; };
-		I20000000000000000000003 /* CloudDebug */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = aroWatch/Widget/Info.plist; INFOPLIST_KEY_CFBundleDisplayName = aro; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.3.1; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp.widget; PRODUCT_NAME = "$(TARGET_NAME)"; REGISTER_APP_GROUPS = YES; SDKROOT = watchos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "watchos watchsimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 4; WATCHOS_DEPLOYMENT_TARGET = 10.0; }; name = CloudDebug; };
-		I20000000000000000000004 /* CloudRelease */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = aroWatch/Widget/Info.plist; INFOPLIST_KEY_CFBundleDisplayName = aro; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 1.3.1; PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp.widget; PRODUCT_NAME = "$(TARGET_NAME)"; REGISTER_APP_GROUPS = YES; SDKROOT = watchos; SKIP_INSTALL = YES; SUPPORTED_PLATFORMS = "watchos watchsimulator"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 4; WATCHOS_DEPLOYMENT_TARGET = 10.0; }; name = CloudRelease; };
+		I00000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		I00000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		I00000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = aro/aro.local.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PU53BZC6D3;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = aro/Resources/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.3.2;
+				OTHER_LDFLAGS = "-lsqlite3";
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		I00000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = aro/aro.local.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PU53BZC6D3;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = aro/Resources/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.3.2;
+				OTHER_LDFLAGS = "-lsqlite3";
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		I00000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aroTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/aro.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/aro";
+			};
+			name = Debug;
+		};
+		I00000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aroTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/aro.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/aro";
+			};
+			name = Release;
+		};
+		I00000000000000000000007 /* CloudDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = CloudDebug;
+		};
+		I00000000000000000000008 /* CloudRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = CloudRelease;
+		};
+		I00000000000000000000009 /* CloudDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = aro/aro.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PU53BZC6D3;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = aro/Resources/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.3.2;
+				OTHER_LDFLAGS = "-lsqlite3";
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG ARO_CLOUDKIT_ENABLED $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = CloudDebug;
+		};
+		I0000000000000000000000A /* CloudRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = aro/aro.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PU53BZC6D3;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = aro/Resources/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.3.2;
+				OTHER_LDFLAGS = "-lsqlite3";
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "ARO_CLOUDKIT_ENABLED $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = CloudRelease;
+		};
+		I0000000000000000000000B /* CloudDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aroTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/aro.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/aro";
+			};
+			name = CloudDebug;
+		};
+		I0000000000000000000000C /* CloudRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aroTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/aro.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/aro";
+			};
+			name = CloudRelease;
+		};
+		I10000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PU53BZC6D3;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = aroWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.3.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		I10000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PU53BZC6D3;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = aroWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.3.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		I10000000000000000000003 /* CloudDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PU53BZC6D3;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = aroWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.3.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = CloudDebug;
+		};
+		I10000000000000000000004 /* CloudRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PU53BZC6D3;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = aroWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.3.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = CloudRelease;
+		};
+		I20000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PU53BZC6D3;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = aroWatch/Widget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = aro;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.3.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		I20000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PU53BZC6D3;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = aroWatch/Widget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = aro;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.3.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		I20000000000000000000003 /* CloudDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PU53BZC6D3;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = aroWatch/Widget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = aro;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.3.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = CloudDebug;
+		};
+		I20000000000000000000004 /* CloudRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = aroWatch/AROWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PU53BZC6D3;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = aroWatch/Widget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = aro;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.3.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.xunbo.aro.watchkitapp.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = CloudRelease;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		H00000000000000000000001 = {isa = XCConfigurationList; buildConfigurations = (I00000000000000000000001, I00000000000000000000002, I00000000000000000000007, I00000000000000000000008); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		H00000000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (I00000000000000000000003, I00000000000000000000004, I00000000000000000000009, I0000000000000000000000A); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		H00000000000000000000003 = {isa = XCConfigurationList; buildConfigurations = (I00000000000000000000005, I00000000000000000000006, I0000000000000000000000B, I0000000000000000000000C); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		H10000000000000000000001 /* Build configuration list for PBXNativeTarget "ARO Watch App" */ = {isa = XCConfigurationList; buildConfigurations = (I10000000000000000000001 /* Debug */, I10000000000000000000002 /* Release */, I10000000000000000000003 /* CloudDebug */, I10000000000000000000004 /* CloudRelease */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
-		H20000000000000000000001 /* Build configuration list for PBXNativeTarget "ARO Watch Widget Extension" */ = {isa = XCConfigurationList; buildConfigurations = (I20000000000000000000001 /* Debug */, I20000000000000000000002 /* Release */, I20000000000000000000003 /* CloudDebug */, I20000000000000000000004 /* CloudRelease */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		H00000000000000000000001 /* Build configuration list for PBXProject "aro" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				I00000000000000000000001 /* Debug */,
+				I00000000000000000000002 /* Release */,
+				I00000000000000000000007 /* CloudDebug */,
+				I00000000000000000000008 /* CloudRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		H00000000000000000000002 /* Build configuration list for PBXNativeTarget "aro" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				I00000000000000000000003 /* Debug */,
+				I00000000000000000000004 /* Release */,
+				I00000000000000000000009 /* CloudDebug */,
+				I0000000000000000000000A /* CloudRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		H00000000000000000000003 /* Build configuration list for PBXNativeTarget "aroTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				I00000000000000000000005 /* Debug */,
+				I00000000000000000000006 /* Release */,
+				I0000000000000000000000B /* CloudDebug */,
+				I0000000000000000000000C /* CloudRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		H10000000000000000000001 /* Build configuration list for PBXNativeTarget "ARO Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				I10000000000000000000001 /* Debug */,
+				I10000000000000000000002 /* Release */,
+				I10000000000000000000003 /* CloudDebug */,
+				I10000000000000000000004 /* CloudRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		H20000000000000000000001 /* Build configuration list for PBXNativeTarget "ARO Watch Widget Extension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				I20000000000000000000001 /* Debug */,
+				I20000000000000000000002 /* Release */,
+				I20000000000000000000003 /* CloudDebug */,
+				I20000000000000000000004 /* CloudRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 	};
-	rootObject = E00000000000000000000001;
+	rootObject = E00000000000000000000001 /* Project object */;
 }

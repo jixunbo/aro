@@ -37,6 +37,8 @@ aro 使用新的 Bundle ID 身份，不能覆盖升级现有的 Traceon/Companio
 
 Apple Watch 电量也必须使用配对真机测试。iPhone 无法通过公开 API 直接读取手表电量；手表不可达时，设备页和快捷指令只能使用带时间戳的最近缓存。watchOS 后台刷新时间由系统决定，不能保证固定间隔。
 
-复杂功能只显示 Watch App 写入 App Group 的最近快照，不会自行读取或轮询电池。添加到活动表盘可带来额外的 watchOS 刷新机会，但不能承诺精确的刷新周期。
+复杂功能平时显示 App Group 中的最近快照；当 WidgetKit 授予新的 Timeline 刷新机会时，Widget Extension 会在手表本地读取一次电量并更新快照。它没有计时器、持续轮询或网络请求。添加到活动表盘可带来更多系统刷新机会，但不能承诺精确的刷新周期。
+
+Watch App 仅在界面处于可交互前台时每五分钟采样，单次读取结束后立即关闭电量监控；后台 App 刷新的 preferred interval 为一小时。aro 的 Watch App 明确关闭 Always On display，放下手腕后不会为了显示电量页而继续保持常亮。
 
 详细的真机验收与耗电测量步骤见 [TESTING.md](TESTING.md)。

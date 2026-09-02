@@ -2,9 +2,9 @@ import Foundation
 
 /// Shared persistence for the watch app and its WidgetKit extension.
 ///
-/// The watch app remains the only component that samples the battery. The
-/// widget reads this latest locally persisted value without starting its own
-/// monitoring loop.
+/// The watch app and system-budgeted widget timeline refreshes can each take a
+/// short-lived sample. Both persist through this newest-timestamp-wins store;
+/// neither leaves battery monitoring enabled between reads.
 enum WatchSnapshotStore {
     static let appGroupIdentifier = "group.com.xunbo.traceon.watch"
     // Keep the original kind stable so an installed complication survives the

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct WatchContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var reporter: WatchBatteryService
 
     var body: some View {
@@ -23,8 +24,13 @@ struct WatchContentView: View {
             .font(.caption2)
             .foregroundStyle(reporter.isReachable ? .green : .secondary)
         }
-        .onAppear { reporter.startForegroundUpdates() }
-        .onDisappear { reporter.stopForegroundUpdates() }
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            if phase == .active {
+                reporter.startForegroundUpdates()
+            } else {
+                reporter.stopForegroundUpdates()
+            }
+        }
     }
 
     private var gaugeColor: Color {
