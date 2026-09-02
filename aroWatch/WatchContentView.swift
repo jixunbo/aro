@@ -23,6 +23,10 @@ struct WatchContentView: View {
             )
             .font(.caption2)
             .foregroundStyle(reporter.isReachable ? .green : .secondary)
+
+            Text(versionLabel)
+                .font(.system(size: 9, weight: .regular, design: .rounded))
+                .foregroundStyle(.tertiary)
         }
         .onChange(of: scenePhase, initial: true) { _, phase in
             if phase == .active {
@@ -38,6 +42,12 @@ struct WatchContentView: View {
         if level < 20 { return .red }
         if level < 40 { return .orange }
         return .green
+    }
+
+    private var versionLabel: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+        return "v\(version) (\(build))"
     }
 }
 

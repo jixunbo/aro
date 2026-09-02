@@ -32,6 +32,8 @@ aro（Everything Around You）是一款隐私优先的 iOS + watchOS App：在 i
 
 如果表盘编辑器中没有 `aro 电量` 或 `aro 轨迹`：确认手表系统为 watchOS 10 或更新版本，并且是从配对 iPhone 的 `aro` scheme 安装了完整的 Watch App（其中包含 `ARO Watch Widget Extension`），而不是只安装 iOS App。先在手表上打开一次 aro，再退出表盘编辑器并重新进入；复杂功能只会出现在支持相应 accessory family 的表盘位置。`aro 轨迹` 当前只支持圆形位置。仍未出现时，重新从 Xcode 安装 Watch App 与 Widget Extension，检查两个 watch target 都使用同一个 App Group，并确认 Widget Extension 的 bundle identifier 为 `com.xunbo.aro.watchkitapp.widget`。模拟器只能验证编译，不能验证复杂功能是否出现在已配对手表的表盘编辑器中。
 
+Watch App 主界面底部显示实际安装包的营销版本与构建号，例如 `v1.4.0 (1)`，用于真机安装和功耗对照时确认版本。
+
 `aro 轨迹` 不会在 Apple Watch 上再次开启定位。iPhone 把当天轨迹压缩成少量归一化路线点和累计距离，通过已有的 WatchConnectivity application context 机会同步到手表，再写入 Watch App Group 给 WidgetKit 使用。普通前台启动会立即尝试同步；如果 WatchConnectivity 会话此前已经激活，后台继续记录时会节流更新。Core Location 单独触发的冷启动不会因此额外激活 WatchConnectivity，因此轨迹复杂功能不是逐点实时流，系统也可能合并或延迟跨设备传输。
 
 aro 使用新的 Bundle ID 身份，不能覆盖升级现有的 Traceon/Companio 安装；旧 App 的容器、权限、UserDefaults 和轨迹数据库不会自动出现在 aro 中。需要保留历史时，请先在旧 App 导出 GPX/GeoJSON，再在 aro 中导入。新 App 内部仍使用 `Application Support/traceon/tracks.sqlite3`，这是数据库文件名兼容性约定，不代表跨 Bundle ID 自动迁移。
