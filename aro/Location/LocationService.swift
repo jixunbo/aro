@@ -23,6 +23,7 @@ final class LocationService: NSObject, ObservableObject {
     @Published var mode: TrackingMode {
         didSet {
             UserDefaults.standard.set(mode.rawValue, forKey: Keys.mode)
+            cancelEcoBurst()
             configureDetailManager()
             if isTrackingEnabled {
                 restartDetailUpdates()
@@ -39,6 +40,13 @@ final class LocationService: NSObject, ObservableObject {
     private var isStarted = false
     private var detailUpdatesPaused = false
     private var isMotionUpdating = false
+    private var ecoBurstStartedAt: Date?
+    private var ecoBurstBestLocation: CLLocation?
+    private var ecoBurstTimeoutTask: Task<Void, Never>?
+
+    private static let ecoBurstDurationNanoseconds: UInt64 = 8_000_000_000
+    private static let ecoBurstTargetAccuracy: CLLocationAccuracy = 65
+    private static let ecoBurstFreshnessTolerance: TimeInterval = 5
 
     private enum Keys {
         static let enabled = "tracking.enabled"
@@ -126,6 +134,7 @@ final class LocationService: NSObject, ObservableObject {
         detailUpdatesPaused = false
         wakeManager.stopMonitoringSignificantLocationChanges()
         wakeManager.stopMonitoringVisits()
+        cancelEcoBurst()
         detailManager.stopUpdatingLocation()
         stopMotionUpdates()
     }
@@ -161,6 +170,78 @@ final class LocationService: NSObject, ObservableObject {
         configureDetailManager()
         detailManager.startUpdatingLocation()
         if mode != .eco { startMotionUpdates() }
+    }
+
+    /// Eco mode leaves standard updates off between system wake events. A wake starts
+    /// a short burst and stores only a fresh, reasonably accurate standard-location fix.
+    private func startEcoBurst() {
+        guard isTrackingEnabled,
+              mode == .eco,
+              ecoBurstStartedAt == nil,
+              authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse
+        else { return }
+
+        ecoBurstStartedAt = .now
+        ecoBurstBestLocation = nil
+        detailManager.stopUpdatingLocation()
+        configureDetailManager()
+        detailManager.distanceFilter = kCLDistanceFilterNone
+        detailManager.pausesLocationUpdatesAutomatically = false
+        detailManager.startUpdatingLocation()
+
+        ecoBurstTimeoutTask?.cancel()
+        ecoBurstTimeoutTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: Self.ecoBurstDurationNanoseconds)
+            guard !Task.isCancelled else { return }
+            self?.finishEcoBurst()
+        }
+    }
+
+    private func consumeEcoBurst(_ locations: [CLLocation]) {
+        guard let startedAt = ecoBurstStartedAt else { return }
+        let earliestTimestamp = startedAt.addingTimeInterval(-Self.ecoBurstFreshnessTolerance)
+        let now = Date()
+
+        for location in locations {
+            guard location.horizontalAccuracy >= 0,
+                  location.horizontalAccuracy <= TrackingMode.eco.maximumAcceptedAccuracy,
+                  location.timestamp >= earliestTimestamp,
+                  abs(location.timestamp.timeIntervalSince(now)) < 30,
+                  CLLocationCoordinate2DIsValid(location.coordinate)
+            else { continue }
+
+            if ecoBurstBestLocation == nil || location.horizontalAccuracy < ecoBurstBestLocation!.horizontalAccuracy {
+                ecoBurstBestLocation = location
+            }
+        }
+
+        if let best = ecoBurstBestLocation,
+           best.horizontalAccuracy <= Self.ecoBurstTargetAccuracy {
+            finishEcoBurst()
+        }
+    }
+
+    private func finishEcoBurst() {
+        guard ecoBurstStartedAt != nil else { return }
+        let bestLocation = ecoBurstBestLocation
+        ecoBurstStartedAt = nil
+        ecoBurstBestLocation = nil
+        ecoBurstTimeoutTask?.cancel()
+        ecoBurstTimeoutTask = nil
+        detailManager.stopUpdatingLocation()
+        configureDetailManager()
+
+        guard isTrackingEnabled, mode == .eco, let bestLocation else { return }
+        consume([bestLocation], source: "standard")
+    }
+
+    private func cancelEcoBurst() {
+        guard ecoBurstStartedAt != nil || ecoBurstTimeoutTask != nil else { return }
+        ecoBurstStartedAt = nil
+        ecoBurstBestLocation = nil
+        ecoBurstTimeoutTask?.cancel()
+        ecoBurstTimeoutTask = nil
+        detailManager.stopUpdatingLocation()
     }
 
     private func startMotionUpdates() {
@@ -253,38 +334,41 @@ extension LocationService: @preconcurrency CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        consume(locations, source: manager === wakeManager ? "significant" : "standard")
         if manager === wakeManager {
-            resumeDetailUpdatesAfterLowPowerWake()
+            if mode == .eco {
+                startEcoBurst()
+            } else {
+                resumeDetailUpdatesAfterLowPowerWake()
+            }
+            return
+        }
+
+        if mode == .eco {
+            consumeEcoBurst(locations)
+        } else {
+            consume(locations, source: "standard")
         }
     }
 
     func locationManager(_ manager: CLLocationManager, didVisit visit: CLVisit) {
         let isDeparture = visit.departureDate != .distantFuture
-        let timestamp = isDeparture ? visit.departureDate : visit.arrivalDate
-        let location = CLLocation(
-            coordinate: visit.coordinate,
-            altitude: 0,
-            horizontalAccuracy: visit.horizontalAccuracy,
-            verticalAccuracy: -1,
-            timestamp: timestamp
-        )
-        consume([location], source: "visit")
-        if isDeparture {
+        if mode == .eco {
+            startEcoBurst()
+        } else if isDeparture {
             resumeDetailUpdatesAfterLowPowerWake()
         }
     }
 
     func locationManagerDidPauseLocationUpdates(_ manager: CLLocationManager) {
-        guard manager === detailManager else { return }
+        guard manager === detailManager, mode != .eco else { return }
         detailUpdatesPaused = true
         stopMotionUpdates()
     }
 
     func locationManagerDidResumeLocationUpdates(_ manager: CLLocationManager) {
-        guard manager === detailManager else { return }
+        guard manager === detailManager, mode != .eco else { return }
         detailUpdatesPaused = false
-        if mode != .eco { startMotionUpdates() }
+        startMotionUpdates()
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
