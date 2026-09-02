@@ -77,6 +77,13 @@ final class WatchBatteryService: NSObject, ObservableObject {
         }
     }
 
+    private func receiveTrackComplication(_ payload: [String: Any]) {
+        guard let snapshot = TrackComplicationSnapshot(payload: payload) else { return }
+        if WatchSnapshotStore.saveTrack(snapshot) {
+            WidgetCenter.shared.reloadTimelines(ofKind: WatchSnapshotStore.trackWidgetKind)
+        }
+    }
+
     private func sampleBattery(completion: @escaping (BatterySnapshot?) -> Void) {
         batteryReadCompletions.append(completion)
         guard !batteryReadScheduled else { return }
@@ -116,12 +123,19 @@ extension WatchBatteryService: WCSessionDelegate {
     ) {
         Task { @MainActor in
             self.isReachable = session.isReachable
+            if activationState == .activated, !session.receivedApplicationContext.isEmpty {
+                self.receiveTrackComplication(session.receivedApplicationContext)
+            }
             self.refreshAndSend()
         }
     }
 
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
         Task { @MainActor in self.isReachable = session.isReachable }
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+        Task { @MainActor in self.receiveTrackComplication(applicationContext) }
     }
 
     nonisolated func session(
