@@ -36,6 +36,31 @@ final class TrackMathTests: XCTestCase {
         XCTAssertFalse(TrackMath.shouldAccept(duplicate, after: previous, mode: .balanced, now: now.addingTimeInterval(30)))
     }
 
+    func testEcoModeUsesHighQualityFixesOnlyForEventBursts() {
+        XCTAssertFalse(TrackingMode.eco.usesContinuousUpdates)
+        XCTAssertEqual(TrackingMode.eco.desiredAccuracy, kCLLocationAccuracyNearestTenMeters)
+        XCTAssertEqual(TrackingMode.eco.maximumAcceptedAccuracy, 150)
+
+        let now = Date()
+        let acceptable = location(latitude: 52.52, longitude: 13.405, date: now, accuracy: 120)
+        let tooInaccurate = location(latitude: 52.52, longitude: 13.405, date: now, accuracy: 180)
+        XCTAssertTrue(TrackMath.shouldAccept(acceptable, after: nil, mode: .eco, now: now))
+        XCTAssertFalse(TrackMath.shouldAccept(tooInaccurate, after: nil, mode: .eco, now: now))
+    }
+
+    func testBalancedModeUsesHighQualityLowFrequencyContinuousUpdates() {
+        XCTAssertTrue(TrackingMode.balanced.usesContinuousUpdates)
+        XCTAssertEqual(TrackingMode.balanced.desiredAccuracy, kCLLocationAccuracyNearestTenMeters)
+        XCTAssertEqual(TrackingMode.balanced.distanceFilter, 75)
+        XCTAssertEqual(TrackingMode.balanced.maximumAcceptedAccuracy, 100)
+
+        let now = Date()
+        let acceptable = location(latitude: 52.52, longitude: 13.405, date: now, accuracy: 80)
+        let tooInaccurate = location(latitude: 52.52, longitude: 13.405, date: now, accuracy: 120)
+        XCTAssertTrue(TrackMath.shouldAccept(acceptable, after: nil, mode: .balanced, now: now))
+        XCTAssertFalse(TrackMath.shouldAccept(tooInaccurate, after: nil, mode: .balanced, now: now))
+    }
+
     func testTrackComplicationSnapshotNormalizesAndSplitsLongGap() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
