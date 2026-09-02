@@ -9,6 +9,8 @@ struct AROBatteryWidgetEntry: TimelineEntry {
 }
 
 struct AROBatteryWidgetProvider: TimelineProvider {
+    private static let batterySamplingDelay: TimeInterval = 1
+
     func placeholder(in context: Context) -> AROBatteryWidgetEntry {
         AROBatteryWidgetEntry(date: .now, snapshot: nil)
     }
@@ -18,6 +20,12 @@ struct AROBatteryWidgetProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<AROBatteryWidgetEntry>) -> Void) {
+        if !WatchSnapshotStore.shouldSampleBattery() {
+            let entry = AROBatteryWidgetEntry(date: .now, snapshot: WatchSnapshotStore.load())
+            completion(Timeline(entries: [entry], policy: .after(Date(timeIntervalSinceNow: 30 * 60))))
+            return
+        }
+
         loadFreshSnapshot { freshSnapshot in
             if let freshSnapshot {
                 WatchSnapshotStore.save(freshSnapshot)
@@ -37,7 +45,7 @@ struct AROBatteryWidgetProvider: TimelineProvider {
             let device = WKInterfaceDevice.current()
             device.isBatteryMonitoringEnabled = true
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.batterySamplingDelay) {
                 let rawLevel = device.batteryLevel
                 defer { device.isBatteryMonitoringEnabled = false }
 

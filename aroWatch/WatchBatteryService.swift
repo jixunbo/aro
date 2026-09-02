@@ -7,6 +7,7 @@ import WidgetKit
 final class WatchBatteryService: NSObject, ObservableObject {
     static let shared = WatchBatteryService()
     private static let foregroundRefreshInterval: TimeInterval = 5 * 60
+    private static let batterySamplingDelay: TimeInterval = 1
 
     @Published private(set) var snapshot: BatterySnapshot?
     @Published private(set) var isReachable = false
@@ -92,7 +93,7 @@ final class WatchBatteryService: NSObject, ObservableObject {
         let device = WKInterfaceDevice.current()
         device.isBatteryMonitoringEnabled = true
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.batterySamplingDelay) {
             let rawLevel = device.batteryLevel
             let snapshot: BatterySnapshot?
 

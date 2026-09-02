@@ -30,6 +30,13 @@ enum WatchSnapshotStore {
         return snapshot
     }
 
+    /// Avoids an immediate second WidgetKit read overwriting a just-sampled
+    /// foreground value with a temporarily stale system reading.
+    static func shouldSampleBattery(now: Date = .now, minimumAge: TimeInterval = 60) -> Bool {
+        guard let snapshot = load() else { return true }
+        return now.timeIntervalSince(snapshot.updatedAt) >= minimumAge
+    }
+
     /// Persists only newer snapshots and reports whether the widget's displayed
     /// values changed. A timestamp-only update is still stored, but does not
     /// require a timeline reload.
