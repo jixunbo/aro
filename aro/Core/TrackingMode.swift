@@ -19,9 +19,9 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .eco: "约 500 米级，适合全天城市足迹"
-        case .balanced: "约 100 米级，推荐日常使用"
-        case .precise: "约 25 米级，轨迹更完整"
+        case .eco: "事件唤醒后短暂精确定位，最低功耗"
+        case .balanced: "约 75 米间隔，高质量定位，推荐日常使用"
+        case .precise: "约 25 米间隔，轨迹更完整"
         case .workout: "高精度连续记录，耗电较高"
         }
     }
@@ -37,9 +37,7 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
 
     var desiredAccuracy: CLLocationAccuracy {
         switch self {
-        case .eco: kCLLocationAccuracyKilometer
-        case .balanced: kCLLocationAccuracyHundredMeters
-        case .precise: kCLLocationAccuracyNearestTenMeters
+        case .eco, .balanced, .precise: kCLLocationAccuracyNearestTenMeters
         case .workout: kCLLocationAccuracyBest
         }
     }
@@ -47,7 +45,7 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
     var distanceFilter: CLLocationDistance {
         switch self {
         case .eco: 500
-        case .balanced: 100
+        case .balanced: 75
         case .precise: 25
         case .workout: 8
         }
@@ -55,8 +53,8 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
 
     var maximumAcceptedAccuracy: CLLocationAccuracy {
         switch self {
-        case .eco: 1_500
-        case .balanced: 350
+        case .eco: 150
+        case .balanced: 100
         case .precise: 100
         case .workout: 65
         }
@@ -65,4 +63,3 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
     var usesContinuousUpdates: Bool { self != .eco }
     var allowsAutomaticPausing: Bool { self != .workout }
 }
-

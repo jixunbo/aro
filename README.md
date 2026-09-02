@@ -5,7 +5,9 @@ aro（Everything Around You）是一款隐私优先的 iOS + watchOS App：在 i
 ## 功能
 
 - 四档定位模式：极省电、均衡、精确、运动
-- App 休眠或被系统回收后，通过显著位置变化与到访事件继续记录
+- 极省电模式平时关闭标准 GPS，在显著位置变化/到访事件唤醒后短暂获取一个质量较好的标准定位点
+- 均衡模式使用高质量定位但降低采样密度；显著位置变化和到访坐标只负责唤醒，不直接画进轨迹
+- App 休眠或被系统回收后，通过显著位置变化与到访事件继续恢复记录
 - 今日轨迹、历史日历、足迹总览和距离统计
 - GPX 与 GeoJSON 导入/导出
 - 本地 SQLite/WAL 存储，适合长期积累大量坐标
@@ -32,13 +34,13 @@ aro（Everything Around You）是一款隐私优先的 iOS + watchOS App：在 i
 
 如果表盘编辑器中没有 `aro 电量` 或 `aro 轨迹`：确认手表系统为 watchOS 10 或更新版本，并且是从配对 iPhone 的 `aro` scheme 安装了完整的 Watch App（其中包含 `ARO Watch Widget Extension`），而不是只安装 iOS App。先在手表上打开一次 aro，再退出表盘编辑器并重新进入；复杂功能只会出现在支持相应 accessory family 的表盘位置。`aro 轨迹` 当前只支持圆形位置。仍未出现时，重新从 Xcode 安装 Watch App 与 Widget Extension，检查两个 watch target 都使用同一个 App Group，并确认 Widget Extension 的 bundle identifier 为 `com.xunbo.aro.watchkitapp.widget`。模拟器只能验证编译，不能验证复杂功能是否出现在已配对手表的表盘编辑器中。
 
-Watch App 主界面底部显示实际安装包的营销版本与构建号，例如 `v1.4.3 (1)`，用于真机安装和功耗对照时确认版本。
+Watch App 主界面底部显示实际安装包的营销版本与构建号，例如 `v1.5.0 (1)`，用于真机安装和功耗对照时确认版本。
 
 `aro 轨迹` 不会在 Apple Watch 上再次开启定位。iPhone 把当天轨迹压缩成少量归一化路线点和累计距离，通过已有的 WatchConnectivity application context 机会同步到手表，再写入 Watch App Group 给 WidgetKit 使用。普通前台启动会立即尝试同步；如果 WatchConnectivity 会话此前已经激活，后台继续记录时会节流更新。Core Location 单独触发的冷启动不会因此额外激活 WatchConnectivity，因此轨迹复杂功能不是逐点实时流，系统也可能合并或延迟跨设备传输。
 
 aro 使用新的 Bundle ID 身份，不能覆盖升级现有的 Traceon/Companio 安装；旧 App 的容器、权限、UserDefaults 和轨迹数据库不会自动出现在 aro 中。需要保留历史时，请先在旧 App 导出 GPX/GeoJSON，再在 aro 中导入。新 App 内部仍使用 `Application Support/traceon/tracks.sqlite3`，这是数据库文件名兼容性约定，不代表跨 Bundle ID 自动迁移。
 
-后台轨迹必须在真机、锁屏、步行/驾车等不同场景下持续测试。iOS 会根据系统压力、定位设置和信号环境调度事件，因此任何后台方案都不保证逐点连续。
+后台轨迹必须在真机、锁屏、步行/驾车等不同场景下持续测试。iOS 会根据系统压力、定位设置和信号环境调度事件，因此任何后台方案都不保证逐点连续。极省电模式尤其依赖系统提供显著位置变化/到访唤醒；如果短暂定位窗口内拿不到足够好的位置，aro 会宁可跳过该点，也不会把粗糙的唤醒坐标直接连进路线。
 
 Apple Watch 电量也必须使用配对真机测试。iPhone 无法通过公开 API 直接读取手表电量；手表不可达时，设备页和快捷指令只能使用带时间戳的最近缓存。watchOS 后台刷新时间由系统决定，不能保证固定间隔。
 
