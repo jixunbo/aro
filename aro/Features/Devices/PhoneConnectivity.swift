@@ -4,6 +4,8 @@ import WatchConnectivity
 @MainActor
 final class PhoneConnectivity: NSObject, ObservableObject {
     static let shared = PhoneConnectivity()
+    private static let trackPublishInterval: TimeInterval = 5 * 60
+    private static let trackDistanceThreshold: Double = 250
 
     @Published private(set) var activationState: WCSessionActivationState = .notActivated
     @Published private(set) var isWatchAppInstalled = false
@@ -14,6 +16,8 @@ final class PhoneConnectivity: NSObject, ObservableObject {
     private var activationInProgress = false
     private var activationWaiters: [UUID: CheckedContinuation<Bool, Never>] = [:]
     private var pendingRequests: [UUID: CheckedContinuation<BatterySnapshot?, Never>] = [:]
+    private var pendingTrackSnapshot: TrackComplicationSnapshot?
+    private var lastPublishedTrackSnapshot: TrackComplicationSnapshot?
 
     private override init() {
         super.init()
@@ -37,6 +41,13 @@ final class PhoneConnectivity: NSObject, ObservableObject {
     func appBecameActive() {
         activate()
         refreshSessionState()
+    }
+
+    /// Queues the latest route summary for the Watch face complication.
+    /// This never activates WatchConnectivity on its own, preserving Core Location cold-launch isolation.
+    func publishTrackComplication(points: [TrackPoint], force: Bool = false) {
+        pendingTrackSnapshot = TrackMath.trackComplicationSnapshot(of: points)
+        flushTrackComplication(force: force)
     }
 
     func freshestSnapshot(timeoutSeconds: UInt64 = 3) async -> BatterySnapshot? {
@@ -125,6 +136,38 @@ final class PhoneConnectivity: NSObject, ObservableObject {
         receive(session.receivedApplicationContext)
     }
 
+    private func flushTrackComplication(force: Bool) {
+        guard let session,
+              session.activationState == .activated,
+              session.isWatchAppInstalled,
+              let snapshot = pendingTrackSnapshot else {
+            return
+        }
+
+        if !force, let previous = lastPublishedTrackSnapshot {
+            let elapsed = snapshot.updatedAt.timeIntervalSince(previous.updatedAt)
+            let distanceDelta = abs(snapshot.distanceMeters - previous.distanceMeters)
+            let dayChanged = !Calendar.autoupdatingCurrent.isDate(snapshot.dayStart, inSameDayAs: previous.dayStart)
+            let routeStarted = previous.segments.isEmpty && !snapshot.segments.isEmpty
+            guard dayChanged
+                    || routeStarted
+                    || elapsed >= Self.trackPublishInterval
+                    || distanceDelta >= Self.trackDistanceThreshold else {
+                return
+            }
+        }
+
+        let payload = snapshot.payload
+        guard !payload.isEmpty else { return }
+        do {
+            try session.updateApplicationContext(payload)
+            lastPublishedTrackSnapshot = snapshot
+            pendingTrackSnapshot = nil
+        } catch {
+            lastError = error.localizedDescription
+        }
+    }
+
     private func startActivationIfNeeded(force: Bool = false) {
         guard let session, !activationInProgress else { return }
         guard session.activationState != .activated else { return }
@@ -153,6 +196,7 @@ extension PhoneConnectivity: WCSessionDelegate {
             self.lastError = error?.localizedDescription
             if activationState == .activated {
                 self.ingestReceivedApplicationContext(from: session)
+                self.flushTrackComplication(force: true)
             }
             self.refreshSessionState()
             self.finishActivationWaiters(activated: activationState == .activated)
@@ -176,7 +220,10 @@ extension PhoneConnectivity: WCSessionDelegate {
     }
 
     nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
-        Task { @MainActor in self.refreshSessionState() }
+        Task { @MainActor in
+            self.refreshSessionState()
+            self.flushTrackComplication(force: true)
+        }
     }
 
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
