@@ -57,12 +57,13 @@ enum TrackMath {
         now: Date = .now,
         calendar: Calendar = .autoupdatingCurrent
     ) -> TrackComplicationSnapshot {
-        let sourceSegments = routeSegments(points).suffix(4)
+        let todayPoints = points.filter { calendar.isDate($0.timestamp, inSameDayAs: now) }
+        let sourceSegments = routeSegments(todayPoints).suffix(4)
         let sampledSegments = sourceSegments.map { downsample($0, maximum: 8) }
         let projected = projectedSegments(sampledSegments)
 
         return TrackComplicationSnapshot(
-            distanceMeters: distance(of: points),
+            distanceMeters: distance(of: todayPoints),
             segments: projected,
             updatedAt: now,
             dayStart: calendar.startOfDay(for: now)
