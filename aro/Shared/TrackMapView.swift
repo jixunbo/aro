@@ -6,6 +6,8 @@ struct TrackMapView: UIViewRepresentable {
     var showsUserLocation = false
     var overview = false
 
+    private static let maximumPointMarkers = 500
+
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIView(context: Context) -> MKMapView {
@@ -31,11 +33,16 @@ struct TrackMapView: UIViewRepresentable {
         context.coordinator.lastSignature = signature
         context.coordinator.lastCount = points.count
         map.removeOverlays(map.overlays)
+        let previousPointAnnotations = map.annotations.compactMap { $0 as? TrackPointAnnotation }
+        map.removeAnnotations(previousPointAnnotations)
         context.coordinator.clearInspection(on: map)
 
         let segments = makeSegments(points)
-        context.coordinator.displayedPoints = segments.filter { $0.count > 1 }.flatMap { $0 }
+        let displayedPoints = segments.flatMap { $0 }
+        context.coordinator.displayedPoints = displayedPoints
         context.coordinator.overview = overview
+        let markerPoints = TrackMath.downsample(displayedPoints, maximum: Self.maximumPointMarkers)
+        map.addAnnotations(markerPoints.map(TrackPointAnnotation.init))
         for segment in segments where segment.count > 1 {
             let polyline = MKPolyline(coordinates: segment.map(\.coordinate), count: segment.count)
             map.addOverlay(polyline)
@@ -126,6 +133,22 @@ struct TrackMapView: UIViewRepresentable {
         }
 
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            if annotation is TrackPointAnnotation {
+                let identifier = "track-point"
+                let view = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
+                    ?? MKAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+                view.annotation = annotation
+                view.frame = CGRect(x: 0, y: 0, width: 8, height: 8)
+                view.layer.cornerRadius = 4
+                view.layer.borderWidth = 1
+                view.layer.borderColor = UIColor.systemCyan.withAlphaComponent(0.9).cgColor
+                view.backgroundColor = UIColor.white.withAlphaComponent(0.9)
+                view.canShowCallout = false
+                view.collisionMode = .none
+                view.displayPriority = .required
+                return view
+            }
+
             guard annotation is InspectedTrackPointAnnotation else { return nil }
             let identifier = "inspected-track-point"
             let view = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) as? MKMarkerAnnotationView
@@ -173,6 +196,15 @@ struct TrackMapView: UIViewRepresentable {
             formatter.dateFormat = format
             return formatter
         }
+    }
+}
+
+private final class TrackPointAnnotation: NSObject, MKAnnotation {
+    let coordinate: CLLocationCoordinate2D
+
+    init(point: TrackPoint) {
+        coordinate = point.coordinate
+        super.init()
     }
 }
 
