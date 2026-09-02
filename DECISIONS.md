@@ -6,7 +6,7 @@
 
 **Reason:** Installed iPhone, Watch, and Widget builds must be distinguishable during testing and distribution, especially when validating fixes that require reinstalling the Watch App.
 
-**Implications:** A code or behavior change is not considered delivery-ready until the version has been reviewed and updated. Documentation-only edits may retain the current version when they do not alter the shipped product. The Watch energy and complication refresh fixes advance the project from `1.3.1` to `1.3.2`.
+**Implications:** A code or behavior change is not considered delivery-ready until the version has been reviewed and updated. Documentation-only edits may retain the current version when they do not alter the shipped product. The Watch energy and complication refresh fixes advanced the project from `1.3.1` to `1.3.2`; adding the track complication advances the backward-compatible feature version to `1.4.0`.
 
 ## Local-only persistence (superseded)
 
@@ -108,7 +108,7 @@ This earlier decision applied while the product was being renamed without changi
 
 **Reason:** Opportunistic Watch battery snapshots need to be ingested without requiring the Devices tab to have been opened, while adding watch battery functionality must not meaningfully increase background-location energy cost or turn a location relaunch into device communication work.
 
-**Implications:** Session activation and connectivity callbacks may accept opportunistic application-context state but must not send live requests. The Devices tab and App Intent own explicit live requests. The watch performs its own system-scheduled background sampling on watchOS. CloudKit follows the same cold-launch isolation principle: a launch identified as Core Location-triggered skips cloud-engine startup.
+**Implications:** Session activation and connectivity callbacks may accept opportunistic application-context state but must not send live battery requests. The Devices tab and App Intent own explicit live requests. The watch performs its own system-scheduled background sampling on watchOS. CloudKit follows the same cold-launch isolation principle: a launch identified as Core Location-triggered skips cloud-engine startup. Track-complication publication is allowed only through the already-existing WatchConnectivity session and never activates that session from a location-only cold launch.
 
 ## Latest timestamped watch snapshot
 
@@ -124,7 +124,15 @@ This earlier decision applied while the product was being renamed without changi
 
 **Reason:** The complication must remain useful when current watchOS releases decline to deliver requested Watch App background refreshes. WidgetKit's separately budgeted timeline execution is the reliable opportunity to sample the same local device for complication display. The fallback remains local, system-triggered, and short-lived, without a timer, cloud path, iPhone polling path, or fabricated value.
 
-**Implications:** Battery monitoring is enabled only during a one-shot read and disabled immediately afterward in both the Watch App and Widget Extension. Watch App foreground sampling runs every five minutes only while `scenePhase` is active, persists newer timestamps locally, and suppresses unchanged WatchConnectivity application-context writes. Autonomous watch refreshes and WidgetKit timeline refreshes do not send unsolicited `sendMessage` calls that could wake the iPhone; only an explicit iPhone request receives a live reply. The Widget extension can advance the shared Watch snapshot without advancing the iPhone cache until WatchConnectivity next publishes from the Watch App. The original WidgetKit kind string stays stable so an installed complication survives the aro display-name rename. The one-hour preferred app refresh and the complication's 30-minute requested timeline refresh remain system-controlled and may be deferred or throttled. The Watch App disables Always On display because its battery dashboard has no continuous-display use case.
+**Implications:** Battery monitoring is enabled only during a one-shot read and disabled immediately afterward in both the Watch App and Widget Extension. Watch App foreground sampling runs every five minutes only while `scenePhase` is active, persists newer timestamps locally, and suppresses unchanged WatchConnectivity application-context writes. Autonomous watch refreshes and WidgetKit timeline refreshes do not send unsolicited `sendMessage` calls that could wake the iPhone; only an explicit iPhone request receives a live reply. The Widget extension can advance the shared Watch snapshot without advancing the iPhone cache until WatchConnectivity next publishes from the Watch App. The original WidgetKit kind string stays stable so an installed complication survives the aro display-name rename. The one-hour preferred app refresh and the complication's 30-minute requested timeline refresh remain system-controlled and may be deferred or throttled. The Watch App disables Always On display because its battery dashboard has no continuous-display use case. The circular battery presentation uses an Ultra-style gauge while the existing non-circular families remain available.
+
+## iPhone-owned track snapshot for the Watch face
+
+**Decision:** Add a second WidgetKit complication kind, `AROTrackWidget`, for an accessory-circular “aro 轨迹” complication. The iPhone derives a compact display snapshot from today's local `TrackPoint` history: cumulative distance plus normalized route geometry, keeping at most the latest four display segments and downsampling each to at most eight points. The watch does not start a second location recorder. The iPhone sends this snapshot with `WCSession.updateApplicationContext`; the watch stores the newest snapshot in the existing Watch App Group and reloads only the track complication when its visible data changes.
+
+**Reason:** The selected design needs the shape of the user's actual iPhone-recorded route on the watch face, but duplicating Core Location recording on Apple Watch would increase energy use and create a second source of truth. A compact application-context snapshot reuses the existing companion channel and keeps SQLite on iPhone as the authoritative track store.
+
+**Implications:** Foreground iPhone activation can publish immediately. While the same WatchConnectivity session remains activated in the background, route updates are opportunistically throttled to five minutes or 250 metres of additional distance, with a first-route/new-day update allowed immediately. `publishTrackComplication` never activates WatchConnectivity by itself, so a Core Location-only cold launch still performs no incidental watch startup. Delivery is therefore eventual rather than point-by-point real time and may be coalesced by watchOS. The snapshot is scoped to the iPhone's current local day; the Watch store hides an old-day route and the Widget timeline schedules a day-boundary refresh. This path is independent of CloudKit and works in Local builds.
 
 ## Freshness and retryable WatchConnectivity activation
 
@@ -132,4 +140,4 @@ This earlier decision applied while the product was being renamed without changi
 
 **Reason:** A newer opportunistic Watch sample can already be available when the app starts, a Shortcut runs, or a Devices refresh begins, and failed activation must not permanently disable later explicit refreshes.
 
-**Implications:** Reachable sessions still receive an explicit live request; unreachable sessions return the newest cache available after context ingestion. Passive activation never sends a live message and remains excluded from Core Location-triggered cold launches.
+**Implications:** Reachable sessions still receive an explicit live request; unreachable sessions return the newest cache available after context ingestion. Passive activation never sends a live battery message and remains excluded from Core Location-triggered cold launches.

@@ -37,6 +37,52 @@ struct BatterySnapshot: Codable, Equatable, Sendable {
     }
 }
 
+struct TrackComplicationPoint: Codable, Equatable, Sendable {
+    let x: Double
+    let y: Double
+
+    init(x: Double, y: Double) {
+        self.x = min(max(x, 0), 1)
+        self.y = min(max(y, 0), 1)
+    }
+}
+
+struct TrackComplicationSegment: Codable, Equatable, Sendable {
+    let points: [TrackComplicationPoint]
+}
+
+struct TrackComplicationSnapshot: Codable, Equatable, Sendable {
+    let distanceMeters: Double
+    let segments: [TrackComplicationSegment]
+    let updatedAt: Date
+    let dayStart: Date
+
+    init(
+        distanceMeters: Double,
+        segments: [TrackComplicationSegment],
+        updatedAt: Date = .now,
+        dayStart: Date
+    ) {
+        self.distanceMeters = max(0, distanceMeters)
+        self.segments = segments.filter { !$0.points.isEmpty }
+        self.updatedAt = updatedAt
+        self.dayStart = dayStart
+    }
+
+    init?(payload: [String: Any]) {
+        guard let data = payload[PayloadKey.trackComplicationSnapshot] as? Data,
+              let snapshot = try? JSONDecoder().decode(Self.self, from: data) else {
+            return nil
+        }
+        self = snapshot
+    }
+
+    var payload: [String: Any] {
+        guard let data = try? JSONEncoder().encode(self) else { return [:] }
+        return [PayloadKey.trackComplicationSnapshot: data]
+    }
+}
+
 enum BatteryChargeState: String, Codable, Sendable {
     case unknown
     case unplugged
@@ -67,6 +113,7 @@ enum PayloadKey {
     static let state = "batteryState"
     static let updatedAt = "updatedAt"
     static let deviceName = "deviceName"
+    static let trackComplicationSnapshot = "trackComplicationSnapshot"
     static let command = "command"
     static let requestBattery = "requestBattery"
 }

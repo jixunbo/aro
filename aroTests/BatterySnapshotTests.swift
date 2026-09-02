@@ -17,6 +17,23 @@ final class BatterySnapshotTests: XCTestCase {
         XCTAssertEqual(snapshot.deviceName, "测试手表")
     }
 
+    func testTrackComplicationPayloadRoundTrip() throws {
+        let snapshot = TrackComplicationSnapshot(
+            distanceMeters: 2_860,
+            segments: [
+                TrackComplicationSegment(points: [
+                    TrackComplicationPoint(x: 0.1, y: 0.2),
+                    TrackComplicationPoint(x: 0.8, y: 0.7)
+                ])
+            ],
+            updatedAt: Date(timeIntervalSince1970: 1_700_000_100),
+            dayStart: Date(timeIntervalSince1970: 1_699_920_000)
+        )
+
+        let decoded = try XCTUnwrap(TrackComplicationSnapshot(payload: snapshot.payload))
+        XCTAssertEqual(decoded, snapshot)
+    }
+
     func testBatteryStoreKeepsNewestSnapshot() async {
         await MainActor.run {
             let suiteName = "BatterySnapshotTests.\(UUID().uuidString)"
