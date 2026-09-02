@@ -214,7 +214,7 @@ final class LocationService: NSObject, ObservableObject {
             }
             insertedAny = true
         }
-        if insertedAny, UIApplication.shared.applicationState == .active {
+        if insertedAny {
             TrackRepository.shared.didInsertPoint()
         }
     }

@@ -27,6 +27,10 @@ struct RootView: View {
         .onChange(of: repository.todayPoints) { _, points in
             PhoneConnectivity.shared.publishTrackComplication(points: points, force: scenePhase == .active)
         }
+        .onChange(of: repository.isLoading) { wasLoading, isLoading in
+            guard wasLoading, !isLoading, scenePhase == .active else { return }
+            PhoneConnectivity.shared.publishTrackComplication(points: repository.todayPoints, force: true)
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 repository.refresh()
