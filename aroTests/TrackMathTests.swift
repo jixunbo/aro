@@ -36,6 +36,43 @@ final class TrackMathTests: XCTestCase {
         XCTAssertFalse(TrackMath.shouldAccept(duplicate, after: previous, mode: .balanced, now: now.addingTimeInterval(30)))
     }
 
+    func testTrackComplicationSnapshotNormalizesAndSplitsLongGap() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = Date(timeIntervalSince1970: 1_735_732_800) // 2025-01-01 12:00 UTC
+        let points = [
+            point(latitude: 50.0000, longitude: 8.0000, date: now.addingTimeInterval(-3_600)),
+            point(latitude: 50.0010, longitude: 8.0010, date: now.addingTimeInterval(-3_480)),
+            point(latitude: 50.0100, longitude: 8.0100, date: now.addingTimeInterval(-10_000)),
+            point(latitude: 50.0110, longitude: 8.0110, date: now.addingTimeInterval(-9_880))
+        ].sorted { $0.timestamp < $1.timestamp }
+
+        let snapshot = TrackMath.trackComplicationSnapshot(of: points, now: now, calendar: calendar)
+
+        XCTAssertEqual(snapshot.segments.count, 2)
+        XCTAssertGreaterThan(snapshot.distanceMeters, 0)
+        for point in snapshot.segments.flatMap(\.points) {
+            XCTAssertTrue((0...1).contains(point.x))
+            XCTAssertTrue((0...1).contains(point.y))
+        }
+    }
+
+    func testTrackComplicationSnapshotIgnoresPreviousDay() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = Date(timeIntervalSince1970: 1_735_732_800)
+        let yesterday = now.addingTimeInterval(-24 * 60 * 60)
+        let points = [
+            point(latitude: 50.0, longitude: 8.0, date: yesterday),
+            point(latitude: 50.001, longitude: 8.001, date: yesterday.addingTimeInterval(120))
+        ]
+
+        let snapshot = TrackMath.trackComplicationSnapshot(of: points, now: now, calendar: calendar)
+
+        XCTAssertEqual(snapshot.distanceMeters, 0)
+        XCTAssertTrue(snapshot.segments.isEmpty)
+    }
+
     func testGPXAndGeoJSONExport() throws {
         let points = [point(latitude: 52.52, longitude: 13.405, date: Date(timeIntervalSince1970: 1_700_000_000))]
         let gpx = String(decoding: TrackExport.gpx(points: points, name: "A & B"), as: UTF8.self)
