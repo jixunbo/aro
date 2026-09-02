@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 import WatchKit
 import WidgetKit
@@ -140,7 +141,7 @@ private struct UltraBatteryCircularView: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(.secondary.opacity(0.22), lineWidth: 3.5)
+                .stroke(Color.white.opacity(0.22), lineWidth: 3.5)
 
             Circle()
                 .trim(from: 0, to: progress)
@@ -165,14 +166,14 @@ private struct UltraBatteryCircularView: View {
                     .minimumScaleFactor(0.75)
                 Text("%")
                     .font(.system(size: 7, weight: .bold, design: .rounded))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.white.opacity(0.65))
             }
         }
     }
 
     private func tickColor(at index: Int) -> Color {
         let tickProgress = Double(index + 1) / 24
-        return tickProgress <= progress ? accent.opacity(0.9) : .secondary.opacity(0.18)
+        return tickProgress <= progress ? accent.opacity(0.9) : Color.white.opacity(0.18)
     }
 }
 
