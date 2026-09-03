@@ -139,6 +139,10 @@ extension WatchBatteryService: WCSessionDelegate {
         Task { @MainActor in self.receiveTrackComplication(applicationContext) }
     }
 
+    nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+        Task { @MainActor in self.receiveTrackComplication(userInfo) }
+    }
+
     nonisolated func session(
         _ session: WCSession,
         didReceiveMessage message: [String: Any],
