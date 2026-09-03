@@ -25,6 +25,7 @@ final class LocationService: NSObject, ObservableObject {
             UserDefaults.standard.set(isTrackingEnabled, forKey: Keys.enabled)
             if isTrackingEnabled {
                 trackingStartedAt = .now
+                resetMovementGeometry()
                 UserDefaults.standard.set(trackingStartedAt.timeIntervalSince1970, forKey: Keys.startedAt)
                 lastError = nil
                 startTrackingIfAuthorized()
@@ -39,6 +40,7 @@ final class LocationService: NSObject, ObservableObject {
         didSet {
             guard mode != oldValue else { return }
             UserDefaults.standard.set(mode.rawValue, forKey: Keys.mode)
+            resetMovementGeometry()
             guard liveUpdatesTask != nil else { return }
             configureBackgroundDelivery()
             restartLiveUpdates()
@@ -52,6 +54,8 @@ final class LocationService: NSObject, ObservableObject {
     private var liveUpdatesGeneration = UUID()
     private var latestAcceptedPoint: TrackPoint?
     private var trackingStartedAt: Date
+    private var lastMovementLocation: CLLocation?
+    private var lastMovementBearing: CLLocationDirection?
 
     private enum Keys {
         static let enabled = "tracking.enabled"
@@ -214,6 +218,7 @@ final class LocationService: NSObject, ObservableObject {
         backgroundActivitySession = nil
         serviceSession?.invalidate()
         serviceSession = nil
+        resetMovementGeometry()
         currentActivity = "未知"
         engineState = "未开启"
     }
@@ -269,12 +274,20 @@ final class LocationService: NSObject, ObservableObject {
             previousForFilter = nil
         }
 
-        guard TrackMath.shouldRecordLiveLocation(
+        let observedTurnDegrees = update.stationary ? nil : advanceMovementGeometry(with: location)
+        let shouldRecord = TrackMath.shouldRecordLiveLocation(
             location,
             after: previousForFilter,
             mode: mode,
-            trackingStartedAt: trackingStartedAt
-        ) else {
+            trackingStartedAt: trackingStartedAt,
+            observedTurnDegrees: observedTurnDegrees
+        )
+
+        if update.stationary {
+            resetMovementGeometry(anchoredAt: location)
+        }
+
+        guard shouldRecord else {
             rejectedUpdateCount += 1
             return
         }
@@ -303,6 +316,43 @@ final class LocationService: NSObject, ObservableObject {
         lastSource = recordedPoint.source
         recordedUpdateCount += 1
         TrackRepository.shared.didInsertPoint()
+    }
+
+    /// Builds a coarse direction history from good live fixes so pedestrian turns can be retained
+    /// even when CLLocation.course is unavailable. Short/noisy movements don't advance the bearing.
+    private func advanceMovementGeometry(with location: CLLocation) -> CLLocationDirection? {
+        guard location.horizontalAccuracy >= 0,
+              location.horizontalAccuracy <= mode.maximumAcceptedAccuracy,
+              location.timestamp >= trackingStartedAt.addingTimeInterval(-1),
+              CLLocationCoordinate2DIsValid(location.coordinate)
+        else { return nil }
+
+        guard let previous = lastMovementLocation else {
+            lastMovementLocation = location
+            return nil
+        }
+        guard location.timestamp > previous.timestamp else { return nil }
+
+        let distance = previous.distance(from: location)
+        let previousAccuracy = previous.horizontalAccuracy >= 0 ? previous.horizontalAccuracy : 0
+        let movementFloor = max(8, max(previousAccuracy, location.horizontalAccuracy) * 0.5)
+        guard distance >= movementFloor else { return nil }
+
+        let interval = location.timestamp.timeIntervalSince(previous.timestamp)
+        if interval < 10 * 60, distance / interval > 100 {
+            return nil
+        }
+
+        let bearing = TrackMath.bearing(from: previous.coordinate, to: location.coordinate)
+        let turn = lastMovementBearing.map { TrackMath.headingDifference($0, bearing) }
+        lastMovementLocation = location
+        lastMovementBearing = bearing
+        return turn
+    }
+
+    private func resetMovementGeometry(anchoredAt location: CLLocation? = nil) {
+        lastMovementLocation = location
+        lastMovementBearing = nil
     }
 
     var sourceLabel: String {
