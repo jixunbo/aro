@@ -70,7 +70,7 @@ struct SettingsView: View {
                     Label(mode.title, systemImage: mode.symbol).tag(mode)
                 }
             }
-            LabeledContent("定位引擎", value: "iOS Live Updates")
+            LabeledContent("定位引擎", value: locationService.mode.engineLabel)
             LabeledContent("后台策略", value: locationService.backgroundDeliveryLabel)
             LabeledContent("运行状态", value: locationService.engineState)
             LabeledContent("当前活动", value: locationService.currentActivity)
@@ -121,7 +121,7 @@ struct SettingsView: View {
         } header: {
             Text("系统权限")
         } footer: {
-            Text("全天自动记录要求“始终”定位权限。极省电/均衡在连续稳定静止后会停止 Live Updates，改用持久化地理条件低功耗监控；离开静止范围后再恢复 Live Updates。精确/运动保持及时后台执行。")
+            Text("全天自动记录要求“始终”定位权限。极省电使用约 100 米距离触发的标准定位，系统确认静止后切到低功耗地理监控；均衡使用 Live Updates，并在稳定静止后切换地理监控。离开静止范围后恢复各自的定位引擎。精确/运动保持及时后台执行。")
         }
     }
 
@@ -218,7 +218,7 @@ struct SettingsView: View {
     private var aboutSection: some View {
         Section("关于") {
             LabeledContent("产品", value: "aro")
-            LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.0")
+            LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.2")
             Button("重新查看隐私引导") { hasCompletedOnboarding = false }
         }
     }
