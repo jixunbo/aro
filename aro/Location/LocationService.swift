@@ -16,6 +16,7 @@ final class LocationService: NSObject, ObservableObject {
     @Published private(set) var engineState = "未开启"
     @Published private(set) var isTrackingActive = false
     @Published private(set) var receivedUpdateCount = 0
+    @Published private(set) var locationUpdateCount = 0
     @Published private(set) var recordedUpdateCount = 0
     @Published private(set) var rejectedUpdateCount = 0
     @Published private(set) var lastHorizontalAccuracy: CLLocationAccuracy?
@@ -41,9 +42,11 @@ final class LocationService: NSObject, ObservableObject {
             guard mode != oldValue else { return }
             UserDefaults.standard.set(mode.rawValue, forKey: Keys.mode)
             resetMovementGeometry()
-            guard liveUpdatesTask != nil else { return }
-            configureBackgroundDelivery()
-            restartLiveUpdates()
+            resetIdleDetection()
+            guard liveUpdatesTask != nil || idleMonitorTask != nil || isIdleMonitorPersisted else { return }
+            Task { @MainActor [weak self] in
+                await self?.reconfigureActiveTrackingForModeChange()
+            }
         }
     }
 
@@ -52,19 +55,27 @@ final class LocationService: NSObject, ObservableObject {
     private var backgroundActivitySession: CLBackgroundActivitySession?
     private var liveUpdatesTask: Task<Void, Never>?
     private var liveUpdatesGeneration = UUID()
+    private var idleMonitor: CLMonitor?
+    private var idleMonitorTask: Task<Void, Never>?
+    private var idleMonitorGeneration = UUID()
     private var latestAcceptedPoint: TrackPoint?
     private var trackingStartedAt: Date
     private var lastMovementLocation: CLLocation?
     private var lastMovementBearing: CLLocationDirection?
+    private var idleDetectionStartedAt = Date.now
+    private var idleLocationWindow: [CLLocation] = []
     private var lastBackgroundRepositoryRefreshAt: Date?
 
     private static let backgroundRepositoryRefreshInterval: TimeInterval = 5 * 60
+    private static let idleMonitorName = "aro.idle-monitor"
+    private static let idleConditionIdentifier = "stationary-area"
 
     private enum Keys {
         static let enabled = "tracking.enabled"
         static let mode = "tracking.mode"
         static let startedAt = "tracking.startedAt"
         static let lastAcceptedSyncID = "tracking.lastAcceptedSyncID"
+        static let idleMonitorActive = "tracking.idleMonitorActive"
     }
 
     private override init() {
@@ -92,8 +103,6 @@ final class LocationService: NSObject, ObservableObject {
         lastRecordedAt = latestPoint?.timestamp
         lastSource = latestPoint?.source
 
-        // 1.x did not persist a modern live-update session boundary. On first 2.0 launch,
-        // start a new boundary instead of treating arbitrary cached legacy fixes as queued work.
         super.init()
 
         authorizationManager.delegate = self
@@ -102,11 +111,13 @@ final class LocationService: NSObject, ObservableObject {
             defaults.removeObject(forKey: Keys.lastAcceptedSyncID)
             latestAcceptedPoint = nil
         }
+        if !savedEnabled || !savedMode.usesIdleMonitoring {
+            defaults.removeObject(forKey: Keys.idleMonitorActive)
+        }
     }
 
-    /// Called from UIApplicationDelegate on every process launch. This is intentionally the only
-    /// launch-time service bootstrap: a Core Location background relaunch can immediately rejoin
-    /// the outstanding live/service sessions without also starting WatchConnectivity or CloudKit.
+    /// Called from UIApplicationDelegate on every process launch. Location is intentionally the
+    /// only launch-time subsystem so a CLMonitor or Live Updates relaunch stays power-isolated.
     func handleApplicationLaunch() {
         authorizationStatus = authorizationManager.authorizationStatus
         accuracyAuthorization = authorizationManager.accuracyAuthorization
@@ -123,6 +134,7 @@ final class LocationService: NSObject, ObservableObject {
         } else {
             clearTrackingAnchor()
             resetMovementGeometry()
+            resetIdleDetection()
         }
     }
 
@@ -159,13 +171,18 @@ final class LocationService: NSObject, ObservableObject {
     }
 
     var backgroundDeliveryLabel: String {
-        mode.requiresTimelyBackgroundDelivery ? "及时后台" : "系统节能调度"
+        mode.requiresTimelyBackgroundDelivery ? "及时后台" : "静止低功耗监控"
+    }
+
+    private var isIdleMonitorPersisted: Bool {
+        UserDefaults.standard.bool(forKey: Keys.idleMonitorActive)
     }
 
     private func beginNewTrackingSession() {
         trackingStartedAt = .now
         clearTrackingAnchor()
         resetMovementGeometry()
+        resetIdleDetection()
         UserDefaults.standard.set(trackingStartedAt.timeIntervalSince1970, forKey: Keys.startedAt)
     }
 
@@ -197,19 +214,21 @@ final class LocationService: NSObject, ObservableObject {
             engineState = authorizationStatus == .authorizedWhenInUse ? "等待始终定位权限" : "等待定位权限"
             return
         }
-        guard liveUpdatesTask == nil else { return }
+        guard liveUpdatesTask == nil, idleMonitorTask == nil else { return }
 
-        // The explicit Always session is the durable authorization intent for the feature.
-        // Core Location remembers the outstanding live/service sessions across suspension and
-        // system termination; recreating them immediately on launch rejoins queued delivery.
-        serviceSession = CLServiceSession(authorization: .always)
+        if serviceSession == nil {
+            serviceSession = CLServiceSession(authorization: .always)
+        }
         configureBackgroundDelivery()
-        startLiveUpdates()
+
+        if mode.usesIdleMonitoring, isIdleMonitorPersisted {
+            restoreIdleMonitoring()
+        } else {
+            UserDefaults.standard.removeObject(forKey: Keys.idleMonitorActive)
+            startLiveUpdates()
+        }
     }
 
-    /// Balanced and Eco intentionally do not hold CLBackgroundActivitySession. With Always
-    /// authorization, iOS may suspend aro, queue locations, and resume/relaunch it when delivery
-    /// is appropriate. Precise and Workout explicitly opt into timely background execution.
     private func configureBackgroundDelivery() {
         if mode.requiresTimelyBackgroundDelivery {
             if backgroundActivitySession == nil {
@@ -224,12 +243,15 @@ final class LocationService: NSObject, ObservableObject {
     private func startLiveUpdates() {
         guard isTrackingEnabled,
               authorizationStatus == .authorizedAlways,
-              liveUpdatesTask == nil else { return }
+              liveUpdatesTask == nil,
+              idleMonitorTask == nil else { return }
 
         let generation = UUID()
         liveUpdatesGeneration = generation
         let configuration = mode.liveConfiguration
+        resetIdleDetection()
         engineState = "等待定位"
+        currentActivity = "未知"
         isTrackingActive = true
 
         liveUpdatesTask = Task { @MainActor [weak self] in
@@ -240,7 +262,7 @@ final class LocationService: NSObject, ObservableObject {
                     self.consume(update)
                 }
             } catch is CancellationError {
-                // Expected when tracking is disabled or the user changes mode.
+                // Expected when tracking is disabled, mode changes, or idle monitoring takes over.
             } catch {
                 guard !Task.isCancelled else { return }
                 self.lastError = error.localizedDescription
@@ -261,16 +283,191 @@ final class LocationService: NSObject, ObservableObject {
         startLiveUpdates()
     }
 
+    private func stopLiveUpdatesForIdle() {
+        liveUpdatesGeneration = UUID()
+        liveUpdatesTask?.cancel()
+        liveUpdatesTask = nil
+        resetMovementGeometry()
+        resetIdleDetection()
+    }
+
+    private func reconfigureActiveTrackingForModeChange() async {
+        configureBackgroundDelivery()
+        if idleMonitorTask != nil || isIdleMonitorPersisted {
+            await leaveIdleMonitoringAndResumeLiveUpdates()
+        } else if liveUpdatesTask != nil {
+            restartLiveUpdates()
+        }
+    }
+
+    private func enterIdleMonitoring(center: CLLocationCoordinate2D) {
+        guard mode.usesIdleMonitoring,
+              isTrackingEnabled,
+              authorizationStatus == .authorizedAlways,
+              idleMonitorTask == nil else { return }
+
+        let generation = UUID()
+        idleMonitorGeneration = generation
+        engineState = "准备静止省电"
+        currentActivity = "静止"
+
+        idleMonitorTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let monitor = await self.getIdleMonitor()
+            guard self.idleMonitorGeneration == generation, !Task.isCancelled else { return }
+
+            await monitor.remove(Self.idleConditionIdentifier)
+            let condition = CLMonitor.CircularGeographicCondition(
+                center: center,
+                radius: self.mode.idleMonitorRadius
+            )
+            await monitor.add(condition, identifier: Self.idleConditionIdentifier, assuming: .satisfied)
+
+            guard self.idleMonitorGeneration == generation, !Task.isCancelled else {
+                await monitor.remove(Self.idleConditionIdentifier)
+                return
+            }
+
+            UserDefaults.standard.set(true, forKey: Keys.idleMonitorActive)
+            self.stopLiveUpdatesForIdle()
+            self.isTrackingActive = true
+            self.engineState = "静止省电监控"
+            self.currentActivity = "静止"
+
+            await self.listenForIdleMonitorEvents(monitor, generation: generation)
+        }
+    }
+
+    private func restoreIdleMonitoring() {
+        guard mode.usesIdleMonitoring, idleMonitorTask == nil else { return }
+        let generation = UUID()
+        idleMonitorGeneration = generation
+        engineState = "恢复静止监控"
+        isTrackingActive = true
+
+        idleMonitorTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let monitor = await self.getIdleMonitor()
+            guard self.idleMonitorGeneration == generation, !Task.isCancelled else { return }
+
+            let identifiers = await monitor.identifiers
+            guard identifiers.contains(Self.idleConditionIdentifier) else {
+                UserDefaults.standard.removeObject(forKey: Keys.idleMonitorActive)
+                self.idleMonitorTask = nil
+                self.isTrackingActive = false
+                self.startLiveUpdates()
+                return
+            }
+
+            self.engineState = "静止省电监控"
+            self.currentActivity = "静止"
+            await self.listenForIdleMonitorEvents(monitor, generation: generation)
+        }
+    }
+
+    private func getIdleMonitor() async -> CLMonitor {
+        if let idleMonitor { return idleMonitor }
+        let monitor = await CLMonitor(Self.idleMonitorName)
+        idleMonitor = monitor
+        return monitor
+    }
+
+    private func listenForIdleMonitorEvents(_ monitor: CLMonitor, generation: UUID) async {
+        do {
+            for try await event in await monitor.events {
+                guard idleMonitorGeneration == generation, !Task.isCancelled else { return }
+                guard event.identifier == Self.idleConditionIdentifier else { continue }
+
+                if event.authorizationDenied || event.authorizationDeniedGlobally || event.authorizationRestricted {
+                    await recoverFromIdleMonitor(monitor, generation: generation, message: "低功耗位置监控失去定位权限")
+                    return
+                }
+                if event.conditionLimitExceeded || event.conditionUnsupported || event.persistenceUnavailable
+                    || event.serviceSessionRequired || event.insufficientlyInUse {
+                    await recoverFromIdleMonitor(monitor, generation: generation, message: "低功耗位置监控不可用，已恢复 Live Updates")
+                    return
+                }
+
+                switch event.state {
+                case .unsatisfied:
+                    await wakeFromIdleMonitor(monitor, generation: generation)
+                    return
+                case .unmonitored:
+                    await recoverFromIdleMonitor(monitor, generation: generation, message: "低功耗位置监控已停止，已恢复 Live Updates")
+                    return
+                case .satisfied:
+                    engineState = "静止省电监控"
+                case .unknown:
+                    engineState = "确认静止范围"
+                @unknown default:
+                    break
+                }
+            }
+        } catch is CancellationError {
+            return
+        } catch {
+            await recoverFromIdleMonitor(monitor, generation: generation, message: error.localizedDescription)
+        }
+    }
+
+    private func wakeFromIdleMonitor(_ monitor: CLMonitor, generation: UUID) async {
+        guard idleMonitorGeneration == generation else { return }
+        await monitor.remove(Self.idleConditionIdentifier)
+        guard idleMonitorGeneration == generation else { return }
+        UserDefaults.standard.removeObject(forKey: Keys.idleMonitorActive)
+        idleMonitorTask = nil
+        resetMovementGeometry()
+        resetIdleDetection()
+        currentActivity = "移动"
+        engineState = "检测到移动"
+        configureBackgroundDelivery()
+        startLiveUpdates()
+    }
+
+    private func recoverFromIdleMonitor(_ monitor: CLMonitor, generation: UUID, message: String) async {
+        guard idleMonitorGeneration == generation else { return }
+        await monitor.remove(Self.idleConditionIdentifier)
+        guard idleMonitorGeneration == generation else { return }
+        UserDefaults.standard.removeObject(forKey: Keys.idleMonitorActive)
+        idleMonitorTask = nil
+        lastError = message
+        resetIdleDetection()
+        configureBackgroundDelivery()
+        startLiveUpdates()
+    }
+
+    private func leaveIdleMonitoringAndResumeLiveUpdates() async {
+        idleMonitorGeneration = UUID()
+        idleMonitorTask?.cancel()
+        idleMonitorTask = nil
+        UserDefaults.standard.removeObject(forKey: Keys.idleMonitorActive)
+        if let idleMonitor {
+            await idleMonitor.remove(Self.idleConditionIdentifier)
+        }
+        isTrackingActive = false
+        resetIdleDetection()
+        configureBackgroundDelivery()
+        startLiveUpdates()
+    }
+
     private func stopTracking() {
         liveUpdatesGeneration = UUID()
         liveUpdatesTask?.cancel()
         liveUpdatesTask = nil
+        idleMonitorGeneration = UUID()
+        idleMonitorTask?.cancel()
+        idleMonitorTask = nil
+        UserDefaults.standard.removeObject(forKey: Keys.idleMonitorActive)
+        if let idleMonitor {
+            Task { await idleMonitor.remove(Self.idleConditionIdentifier) }
+        }
         isTrackingActive = false
         backgroundActivitySession?.invalidate()
         backgroundActivitySession = nil
         serviceSession?.invalidate()
         serviceSession = nil
         resetMovementGeometry()
+        resetIdleDetection()
         currentActivity = "未知"
         engineState = "未开启"
     }
@@ -308,18 +505,28 @@ final class LocationService: NSObject, ObservableObject {
         if update.stationary {
             currentActivity = "静止"
             engineState = "系统静止休眠"
-            // Stationary diagnostics can arrive without a location. Always clear the prior
-            // movement bearing so motion after the sleep interval cannot inherit a stale turn.
             resetMovementGeometry()
         } else if update.locationUnavailable {
             engineState = "暂时无法定位"
         }
 
         guard let location = update.location else { return }
+        locationUpdateCount += 1
         lastHorizontalAccuracy = location.horizontalAccuracy
         if !update.stationary {
             currentActivity = "移动"
             engineState = "移动中"
+        }
+
+        let idleCenter: CLLocationCoordinate2D?
+        if update.stationary,
+           mode.usesIdleMonitoring,
+           location.horizontalAccuracy >= 0,
+           location.horizontalAccuracy <= mode.idleDetectionMaximumAccuracy,
+           CLLocationCoordinate2DIsValid(location.coordinate) {
+            idleCenter = location.coordinate
+        } else {
+            idleCenter = updateIdleDetection(with: location)
         }
 
         let previousForFilter: TrackPoint?
@@ -342,13 +549,18 @@ final class LocationService: NSObject, ObservableObject {
             resetMovementGeometry(anchoredAt: location)
         }
 
-        guard shouldRecord else {
+        if shouldRecord {
+            record(location)
+        } else {
             rejectedUpdateCount += 1
-            return
         }
 
-        // Generate the sync ID before inserting so the local recorder can persist a stable
-        // cross-process anchor without consulting arbitrary imported or remotely synced rows.
+        if let idleCenter {
+            enterIdleMonitoring(center: idleCenter)
+        }
+    }
+
+    private func record(_ location: CLLocation) {
         let point = TrackPoint(
             syncID: UUID().uuidString.lowercased(),
             timestamp: location.timestamp,
@@ -387,6 +599,27 @@ final class LocationService: NSObject, ObservableObject {
         notifyRepositoryOfRecordedPoint()
     }
 
+    private func updateIdleDetection(with location: CLLocation) -> CLLocationCoordinate2D? {
+        guard mode.usesIdleMonitoring,
+              location.timestamp >= idleDetectionStartedAt.addingTimeInterval(-1),
+              location.horizontalAccuracy >= 0,
+              location.horizontalAccuracy <= mode.idleDetectionMaximumAccuracy,
+              CLLocationCoordinate2DIsValid(location.coordinate) else { return nil }
+
+        idleLocationWindow.append(location)
+        let cutoff = location.timestamp.addingTimeInterval(-(mode.idleDetectionInterval + 60))
+        idleLocationWindow.removeAll { $0.timestamp < cutoff }
+        if idleLocationWindow.count > 256 {
+            idleLocationWindow.removeFirst(idleLocationWindow.count - 256)
+        }
+        return TrackMath.idleMonitorCenter(for: idleLocationWindow, mode: mode)
+    }
+
+    private func resetIdleDetection() {
+        idleDetectionStartedAt = .now
+        idleLocationWindow.removeAll(keepingCapacity: true)
+    }
+
     private func notifyRepositoryOfRecordedPoint() {
         let now = Date.now
         if UIApplication.shared.applicationState == .active {
@@ -403,8 +636,6 @@ final class LocationService: NSObject, ObservableObject {
         TrackRepository.shared.didInsertPoint()
     }
 
-    /// Builds a coarse direction history from good live fixes so pedestrian turns can be retained
-    /// even when CLLocation.course is unavailable. Short/noisy movements don't advance the bearing.
     private func advanceMovementGeometry(with location: CLLocation) -> CLLocationDirection? {
         guard location.horizontalAccuracy >= 0,
               location.horizontalAccuracy <= mode.maximumAcceptedAccuracy,
@@ -462,13 +693,11 @@ extension LocationService: @preconcurrency CLLocationManagerDelegate {
 
         if authorizationStatus == .authorizedAlways {
             if isTrackingEnabled, previousAuthorizationStatus != .authorizedAlways {
-                // A period without Always authorization cannot produce valid all-day recording.
-                // Start a fresh boundary so cached fixes from that permission gap are never imported.
                 beginNewTrackingSession()
             }
             lastError = nil
             startTrackingIfAuthorized()
-        } else if liveUpdatesTask != nil {
+        } else if liveUpdatesTask != nil || idleMonitorTask != nil || isIdleMonitorPersisted {
             stopTracking()
             if isTrackingEnabled {
                 engineState = authorizationStatus == .authorizedWhenInUse ? "等待始终定位权限" : "等待定位权限"
