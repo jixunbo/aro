@@ -256,6 +256,9 @@ final class LocationService: NSObject, ObservableObject {
         if update.stationary {
             currentActivity = "静止"
             engineState = "系统静止休眠"
+            // Stationary diagnostics can arrive without a location. Always clear the prior
+            // movement bearing so motion after the sleep interval cannot inherit a stale turn.
+            resetMovementGeometry()
         } else if update.locationUnavailable {
             engineState = "暂时无法定位"
         }
