@@ -19,8 +19,8 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .eco: "允许系统后台挂起，移动时稀疏保存"
-        case .balanced: "允许系统后台挂起，自适应保留转弯与约 55 米级轨迹"
+        case .eco: "静止后切换低功耗监控，移动时稀疏保存"
+        case .balanced: "静止后切换低功耗监控，自适应保留约 35 米级轨迹"
         case .precise: "保持及时后台更新，约 20 米级保存，轨迹更完整"
         case .workout: "保持及时健身级后台更新，优先保留完整运动轨迹"
         }
@@ -49,6 +49,51 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
         self == .precise || self == .workout
     }
 
+    /// Eco/Balanced can transition from Live Updates to a persistent CLMonitor geofence after
+    /// several minutes of high-quality, spatially stable fixes. Precise/Workout stay live.
+    var usesIdleMonitoring: Bool {
+        self == .eco || self == .balanced
+    }
+
+    var idleDetectionInterval: TimeInterval {
+        switch self {
+        case .eco: 3 * 60
+        case .balanced: 5 * 60
+        case .precise, .workout: .infinity
+        }
+    }
+
+    var idleDetectionRadius: CLLocationDistance {
+        switch self {
+        case .eco: 45
+        case .balanced: 30
+        case .precise, .workout: 0
+        }
+    }
+
+    var idleDetectionMaximumAccuracy: CLLocationAccuracy {
+        switch self {
+        case .eco: 60
+        case .balanced: 40
+        case .precise, .workout: 0
+        }
+    }
+
+    var idleMonitorRadius: CLLocationDistance {
+        switch self {
+        case .eco: 120
+        case .balanced: 60
+        case .precise, .workout: 0
+        }
+    }
+
+    var minimumIdleSamples: Int {
+        switch self {
+        case .eco, .balanced: 8
+        case .precise, .workout: .max
+        }
+    }
+
     /// Accuracy is a storage-quality gate, not a request to turn GPS hardware on.
     var maximumAcceptedAccuracy: CLLocationAccuracy {
         switch self {
@@ -63,7 +108,7 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
     var minimumRecordingDistance: CLLocationDistance {
         switch self {
         case .eco: 120
-        case .balanced: 55
+        case .balanced: 35
         case .precise: 20
         case .workout: 8
         }
@@ -73,7 +118,7 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
     var maximumRecordingInterval: TimeInterval {
         switch self {
         case .eco: 4 * 60
-        case .balanced: 2 * 60
+        case .balanced: 60
         case .precise: 45
         case .workout: 20
         }
@@ -82,7 +127,7 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
     var minimumTimedRecordingDistance: CLLocationDistance {
         switch self {
         case .eco: 40
-        case .balanced: 20
+        case .balanced: 12
         case .precise: 10
         case .workout: 5
         }
@@ -92,7 +137,7 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
     var minimumTurnDistance: CLLocationDistance {
         switch self {
         case .eco: 45
-        case .balanced: 18
+        case .balanced: 12
         case .precise: 10
         case .workout: 6
         }
