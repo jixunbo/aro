@@ -71,8 +71,16 @@ final class TrackDatabaseTests: XCTestCase {
             try? FileManager.default.removeItem(at: folder)
         }
 
+        let recordedID = "recorded-live-id"
         XCTAssertGreaterThan(
-            database?.insert(TrackPoint(timestamp: Date(timeIntervalSince1970: 1), latitude: 52.52, longitude: 13.405)) ?? 0,
+            database?.insert(
+                TrackPoint(
+                    syncID: recordedID,
+                    timestamp: Date(timeIntervalSince1970: 1),
+                    latitude: 52.52,
+                    longitude: 13.405
+                )
+            ) ?? 0,
             0
         )
         let suppliedID = "cloud-record-id"
@@ -90,9 +98,10 @@ final class TrackDatabaseTests: XCTestCase {
 
         let stored = try XCTUnwrap(database?.allPoints())
         XCTAssertEqual(stored.count, 2)
-        XCTAssertFalse(try XCTUnwrap(stored[0].syncID).isEmpty)
+        XCTAssertEqual(stored[0].syncID, recordedID)
         XCTAssertEqual(stored[1].syncID, suppliedID)
         XCTAssertEqual(Set(stored.compactMap(\.syncID)).count, 2)
+        XCTAssertEqual(database?.point(syncID: recordedID)?.id, stored[0].id)
     }
 
     func testCloudSyncBookkeepingSeparatesLocalAndRemotePoints() throws {
