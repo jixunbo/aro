@@ -18,11 +18,11 @@ enum TrackMath {
         return result
     }
 
-    /// Decides whether a live Core Location fix is useful route geometry.
+    /// Decides whether a delivered Core Location fix is useful route geometry.
     ///
-    /// Live Updates may deliver queued fixes after a background relaunch, so wall-clock age is
-    /// deliberately not used as a freshness gate. Instead, a fix must belong to the current
-    /// tracking session and be newer than the last point already persisted.
+    /// Live Updates and Standard location callbacks may deliver queued fixes after a background
+    /// relaunch, so wall-clock age is deliberately not used as a freshness gate. Instead, a fix
+    /// must belong to the current tracking session and be newer than the last persisted point.
     static func shouldRecordLiveLocation(
         _ location: CLLocation,
         after previous: TrackPoint?,
@@ -75,15 +75,16 @@ enum TrackMath {
         return false
     }
 
-    /// Returns a stable center only when recent good fixes prove the device has remained inside
-    /// the mode's idle radius for the complete idle-detection interval. The newest fix must be
-    /// fresh so a delayed batch from before a relaunch cannot immediately put a moving device to sleep.
+    /// Returns a stable center only when recent good fixes prove the device has remained in one
+    /// place for the complete idle interval. A robust median center plus a high inlier fraction
+    /// prevents one or two GPS spikes from keeping Balanced awake forever, while the first/last
+    /// cluster drift check prevents a slowly translating path from being mistaken for jitter.
     static func idleMonitorCenter(
         for locations: [CLLocation],
         mode: TrackingMode,
         now: Date = .now
     ) -> CLLocationCoordinate2D? {
-        guard mode.usesIdleMonitoring else { return nil }
+        guard mode.usesSpatialIdleDetection else { return nil }
 
         let usable = locations
             .filter {
@@ -101,18 +102,29 @@ enum TrackMath {
         let window = usable.filter { $0.timestamp >= cutoff }
         guard window.count >= mode.minimumIdleSamples,
               let oldest = window.first,
-              newest.timestamp.timeIntervalSince(oldest.timestamp) >= mode.idleDetectionInterval else {
+              newest.timestamp.timeIntervalSince(oldest.timestamp) >= mode.idleDetectionInterval,
+              let center = medianCoordinate(of: window) else {
             return nil
         }
 
-        let latitude = window.map(\.coordinate.latitude).reduce(0, +) / Double(window.count)
-        let longitude = window.map(\.coordinate.longitude).reduce(0, +) / Double(window.count)
-        let center = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-        let centerLocation = CLLocation(latitude: latitude, longitude: longitude)
+        let centerLocation = CLLocation(latitude: center.latitude, longitude: center.longitude)
+        let inlierCount = window.reduce(into: 0) { count, location in
+            if centerLocation.distance(from: location) <= mode.idleDetectionRadius {
+                count += 1
+            }
+        }
+        let requiredInliers = Int(ceil(Double(window.count) * mode.idleDetectionRequiredFraction))
+        guard inlierCount >= requiredInliers else { return nil }
 
-        guard window.allSatisfy({ centerLocation.distance(from: $0) <= mode.idleDetectionRadius }) else {
+        let clusterCount = max(3, window.count / 4)
+        guard let earlyCenter = medianCoordinate(of: Array(window.prefix(clusterCount))),
+              let lateCenter = medianCoordinate(of: Array(window.suffix(clusterCount))) else {
             return nil
         }
+        let drift = CLLocation(latitude: earlyCenter.latitude, longitude: earlyCenter.longitude)
+            .distance(from: CLLocation(latitude: lateCenter.latitude, longitude: lateCenter.longitude))
+        guard drift <= mode.idleDetectionMaximumCenterDrift else { return nil }
+
         return center
     }
 
@@ -169,6 +181,24 @@ enum TrackMath {
         guard previous.course >= 0, location.course >= 0 else { return false }
         if location.speed >= 0, location.speed < 0.5 { return false }
         return headingDifference(previous.course, location.course) >= threshold
+    }
+
+    private static func medianCoordinate(of locations: [CLLocation]) -> CLLocationCoordinate2D? {
+        guard !locations.isEmpty else { return nil }
+        let latitudes = locations.map(\.coordinate.latitude).sorted()
+        let longitudes = locations.map(\.coordinate.longitude).sorted()
+        return CLLocationCoordinate2D(
+            latitude: median(of: latitudes),
+            longitude: median(of: longitudes)
+        )
+    }
+
+    private static func median(of values: [Double]) -> Double {
+        let middle = values.count / 2
+        if values.count.isMultiple(of: 2) {
+            return (values[middle - 1] + values[middle]) / 2
+        }
+        return values[middle]
     }
 
     private static func routeSegments(_ points: [TrackPoint]) -> [[TrackPoint]] {
