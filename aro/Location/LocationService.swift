@@ -39,9 +39,9 @@ final class LocationService: NSObject, ObservableObject {
         didSet {
             guard mode != oldValue else { return }
             UserDefaults.standard.set(mode.rawValue, forKey: Keys.mode)
-            if liveUpdatesTask != nil {
-                restartLiveUpdates()
-            }
+            guard liveUpdatesTask != nil else { return }
+            configureBackgroundDelivery()
+            restartLiveUpdates()
         }
     }
 
@@ -73,9 +73,10 @@ final class LocationService: NSObject, ObservableObject {
         latestAcceptedPoint = latestPoint
         lastRecordedAt = latestPoint?.timestamp
         lastSource = latestPoint?.source
-        trackingStartedAt = savedStartedAt > 0
-            ? Date(timeIntervalSince1970: savedStartedAt)
-            : (savedEnabled ? latestPoint?.timestamp ?? .now : .now)
+
+        // 1.x did not persist a modern live-update session boundary. On first 2.0 launch,
+        // start a new boundary instead of treating arbitrary cached legacy fixes as queued work.
+        trackingStartedAt = savedStartedAt > 0 ? Date(timeIntervalSince1970: savedStartedAt) : .now
         super.init()
 
         authorizationManager.delegate = self
@@ -86,7 +87,7 @@ final class LocationService: NSObject, ObservableObject {
 
     /// Called from UIApplicationDelegate on every process launch. This is intentionally the only
     /// launch-time service bootstrap: a Core Location background relaunch can immediately rejoin
-    /// the outstanding live/background sessions without also starting WatchConnectivity or CloudKit.
+    /// the outstanding live/service sessions without also starting WatchConnectivity or CloudKit.
     func handleApplicationLaunch() {
         authorizationStatus = authorizationManager.authorizationStatus
         accuracyAuthorization = authorizationManager.accuracyAuthorization
@@ -125,6 +126,10 @@ final class LocationService: NSObject, ObservableObject {
         }
     }
 
+    var backgroundDeliveryLabel: String {
+        mode.requiresTimelyBackgroundDelivery ? "及时后台" : "系统节能调度"
+    }
+
     private func startTrackingIfAuthorized() {
         guard isTrackingEnabled else {
             engineState = "未开启"
@@ -141,12 +146,26 @@ final class LocationService: NSObject, ObservableObject {
         }
         guard liveUpdatesTask == nil else { return }
 
-        // Explicit sessions make the lifetime of aro's all-day tracking request deterministic.
-        // BackgroundActivitySession is retained across the feature lifetime; after a system
-        // termination, recreating it here rejoins the outstanding session before queued updates arrive.
+        // The explicit Always session is the durable authorization intent for the feature.
+        // Core Location remembers the outstanding live/service sessions across suspension and
+        // system termination; recreating them immediately on launch rejoins queued delivery.
         serviceSession = CLServiceSession(authorization: .always)
-        backgroundActivitySession = CLBackgroundActivitySession()
+        configureBackgroundDelivery()
         startLiveUpdates()
+    }
+
+    /// Balanced and Eco intentionally do not hold CLBackgroundActivitySession. With Always
+    /// authorization, iOS may suspend aro, queue locations, and resume/relaunch it when delivery
+    /// is appropriate. Precise and Workout explicitly opt into timely background execution.
+    private func configureBackgroundDelivery() {
+        if mode.requiresTimelyBackgroundDelivery {
+            if backgroundActivitySession == nil {
+                backgroundActivitySession = CLBackgroundActivitySession()
+            }
+        } else if let backgroundActivitySession {
+            backgroundActivitySession.invalidate()
+            self.backgroundActivitySession = nil
+        }
     }
 
     private func startLiveUpdates() {
@@ -219,11 +238,14 @@ final class LocationService: NSObject, ObservableObject {
         }
         if update.insufficientlyInUse {
             engineState = "后台定位不可用"
-            lastError = "当前后台定位会话不足以继续接收位置"
+            lastError = "当前定位模式没有足够的后台使用条件"
             return
         }
         if update.accuracyLimited {
             lastError = "精确位置已关闭，轨迹质量可能受影响"
+        }
+        if update.authorizationRequestInProgress {
+            engineState = "等待权限确认"
         }
 
         if update.stationary {
@@ -240,9 +262,16 @@ final class LocationService: NSObject, ObservableObject {
             engineState = "移动中"
         }
 
+        let previousForFilter: TrackPoint?
+        if let latestAcceptedPoint, latestAcceptedPoint.timestamp >= trackingStartedAt.addingTimeInterval(-1) {
+            previousForFilter = latestAcceptedPoint
+        } else {
+            previousForFilter = nil
+        }
+
         guard TrackMath.shouldRecordLiveLocation(
             location,
-            after: latestAcceptedPoint,
+            after: previousForFilter,
             mode: mode,
             trackingStartedAt: trackingStartedAt
         ) else {
