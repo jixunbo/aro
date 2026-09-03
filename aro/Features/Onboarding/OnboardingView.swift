@@ -15,7 +15,7 @@ struct OnboardingView: View {
                     pageView(
                         symbol: "point.topleft.down.to.point.bottomright.curvepath",
                         title: "把走过的路留下来",
-                        detail: "aro 在后台自动记录每天的路线，打开时再绘制地图。"
+                        detail: "aro 使用 iOS Live Updates 在后台记录路线；静止时系统会自动暂停定位更新，移动后自动恢复。"
                     ).tag(0)
                     pageView(
                         symbol: "lock.shield.fill",
@@ -36,14 +36,6 @@ struct OnboardingView: View {
                 }
                 .padding(.horizontal, 28)
 
-                if page == 2, locationService.authorizationStatus == .authorizedWhenInUse {
-                    Button("暂时以“使用 App 时”开始") {
-                        locationService.isTrackingEnabled = true
-                        isComplete = true
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                }
                 Spacer().frame(height: 12)
             }
         }
@@ -83,8 +75,8 @@ struct OnboardingView: View {
 
     private var permissionDetail: String {
         locationService.authorizationStatus == .authorizedWhenInUse
-            ? "下一步请选择“始终允许”。否则 App 被系统回收后可能无法继续自动记录。"
-            : "iOS 会分两次询问定位权限。aro 只在你开启记录后使用位置。"
+            ? "下一步请选择“始终允许”。aro 的全天自动记录只在获得“始终”定位权限后启动。"
+            : "iOS 会分阶段询问定位权限。aro 只在你开启记录后保持后台定位会话。"
     }
 
     private var buttonTitle: String {
