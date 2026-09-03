@@ -24,9 +24,7 @@ final class LocationService: NSObject, ObservableObject {
             guard isTrackingEnabled != oldValue else { return }
             UserDefaults.standard.set(isTrackingEnabled, forKey: Keys.enabled)
             if isTrackingEnabled {
-                trackingStartedAt = .now
-                resetMovementGeometry()
-                UserDefaults.standard.set(trackingStartedAt.timeIntervalSince1970, forKey: Keys.startedAt)
+                beginNewTrackingSession()
                 lastError = nil
                 startTrackingIfAuthorized()
             } else {
@@ -132,6 +130,12 @@ final class LocationService: NSObject, ObservableObject {
 
     var backgroundDeliveryLabel: String {
         mode.requiresTimelyBackgroundDelivery ? "及时后台" : "系统节能调度"
+    }
+
+    private func beginNewTrackingSession() {
+        trackingStartedAt = .now
+        resetMovementGeometry()
+        UserDefaults.standard.set(trackingStartedAt.timeIntervalSince1970, forKey: Keys.startedAt)
     }
 
     private func startTrackingIfAuthorized() {
@@ -374,10 +378,16 @@ final class LocationService: NSObject, ObservableObject {
 extension LocationService: @preconcurrency CLLocationManagerDelegate {
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         guard manager === authorizationManager else { return }
+        let previousAuthorizationStatus = authorizationStatus
         authorizationStatus = manager.authorizationStatus
         accuracyAuthorization = manager.accuracyAuthorization
 
         if authorizationStatus == .authorizedAlways {
+            if isTrackingEnabled, previousAuthorizationStatus != .authorizedAlways {
+                // A period without Always authorization cannot produce valid all-day recording.
+                // Start a fresh boundary so cached fixes from that permission gap are never imported.
+                beginNewTrackingSession()
+            }
             lastError = nil
             startTrackingIfAuthorized()
         } else if liveUpdatesTask != nil {
