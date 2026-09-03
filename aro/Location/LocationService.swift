@@ -29,6 +29,7 @@ final class LocationService: NSObject, ObservableObject {
                 startTrackingIfAuthorized()
             } else {
                 UserDefaults.standard.removeObject(forKey: Keys.startedAt)
+                clearTrackingAnchor()
                 stopTracking()
             }
         }
@@ -59,6 +60,7 @@ final class LocationService: NSObject, ObservableObject {
         static let enabled = "tracking.enabled"
         static let mode = "tracking.mode"
         static let startedAt = "tracking.startedAt"
+        static let lastAcceptedSyncID = "tracking.lastAcceptedSyncID"
     }
 
     private override init() {
@@ -67,23 +69,34 @@ final class LocationService: NSObject, ObservableObject {
         let savedEnabled = defaults.object(forKey: Keys.enabled) as? Bool ?? false
         let latestPoint = TrackDatabase.shared.latestPoint()
         let savedStartedAt = defaults.double(forKey: Keys.startedAt)
+        let sessionStart = savedStartedAt > 0 ? Date(timeIntervalSince1970: savedStartedAt) : .now
+        let savedAnchor = defaults.string(forKey: Keys.lastAcceptedSyncID)
+            .flatMap { TrackDatabase.shared.point(syncID: $0) }
 
         mode = savedMode
         isTrackingEnabled = savedEnabled
         authorizationStatus = authorizationManager.authorizationStatus
         accuracyAuthorization = authorizationManager.accuracyAuthorization
-        latestAcceptedPoint = latestPoint
+        trackingStartedAt = sessionStart
+        if let savedAnchor,
+           savedAnchor.timestamp >= sessionStart.addingTimeInterval(-1),
+           savedAnchor.timestamp <= Date.now.addingTimeInterval(60) {
+            latestAcceptedPoint = savedAnchor
+        } else {
+            latestAcceptedPoint = nil
+        }
         lastRecordedAt = latestPoint?.timestamp
         lastSource = latestPoint?.source
 
         // 1.x did not persist a modern live-update session boundary. On first 2.0 launch,
         // start a new boundary instead of treating arbitrary cached legacy fixes as queued work.
-        trackingStartedAt = savedStartedAt > 0 ? Date(timeIntervalSince1970: savedStartedAt) : .now
         super.init()
 
         authorizationManager.delegate = self
         if savedEnabled, savedStartedAt <= 0 {
             defaults.set(trackingStartedAt.timeIntervalSince1970, forKey: Keys.startedAt)
+            defaults.removeObject(forKey: Keys.lastAcceptedSyncID)
+            latestAcceptedPoint = nil
         }
     }
 
@@ -134,8 +147,23 @@ final class LocationService: NSObject, ObservableObject {
 
     private func beginNewTrackingSession() {
         trackingStartedAt = .now
+        clearTrackingAnchor()
         resetMovementGeometry()
         UserDefaults.standard.set(trackingStartedAt.timeIntervalSince1970, forKey: Keys.startedAt)
+    }
+
+    private func clearTrackingAnchor() {
+        latestAcceptedPoint = nil
+        UserDefaults.standard.removeObject(forKey: Keys.lastAcceptedSyncID)
+    }
+
+    private func persistTrackingAnchor(_ point: TrackPoint) {
+        latestAcceptedPoint = point
+        if let syncID = point.syncID {
+            UserDefaults.standard.set(syncID, forKey: Keys.lastAcceptedSyncID)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Keys.lastAcceptedSyncID)
+        }
     }
 
     private func startTrackingIfAuthorized() {
@@ -299,7 +327,20 @@ final class LocationService: NSObject, ObservableObject {
             return
         }
 
-        let point = TrackPoint(location: location, source: "live", activity: currentActivity)
+        // Generate the sync ID before inserting so the local recorder can persist a stable
+        // cross-process anchor without consulting arbitrary imported or remotely synced rows.
+        let point = TrackPoint(
+            syncID: UUID().uuidString.lowercased(),
+            timestamp: location.timestamp,
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude,
+            altitude: location.altitude,
+            horizontalAccuracy: location.horizontalAccuracy,
+            speed: location.speed,
+            course: location.course,
+            source: "live",
+            activity: currentActivity
+        )
         let rowID = TrackDatabase.shared.insert(point)
         guard rowID > 0 else {
             rejectedUpdateCount += 1
@@ -308,6 +349,7 @@ final class LocationService: NSObject, ObservableObject {
 
         let recordedPoint = TrackPoint(
             id: rowID,
+            syncID: point.syncID,
             timestamp: point.timestamp,
             latitude: point.latitude,
             longitude: point.longitude,
@@ -318,7 +360,7 @@ final class LocationService: NSObject, ObservableObject {
             source: point.source,
             activity: point.activity
         )
-        latestAcceptedPoint = recordedPoint
+        persistTrackingAnchor(recordedPoint)
         lastRecordedAt = recordedPoint.timestamp
         lastSource = recordedPoint.source
         recordedUpdateCount += 1
