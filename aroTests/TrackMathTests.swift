@@ -96,11 +96,11 @@ final class TrackMathTests: XCTestCase {
     func testIdleMonitorCenterAcceptsStableBalancedWindow() throws {
         let now = Date()
         let start = now.addingTimeInterval(-TrackingMode.balanced.idleDetectionInterval)
-        let samples = (0..<9).map { index in
+        let samples = (0..<13).map { index in
             location(
                 latitude: 52.5200 + Double(index % 3) * 0.00001,
                 longitude: 13.4050 + Double(index % 2) * 0.00001,
-                date: start.addingTimeInterval(Double(index) * TrackingMode.balanced.idleDetectionInterval / 8),
+                date: start.addingTimeInterval(Double(index) * TrackingMode.balanced.idleDetectionInterval / 12),
                 accuracy: 8,
                 speed: 0
             )
@@ -108,19 +108,57 @@ final class TrackMathTests: XCTestCase {
 
         let center = try XCTUnwrap(TrackMath.idleMonitorCenter(for: samples, mode: .balanced, now: now))
         XCTAssertEqual(center.latitude, 52.52001, accuracy: 0.00002)
-        XCTAssertEqual(center.longitude, 13.405005, accuracy: 0.00002)
+        XCTAssertEqual(center.longitude, 13.4050, accuracy: 0.00002)
+    }
+
+    func testIdleMonitorCenterIgnoresSingleGPSOutlier() throws {
+        let now = Date()
+        let start = now.addingTimeInterval(-TrackingMode.balanced.idleDetectionInterval)
+        var samples = (0..<20).map { index in
+            location(
+                latitude: 52.5200 + Double(index % 3) * 0.00001,
+                longitude: 13.4050 + Double(index % 2) * 0.00001,
+                date: start.addingTimeInterval(Double(index) * TrackingMode.balanced.idleDetectionInterval / 19),
+                accuracy: 8,
+                speed: 0
+            )
+        }
+        samples[10] = location(
+            latitude: 52.52034,
+            longitude: 13.4050,
+            date: samples[10].timestamp,
+            accuracy: 12,
+            speed: 0
+        )
+
+        XCTAssertNotNil(TrackMath.idleMonitorCenter(for: samples, mode: .balanced, now: now))
     }
 
     func testIdleMonitorCenterRejectsMovementAcrossWindow() {
         let now = Date()
         let start = now.addingTimeInterval(-TrackingMode.balanced.idleDetectionInterval)
-        let samples = (0..<9).map { index in
+        let samples = (0..<13).map { index in
             location(
-                latitude: 52.5200 + Double(index) * 0.00012,
+                latitude: 52.5200 + Double(index) * 0.00008,
                 longitude: 13.4050,
-                date: start.addingTimeInterval(Double(index) * TrackingMode.balanced.idleDetectionInterval / 8),
+                date: start.addingTimeInterval(Double(index) * TrackingMode.balanced.idleDetectionInterval / 12),
                 accuracy: 8,
                 speed: 1
+            )
+        }
+        XCTAssertNil(TrackMath.idleMonitorCenter(for: samples, mode: .balanced, now: now))
+    }
+
+    func testIdleMonitorCenterRejectsSlowlyDriftingCluster() {
+        let now = Date()
+        let start = now.addingTimeInterval(-TrackingMode.balanced.idleDetectionInterval)
+        let samples = (0..<20).map { index in
+            location(
+                latitude: 52.5200 + Double(index) * 0.000015,
+                longitude: 13.4050,
+                date: start.addingTimeInterval(Double(index) * TrackingMode.balanced.idleDetectionInterval / 19),
+                accuracy: 8,
+                speed: 0.3
             )
         }
         XCTAssertNil(TrackMath.idleMonitorCenter(for: samples, mode: .balanced, now: now))
@@ -129,10 +167,20 @@ final class TrackMathTests: XCTestCase {
     func testIdleMonitorCenterRequiresFreshNewestFix() {
         let now = Date()
         let start = now.addingTimeInterval(-10 * 60)
-        let samples = (0..<9).map { index in
-            location(latitude: 52.52, longitude: 13.405, date: start.addingTimeInterval(Double(index) * 30), accuracy: 8)
+        let samples = (0..<13).map { index in
+            location(latitude: 52.52, longitude: 13.405, date: start.addingTimeInterval(Double(index) * 20), accuracy: 8)
         }
         XCTAssertNil(TrackMath.idleMonitorCenter(for: samples, mode: .balanced, now: now))
+    }
+
+    func testEcoUsesDistanceFilteredStandardLocationAndIdleMonitor() {
+        XCTAssertTrue(TrackingMode.eco.usesDistanceFilteredStandardUpdates)
+        XCTAssertEqual(TrackingMode.eco.standardDesiredAccuracy, kCLLocationAccuracyNearestTenMeters)
+        XCTAssertEqual(TrackingMode.eco.standardDistanceFilter, 100)
+        XCTAssertEqual(TrackingMode.eco.maximumAcceptedAccuracy, 50)
+        XCTAssertEqual(TrackingMode.eco.idleMonitorRadius, 100)
+        XCTAssertFalse(TrackingMode.eco.usesSpatialIdleDetection)
+        XCTAssertTrue(TrackingMode.eco.usesIdleMonitoring)
     }
 
     func testBearingAndHeadingDifference() {
@@ -145,14 +193,15 @@ final class TrackMathTests: XCTestCase {
     }
 
     func testTrackingModeSamplingAndBackgroundPolicies() {
-        XCTAssertEqual(TrackingMode.eco.maximumAcceptedAccuracy, 120)
         XCTAssertEqual(TrackingMode.balanced.maximumAcceptedAccuracy, 80)
         XCTAssertEqual(TrackingMode.balanced.minimumRecordingDistance, 35)
         XCTAssertEqual(TrackingMode.balanced.maximumRecordingInterval, 60)
-        XCTAssertTrue(TrackingMode.eco.usesIdleMonitoring)
         XCTAssertTrue(TrackingMode.balanced.usesIdleMonitoring)
+        XCTAssertTrue(TrackingMode.balanced.usesSpatialIdleDetection)
         XCTAssertEqual(TrackingMode.balanced.idleDetectionInterval, 300)
         XCTAssertEqual(TrackingMode.balanced.idleMonitorRadius, 60)
+        XCTAssertEqual(TrackingMode.balanced.idleDetectionRequiredFraction, 0.90)
+        XCTAssertEqual(TrackingMode.balanced.idleDetectionMaximumCenterDrift, 20)
         XCTAssertFalse(TrackingMode.precise.usesIdleMonitoring)
         XCTAssertFalse(TrackingMode.workout.usesIdleMonitoring)
         XCTAssertFalse(TrackingMode.eco.requiresTimelyBackgroundDelivery)
