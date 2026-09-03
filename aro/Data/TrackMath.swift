@@ -18,16 +18,22 @@ enum TrackMath {
         return result
     }
 
-    static func shouldAccept(
+    /// Decides whether a live Core Location fix is useful route geometry.
+    ///
+    /// Live Updates may deliver queued fixes after a background relaunch, so wall-clock age is
+    /// deliberately not used as a freshness gate. Instead, a fix must belong to the current
+    /// tracking session and be newer than the last point already persisted.
+    static func shouldRecordLiveLocation(
         _ location: CLLocation,
         after previous: TrackPoint?,
         mode: TrackingMode,
-        maximumAge: TimeInterval = 180,
-        now: Date = Date()
+        trackingStartedAt: Date,
+        now: Date = .now
     ) -> Bool {
         guard location.horizontalAccuracy >= 0,
               location.horizontalAccuracy <= mode.maximumAcceptedAccuracy,
-              abs(location.timestamp.timeIntervalSince(now)) < maximumAge,
+              location.timestamp >= trackingStartedAt.addingTimeInterval(-1),
+              location.timestamp <= now.addingTimeInterval(60),
               CLLocationCoordinate2DIsValid(location.coordinate)
         else { return false }
 
@@ -36,14 +42,31 @@ enum TrackMath {
         guard interval > 0 else { return false }
 
         let distance = previous.location.distance(from: location)
-        if distance < max(5, mode.distanceFilter * 0.25), interval < 90 {
-            return false
-        }
+        guard distance >= 5 else { return false }
 
         if interval < 10 * 60, distance / interval > 100 {
             return false
         }
-        return true
+
+        let previousAccuracy = previous.horizontalAccuracy >= 0 ? previous.horizontalAccuracy : 0
+        let noiseRadius = max(previousAccuracy, location.horizontalAccuracy) * 0.5
+        let normalDistance = max(mode.minimumRecordingDistance, noiseRadius)
+        if distance >= normalDistance {
+            return true
+        }
+
+        let timedDistance = max(mode.minimumTimedRecordingDistance, noiseRadius)
+        if interval >= mode.maximumRecordingInterval, distance >= timedDistance {
+            return true
+        }
+
+        let turnDistance = max(mode.minimumTurnDistance, noiseRadius)
+        if distance >= turnDistance,
+           isMeaningfulTurn(from: previous, to: location, threshold: mode.turnThresholdDegrees) {
+            return true
+        }
+
+        return false
     }
 
     static func downsample(_ points: [TrackPoint], maximum: Int) -> [TrackPoint] {
@@ -68,6 +91,19 @@ enum TrackMath {
             updatedAt: now,
             dayStart: calendar.startOfDay(for: now)
         )
+    }
+
+    private static func isMeaningfulTurn(
+        from previous: TrackPoint,
+        to location: CLLocation,
+        threshold: CLLocationDirection
+    ) -> Bool {
+        guard previous.course >= 0, location.course >= 0 else { return false }
+        if location.speed >= 0, location.speed < 0.5 { return false }
+
+        let difference = abs(previous.course - location.course).truncatingRemainder(dividingBy: 360)
+        let shortestDifference = min(difference, 360 - difference)
+        return shortestDifference >= threshold
     }
 
     private static func routeSegments(_ points: [TrackPoint]) -> [[TrackPoint]] {
