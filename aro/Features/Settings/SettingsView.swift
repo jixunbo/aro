@@ -81,7 +81,7 @@ struct SettingsView: View {
             }
             LabeledContent(
                 "本次启动",
-                value: "接收 \(locationService.receivedUpdateCount) · 保存 \(locationService.recordedUpdateCount) · 丢弃 \(locationService.rejectedUpdateCount)"
+                value: "更新 \(locationService.receivedUpdateCount) · 定位 \(locationService.locationUpdateCount) · 保存 \(locationService.recordedUpdateCount) · 过滤 \(locationService.rejectedUpdateCount)"
             )
             if let error = locationService.lastError {
                 LabeledContent("最近提示", value: error)
@@ -121,7 +121,7 @@ struct SettingsView: View {
         } header: {
             Text("系统权限")
         } footer: {
-            Text("全天自动记录要求“始终”定位权限。Live Updates 会在设备静止后自动暂停并在重新移动时恢复。极省电/均衡允许 iOS 挂起 aro 并按系统节能节奏排队、唤醒交付；精确/运动才保持及时后台执行。")
+            Text("全天自动记录要求“始终”定位权限。极省电/均衡在连续稳定静止后会停止 Live Updates，改用持久化地理条件低功耗监控；离开静止范围后再恢复 Live Updates。精确/运动保持及时后台执行。")
         }
     }
 
