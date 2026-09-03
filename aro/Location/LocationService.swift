@@ -14,6 +14,7 @@ final class LocationService: NSObject, ObservableObject {
     @Published private(set) var currentActivity = "未知"
     @Published private(set) var lastError: String?
     @Published private(set) var engineState = "未开启"
+    @Published private(set) var isTrackingActive = false
     @Published private(set) var receivedUpdateCount = 0
     @Published private(set) var recordedUpdateCount = 0
     @Published private(set) var rejectedUpdateCount = 0
@@ -110,6 +111,19 @@ final class LocationService: NSObject, ObservableObject {
         authorizationStatus = authorizationManager.authorizationStatus
         accuracyAuthorization = authorizationManager.accuracyAuthorization
         startTrackingIfAuthorized()
+    }
+
+    func handleTrackDataDeleted() {
+        lastRecordedAt = nil
+        lastSource = nil
+        lastHorizontalAccuracy = nil
+        lastBackgroundRepositoryRefreshAt = nil
+        if isTrackingEnabled {
+            beginNewTrackingSession()
+        } else {
+            clearTrackingAnchor()
+            resetMovementGeometry()
+        }
     }
 
     func requestWhenInUseAuthorization() {
@@ -216,6 +230,7 @@ final class LocationService: NSObject, ObservableObject {
         liveUpdatesGeneration = generation
         let configuration = mode.liveConfiguration
         engineState = "等待定位"
+        isTrackingActive = true
 
         liveUpdatesTask = Task { @MainActor [weak self] in
             guard let self else { return }
@@ -234,6 +249,7 @@ final class LocationService: NSObject, ObservableObject {
 
             if self.liveUpdatesGeneration == generation {
                 self.liveUpdatesTask = nil
+                self.isTrackingActive = false
             }
         }
     }
@@ -249,6 +265,7 @@ final class LocationService: NSObject, ObservableObject {
         liveUpdatesGeneration = UUID()
         liveUpdatesTask?.cancel()
         liveUpdatesTask = nil
+        isTrackingActive = false
         backgroundActivitySession?.invalidate()
         backgroundActivitySession = nil
         serviceSession?.invalidate()

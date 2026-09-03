@@ -360,7 +360,13 @@ final class TrackDatabase: @unchecked Sendable {
 
         guard sqlite3_step(statement) == SQLITE_DONE, sqlite3_changes(database) > 0 else { return 0 }
         let rowID = sqlite3_last_insert_rowid(database)
-        if updatesSummary { updateDailySummaryLocked(with: point, previous: previous) }
+        if updatesSummary {
+            if let previous, point.timestamp < previous.timestamp {
+                rebuildDailySummariesLocked()
+            } else {
+                updateDailySummaryLocked(with: point, previous: previous)
+            }
+        }
         return rowID
     }
 

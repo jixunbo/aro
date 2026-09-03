@@ -269,12 +269,14 @@ struct SettingsView: View {
             Task {
                 do {
                     try await cloudSync.deleteCloudAndLocalData()
+                    locationService.handleTrackDataDeleted()
                 } catch {
                     deleteError = error.localizedDescription
                 }
             }
         } else {
             repository.deleteEverything()
+            locationService.handleTrackDataDeleted()
         }
 #else
         guard !localBuildMayHaveCloudData else {
@@ -282,6 +284,7 @@ struct SettingsView: View {
             return
         }
         repository.deleteEverything()
+        locationService.handleTrackDataDeleted()
 #endif
     }
 
