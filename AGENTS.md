@@ -26,6 +26,11 @@ xcodebuild -project aro.xcodeproj -scheme aro -sdk iphonesimulator \
   -destination 'generic/platform=iOS Simulator' -derivedDataPath DerivedData \
   CODE_SIGNING_ALLOWED=NO build
 
+# Cloud configuration compile
+xcodebuild -project aro.xcodeproj -scheme aro -configuration CloudDebug -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' -derivedDataPath DerivedData-cloud \
+  CODE_SIGNING_ALLOWED=NO build
+
 # Unit tests; substitute another installed simulator name if needed
 xcodebuild -project aro.xcodeproj -scheme aro \
   -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
@@ -46,19 +51,21 @@ There is no separate lint or formatter configuration; use compiler warnings and 
 
 ## Repository conventions and constraints
 
-- Deployment is iOS/iPadOS 17.0+ and watchOS 10.0+, Swift 5; the iOS target supports iPhone and iPad, and Mac Catalyst is disabled. The repository setup instructions require Xcode 26+.
-- Keep the implementation platform-native unless a task demonstrates a need otherwise: SwiftUI, UIKit/MapKit, Core Location, Core Motion, Foundation, and system SQLite (`-lsqlite3`).
+- Deployment is iOS/iPadOS 26.0+ and watchOS 10.0+, Swift 5; the iOS target supports iPhone and iPad, and Mac Catalyst is disabled. Do not add iOS 17–25 compatibility branches or legacy location fallbacks. The repository setup instructions require Xcode 26+.
+- Keep the implementation platform-native unless a task demonstrates a need otherwise: SwiftUI, UIKit/MapKit, Core Location, Foundation, and system SQLite (`-lsqlite3`).
 - `LocationService` and `TrackRepository` are main-actor state owners. `TrackDatabase` serializes SQLite access on its private queue; do not bypass those concurrency boundaries.
 - Keep raw points and `daily_summary` consistent across recording, import, deletion, and schema changes. Preserve timestamp/coordinate deduplication and validate distance calculations against implausible jumps.
 - Preserve the privacy-first, local-only behavior unless a task explicitly changes product scope. Do not add analytics, accounts, network upload, or cloud synchronization incidentally.
-- Background location behavior depends on `Info.plist`, staged authorization, and both significant-change/visit and standard location updates. Changes in this area must be tested on a real device and keep permission copy, background modes, and runtime behavior aligned.
+- Background tracking is built on `CLLocationUpdate.liveUpdates`, an explicit `CLServiceSession(.always)`, the `location` background mode, and persisted session-start state. Core Location's stationary state owns normal pause/resume. Eco/Balanced intentionally remain suspendable and do not hold `CLBackgroundActivitySession`; Precise/Workout retain one for timely background delivery. Do not reintroduce significant-change/visit recording, Core Motion wake logic, or a second legacy `CLLocationManager` as fallback.
+- A Core Location relaunch must immediately restore only the outstanding location/service session. It must not incidentally activate WatchConnectivity or CloudKit. Ordinary foreground lifecycle and CloudKit remote-notification delivery own those subsystems separately.
+- Live-update filtering must preserve queued locations from the active tracking session, reject pre-session/future/inaccurate/impossible fixes, and keep route geometry useful through distance, time, accuracy-noise, and turn-aware sampling. Do not restore a wall-clock age filter that discards valid queued background fixes.
 - `BatterySnapshot.swift` is compiled into the iOS and watchOS targets and defines the WatchConnectivity contract. Preserve newest-timestamp-wins cache semantics and label cached data as non-live.
 - Keep `PhoneConnectivity` passive during initialization and activation. A Core Location background relaunch must not send a live watch request; live requests belong only to explicit Devices UI use or the App Intent. Do not add iPhone polling or battery-only background tasks, and do not couple connectivity to `LocationService`.
 - Preserve the watch target dependency, Embed Watch Content phase, `com.xunbo.aro.watchkitapp` identifier, and `WKCompanionAppBundleIdentifier = com.xunbo.aro` relationship. The iOS and on-device Watch/Widget display name is `aro`; the internal Xcode targets remain `ARO Watch App` and `ARO Watch Widget Extension`. The iOS host identifier is `com.xunbo.aro`; do not assume an existing Traceon/Companio installation upgrades in place.
 - Keep `PrivacyInfo.xcprivacy` accurate when introducing dependencies or required-reason API usage.
 - New source or resource files must also be added to the appropriate target in `aro.xcodeproj/project.pbxproj`; the project does not auto-discover files.
 - User-facing text and the Xcode development region are currently Simplified Chinese; follow the surrounding language unless the task includes localization.
-- Add focused XCTest coverage for changed filtering, distance, import, or export behavior. Do not treat simulator tests as proof of background delivery or battery performance.
+- Add focused XCTest coverage for changed filtering, distance, import, or export behavior. Do not treat simulator tests as proof of background delivery, stationary resume, relaunch behavior, or battery performance.
 
 ## Files normally left alone
 
