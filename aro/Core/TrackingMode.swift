@@ -19,7 +19,7 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .eco: "静止后切换低功耗监控，移动时稀疏保存"
+        case .eco: "高质量定位约 100 米触发，静止后切换低功耗监控"
         case .balanced: "静止后切换低功耗监控，自适应保留约 35 米级轨迹"
         case .precise: "保持及时后台更新，约 20 米级保存，轨迹更完整"
         case .workout: "保持及时健身级后台更新，优先保留完整运动轨迹"
@@ -35,6 +35,20 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    /// Eco intentionally uses the Standard location service because distanceFilter controls
+    /// location generation at the Core Location layer. Other modes use iOS 26 Live Updates.
+    var usesDistanceFilteredStandardUpdates: Bool {
+        self == .eco
+    }
+
+    var standardDesiredAccuracy: CLLocationAccuracy {
+        kCLLocationAccuracyNearestTenMeters
+    }
+
+    var standardDistanceFilter: CLLocationDistance {
+        self == .eco ? 100 : kCLDistanceFilterNone
+    }
+
     var liveConfiguration: CLLocationUpdate.LiveConfiguration {
         switch self {
         case .eco, .balanced: .default
@@ -43,45 +57,57 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
         }
     }
 
-    /// Balanced/Eco intentionally let iOS suspend the process and queue/relaunch delivery.
+    /// Balanced intentionally lets iOS suspend the process and queue/relaunch delivery.
     /// Precise/Workout opt into timely background execution through CLBackgroundActivitySession.
+    /// Eco uses distance-filtered Standard location updates and does not retain a background session.
     var requiresTimelyBackgroundDelivery: Bool {
         self == .precise || self == .workout
     }
 
-    /// Eco/Balanced can transition from Live Updates to a persistent CLMonitor geofence after
-    /// several minutes of high-quality, spatially stable fixes. Precise/Workout stay live.
+    /// Eco/Balanced transition to a persistent CLMonitor geofence while idle. Eco normally gets
+    /// there through CLLocationManager automatic pause; Balanced proves spatial stability itself.
     var usesIdleMonitoring: Bool {
         self == .eco || self == .balanced
     }
 
+    var usesSpatialIdleDetection: Bool {
+        self == .balanced
+    }
+
     var idleDetectionInterval: TimeInterval {
         switch self {
-        case .eco: 3 * 60
         case .balanced: 5 * 60
-        case .precise, .workout: .infinity
+        case .eco, .precise, .workout: .infinity
         }
     }
 
     var idleDetectionRadius: CLLocationDistance {
         switch self {
-        case .eco: 45
         case .balanced: 30
-        case .precise, .workout: 0
+        case .eco, .precise, .workout: 0
         }
     }
 
     var idleDetectionMaximumAccuracy: CLLocationAccuracy {
         switch self {
-        case .eco: 60
         case .balanced: 40
-        case .precise, .workout: 0
+        case .eco, .precise, .workout: 0
         }
+    }
+
+    /// A small minority of GPS outliers must not keep Balanced awake forever.
+    var idleDetectionRequiredFraction: Double {
+        self == .balanced ? 0.90 : 1
+    }
+
+    /// Prevent a slowly translating cluster from being mistaken for stationary GPS noise.
+    var idleDetectionMaximumCenterDrift: CLLocationDistance {
+        self == .balanced ? 20 : 0
     }
 
     var idleMonitorRadius: CLLocationDistance {
         switch self {
-        case .eco: 120
+        case .eco: 100
         case .balanced: 60
         case .precise, .workout: 0
         }
@@ -89,25 +115,26 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
 
     var minimumIdleSamples: Int {
         switch self {
-        case .eco, .balanced: 8
-        case .precise, .workout: .max
+        case .balanced: 12
+        case .eco, .precise, .workout: .max
         }
     }
 
     /// Accuracy is a storage-quality gate, not a request to turn GPS hardware on.
     var maximumAcceptedAccuracy: CLLocationAccuracy {
         switch self {
-        case .eco: 120
+        case .eco: 50
         case .balanced: 80
         case .precise: 65
         case .workout: 50
         }
     }
 
-    /// Normal movement distance that is sufficient to persist another point.
+    /// Normal movement distance sufficient to persist another delivered point. Eco's hardware
+    /// cadence is already ~100 m, so its storage threshold stays lower to keep useful extra fixes.
     var minimumRecordingDistance: CLLocationDistance {
         switch self {
-        case .eco: 120
+        case .eco: 25
         case .balanced: 35
         case .precise: 20
         case .workout: 8
@@ -117,7 +144,7 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
     /// Preserve a useful point even on slow movement if the previous saved point is old.
     var maximumRecordingInterval: TimeInterval {
         switch self {
-        case .eco: 4 * 60
+        case .eco: 5 * 60
         case .balanced: 60
         case .precise: 45
         case .workout: 20
@@ -126,7 +153,7 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
 
     var minimumTimedRecordingDistance: CLLocationDistance {
         switch self {
-        case .eco: 40
+        case .eco: 20
         case .balanced: 12
         case .precise: 10
         case .workout: 5
@@ -136,7 +163,7 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
     /// A turn can be worth keeping before the normal distance threshold is reached.
     var minimumTurnDistance: CLLocationDistance {
         switch self {
-        case .eco: 45
+        case .eco: 25
         case .balanced: 12
         case .precise: 10
         case .workout: 6
