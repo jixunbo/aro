@@ -28,6 +28,7 @@ enum TrackMath {
         after previous: TrackPoint?,
         mode: TrackingMode,
         trackingStartedAt: Date,
+        observedTurnDegrees: CLLocationDirection? = nil,
         now: Date = .now
     ) -> Bool {
         guard location.horizontalAccuracy >= 0,
@@ -62,11 +63,32 @@ enum TrackMath {
 
         let turnDistance = max(mode.minimumTurnDistance, noiseRadius)
         if distance >= turnDistance,
-           isMeaningfulTurn(from: previous, to: location, threshold: mode.turnThresholdDegrees) {
+           isMeaningfulTurn(
+               from: previous,
+               to: location,
+               observedTurnDegrees: observedTurnDegrees,
+               threshold: mode.turnThresholdDegrees
+           ) {
             return true
         }
 
         return false
+    }
+
+    /// Bearing of the path segment in degrees clockwise from true north.
+    static func bearing(from start: CLLocationCoordinate2D, to end: CLLocationCoordinate2D) -> CLLocationDirection {
+        let lat1 = start.latitude * .pi / 180
+        let lat2 = end.latitude * .pi / 180
+        let deltaLongitude = (end.longitude - start.longitude) * .pi / 180
+        let y = sin(deltaLongitude) * cos(lat2)
+        let x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(deltaLongitude)
+        let degrees = atan2(y, x) * 180 / .pi
+        return (degrees + 360).truncatingRemainder(dividingBy: 360)
+    }
+
+    static func headingDifference(_ first: CLLocationDirection, _ second: CLLocationDirection) -> CLLocationDirection {
+        let difference = abs(first - second).truncatingRemainder(dividingBy: 360)
+        return min(difference, 360 - difference)
     }
 
     static func downsample(_ points: [TrackPoint], maximum: Int) -> [TrackPoint] {
@@ -96,14 +118,16 @@ enum TrackMath {
     private static func isMeaningfulTurn(
         from previous: TrackPoint,
         to location: CLLocation,
+        observedTurnDegrees: CLLocationDirection?,
         threshold: CLLocationDirection
     ) -> Bool {
+        if let observedTurnDegrees, observedTurnDegrees >= threshold {
+            return true
+        }
+
         guard previous.course >= 0, location.course >= 0 else { return false }
         if location.speed >= 0, location.speed < 0.5 { return false }
-
-        let difference = abs(previous.course - location.course).truncatingRemainder(dividingBy: 360)
-        let shortestDifference = min(difference, 360 - difference)
-        return shortestDifference >= threshold
+        return headingDifference(previous.course, location.course) >= threshold
     }
 
     private static func routeSegments(_ points: [TrackPoint]) -> [[TrackPoint]] {
