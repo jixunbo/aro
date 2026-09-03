@@ -70,11 +70,20 @@ struct SettingsView: View {
                     Label(mode.title, systemImage: mode.symbol).tag(mode)
                 }
             }
+            LabeledContent("定位引擎", value: "iOS Live Updates")
+            LabeledContent("运行状态", value: locationService.engineState)
             LabeledContent("当前活动", value: locationService.currentActivity)
             LabeledContent("最后记录", value: lastRecordedText)
             LabeledContent("记录通道", value: locationService.sourceLabel)
+            if let accuracy = locationService.lastHorizontalAccuracy, accuracy >= 0 {
+                LabeledContent("最近精度", value: "±\(Int(accuracy.rounded())) m")
+            }
+            LabeledContent(
+                "本次启动",
+                value: "接收 \(locationService.receivedUpdateCount) · 保存 \(locationService.recordedUpdateCount) · 丢弃 \(locationService.rejectedUpdateCount)"
+            )
             if let error = locationService.lastError {
-                LabeledContent("最近错误", value: error)
+                LabeledContent("最近提示", value: error)
             }
         }
     }
@@ -111,7 +120,7 @@ struct SettingsView: View {
         } header: {
             Text("系统权限")
         } footer: {
-            Text("要在 App 未打开或被系统回收后继续记录，需要“始终”定位权限。极省电模式只在位置明显变化时唤醒。")
+            Text("全天自动记录要求“始终”定位权限。iOS Live Updates 会在设备静止后自动暂停位置更新，并在重新移动时恢复；显著位置变化和到访事件不再作为轨迹记录或恢复机制。")
         }
     }
 
@@ -208,7 +217,7 @@ struct SettingsView: View {
     private var aboutSection: some View {
         Section("关于") {
             LabeledContent("产品", value: "aro")
-            LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.3")
+            LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.0")
             Button("重新查看隐私引导") { hasCompletedOnboarding = false }
         }
     }
