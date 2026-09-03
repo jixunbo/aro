@@ -35,6 +35,10 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    var engineLabel: String {
+        usesDistanceFilteredStandardUpdates ? "iOS 标准定位" : "iOS Live Updates"
+    }
+
     /// Eco intentionally uses the Standard location service because distanceFilter controls
     /// location generation at the Core Location layer. Other modes use iOS 26 Live Updates.
     var usesDistanceFilteredStandardUpdates: Bool {
