@@ -75,6 +75,47 @@ enum TrackMath {
         return false
     }
 
+    /// Returns a stable center only when recent good fixes prove the device has remained inside
+    /// the mode's idle radius for the complete idle-detection interval. The newest fix must be
+    /// fresh so a delayed batch from before a relaunch cannot immediately put a moving device to sleep.
+    static func idleMonitorCenter(
+        for locations: [CLLocation],
+        mode: TrackingMode,
+        now: Date = .now
+    ) -> CLLocationCoordinate2D? {
+        guard mode.usesIdleMonitoring else { return nil }
+
+        let usable = locations
+            .filter {
+                $0.horizontalAccuracy >= 0
+                    && $0.horizontalAccuracy <= mode.idleDetectionMaximumAccuracy
+                    && $0.timestamp <= now.addingTimeInterval(60)
+                    && CLLocationCoordinate2DIsValid($0.coordinate)
+            }
+            .sorted { $0.timestamp < $1.timestamp }
+
+        guard let newest = usable.last,
+              now.timeIntervalSince(newest.timestamp) <= 90 else { return nil }
+
+        let cutoff = newest.timestamp.addingTimeInterval(-mode.idleDetectionInterval)
+        let window = usable.filter { $0.timestamp >= cutoff }
+        guard window.count >= mode.minimumIdleSamples,
+              let oldest = window.first,
+              newest.timestamp.timeIntervalSince(oldest.timestamp) >= mode.idleDetectionInterval else {
+            return nil
+        }
+
+        let latitude = window.map(\.coordinate.latitude).reduce(0, +) / Double(window.count)
+        let longitude = window.map(\.coordinate.longitude).reduce(0, +) / Double(window.count)
+        let center = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        let centerLocation = CLLocation(latitude: latitude, longitude: longitude)
+
+        guard window.allSatisfy({ centerLocation.distance(from: $0) <= mode.idleDetectionRadius }) else {
+            return nil
+        }
+        return center
+    }
+
     /// Bearing of the path segment in degrees clockwise from true north.
     static func bearing(from start: CLLocationCoordinate2D, to end: CLLocationCoordinate2D) -> CLLocationDirection {
         let lat1 = start.latitude * .pi / 180
