@@ -21,44 +21,199 @@ final class TrackMathTests: XCTestCase {
         XCTAssertEqual(TrackMath.distance(of: points), 0)
     }
 
-    func testFilterRejectsStaleAndInaccurateLocations() {
+    func testLiveFilterRejectsInaccurateAndPreSessionLocations() {
         let now = Date()
-        let stale = location(latitude: 52.52, longitude: 13.405, date: now.addingTimeInterval(-1_000), accuracy: 10)
-        let inaccurate = location(latitude: 52.52, longitude: 13.405, date: now, accuracy: 800)
-        XCTAssertFalse(TrackMath.shouldAccept(stale, after: nil, mode: .balanced, now: now))
-        XCTAssertFalse(TrackMath.shouldAccept(inaccurate, after: nil, mode: .balanced, now: now))
+        let startedAt = now.addingTimeInterval(-300)
+        let inaccurate = location(latitude: 52.52, longitude: 13.405, date: now, accuracy: 120)
+        let beforeSession = location(latitude: 52.52, longitude: 13.405, date: startedAt.addingTimeInterval(-10), accuracy: 10)
+
+        XCTAssertFalse(TrackMath.shouldRecordLiveLocation(
+            inaccurate,
+            after: nil,
+            mode: .balanced,
+            trackingStartedAt: startedAt,
+            now: now
+        ))
+        XCTAssertFalse(TrackMath.shouldRecordLiveLocation(
+            beforeSession,
+            after: nil,
+            mode: .balanced,
+            trackingStartedAt: startedAt,
+            now: now
+        ))
     }
 
-    func testFilterRejectsNearDuplicate() {
+    func testLiveFilterAcceptsQueuedLocationFromCurrentTrackingSession() {
         let now = Date()
-        let previous = point(latitude: 52.52, longitude: 13.405, date: now)
-        let duplicate = location(latitude: 52.52001, longitude: 13.40501, date: now.addingTimeInterval(30), accuracy: 8)
-        XCTAssertFalse(TrackMath.shouldAccept(duplicate, after: previous, mode: .balanced, now: now.addingTimeInterval(30)))
+        let startedAt = now.addingTimeInterval(-30 * 60)
+        let queued = location(
+            latitude: 52.52,
+            longitude: 13.405,
+            date: now.addingTimeInterval(-15 * 60),
+            accuracy: 12
+        )
+
+        XCTAssertTrue(TrackMath.shouldRecordLiveLocation(
+            queued,
+            after: nil,
+            mode: .balanced,
+            trackingStartedAt: startedAt,
+            now: now
+        ))
     }
 
-    func testEcoModeUsesHighQualityFixesOnlyForEventBursts() {
-        XCTAssertFalse(TrackingMode.eco.usesContinuousUpdates)
-        XCTAssertEqual(TrackingMode.eco.desiredAccuracy, kCLLocationAccuracyNearestTenMeters)
-        XCTAssertEqual(TrackingMode.eco.maximumAcceptedAccuracy, 150)
-
+    func testLiveFilterRejectsFutureLocation() {
         let now = Date()
-        let acceptable = location(latitude: 52.52, longitude: 13.405, date: now, accuracy: 120)
-        let tooInaccurate = location(latitude: 52.52, longitude: 13.405, date: now, accuracy: 180)
-        XCTAssertTrue(TrackMath.shouldAccept(acceptable, after: nil, mode: .eco, now: now))
-        XCTAssertFalse(TrackMath.shouldAccept(tooInaccurate, after: nil, mode: .eco, now: now))
+        let future = location(latitude: 52.52, longitude: 13.405, date: now.addingTimeInterval(120), accuracy: 10)
+
+        XCTAssertFalse(TrackMath.shouldRecordLiveLocation(
+            future,
+            after: nil,
+            mode: .balanced,
+            trackingStartedAt: now.addingTimeInterval(-60),
+            now: now
+        ))
     }
 
-    func testBalancedModeUsesHighQualityLowFrequencyContinuousUpdates() {
-        XCTAssertTrue(TrackingMode.balanced.usesContinuousUpdates)
-        XCTAssertEqual(TrackingMode.balanced.desiredAccuracy, kCLLocationAccuracyNearestTenMeters)
-        XCTAssertEqual(TrackingMode.balanced.distanceFilter, 75)
-        XCTAssertEqual(TrackingMode.balanced.maximumAcceptedAccuracy, 100)
-
+    func testLiveFilterRejectsNearDuplicate() {
         let now = Date()
-        let acceptable = location(latitude: 52.52, longitude: 13.405, date: now, accuracy: 80)
-        let tooInaccurate = location(latitude: 52.52, longitude: 13.405, date: now, accuracy: 120)
-        XCTAssertTrue(TrackMath.shouldAccept(acceptable, after: nil, mode: .balanced, now: now))
-        XCTAssertFalse(TrackMath.shouldAccept(tooInaccurate, after: nil, mode: .balanced, now: now))
+        let previous = point(latitude: 52.52, longitude: 13.405, date: now, course: 0)
+        let duplicate = location(
+            latitude: 52.52001,
+            longitude: 13.40501,
+            date: now.addingTimeInterval(30),
+            accuracy: 8,
+            course: 5,
+            speed: 1
+        )
+
+        XCTAssertFalse(TrackMath.shouldRecordLiveLocation(
+            duplicate,
+            after: previous,
+            mode: .balanced,
+            trackingStartedAt: now.addingTimeInterval(-60),
+            now: now.addingTimeInterval(30)
+        ))
+    }
+
+    func testBalancedRecordsNormalMovementDistance() {
+        let now = Date()
+        let previous = point(latitude: 52.5200, longitude: 13.4050, date: now, course: 0)
+        let moved = location(
+            latitude: 52.52055,
+            longitude: 13.4050,
+            date: now.addingTimeInterval(60),
+            accuracy: 10,
+            course: 0,
+            speed: 1.2
+        )
+
+        XCTAssertTrue(TrackMath.shouldRecordLiveLocation(
+            moved,
+            after: previous,
+            mode: .balanced,
+            trackingStartedAt: now.addingTimeInterval(-60),
+            now: now.addingTimeInterval(60)
+        ))
+    }
+
+    func testBalancedPreservesMeaningfulTurnBeforeNormalDistance() {
+        let now = Date()
+        let previous = point(latitude: 52.5200, longitude: 13.4050, date: now, course: 0)
+        let turn = location(
+            latitude: 52.52027,
+            longitude: 13.4050,
+            date: now.addingTimeInterval(30),
+            accuracy: 8,
+            course: 90,
+            speed: 1.4
+        )
+
+        XCTAssertTrue(TrackMath.shouldRecordLiveLocation(
+            turn,
+            after: previous,
+            mode: .balanced,
+            trackingStartedAt: now.addingTimeInterval(-60),
+            now: now.addingTimeInterval(30)
+        ))
+    }
+
+    func testBalancedRejectsShortStraightMovement() {
+        let now = Date()
+        let previous = point(latitude: 52.5200, longitude: 13.4050, date: now, course: 0)
+        let shortMove = location(
+            latitude: 52.52027,
+            longitude: 13.4050,
+            date: now.addingTimeInterval(30),
+            accuracy: 8,
+            course: 5,
+            speed: 1.4
+        )
+
+        XCTAssertFalse(TrackMath.shouldRecordLiveLocation(
+            shortMove,
+            after: previous,
+            mode: .balanced,
+            trackingStartedAt: now.addingTimeInterval(-60),
+            now: now.addingTimeInterval(30)
+        ))
+    }
+
+    func testBalancedRecordsSlowMovementAfterMaximumInterval() {
+        let now = Date()
+        let previous = point(latitude: 52.5200, longitude: 13.4050, date: now, course: 0)
+        let slowMove = location(
+            latitude: 52.52023,
+            longitude: 13.4050,
+            date: now.addingTimeInterval(130),
+            accuracy: 8,
+            course: 5,
+            speed: 0.8
+        )
+
+        XCTAssertTrue(TrackMath.shouldRecordLiveLocation(
+            slowMove,
+            after: previous,
+            mode: .balanced,
+            trackingStartedAt: now.addingTimeInterval(-60),
+            now: now.addingTimeInterval(130)
+        ))
+    }
+
+    func testAccuracyNoiseFloorPreventsFalseShortTurn() {
+        let now = Date()
+        let previous = point(
+            latitude: 52.5200,
+            longitude: 13.4050,
+            date: now,
+            horizontalAccuracy: 70,
+            course: 0
+        )
+        let noisyTurn = location(
+            latitude: 52.52027,
+            longitude: 13.4050,
+            date: now.addingTimeInterval(130),
+            accuracy: 70,
+            course: 90,
+            speed: 1
+        )
+
+        XCTAssertFalse(TrackMath.shouldRecordLiveLocation(
+            noisyTurn,
+            after: previous,
+            mode: .balanced,
+            trackingStartedAt: now.addingTimeInterval(-60),
+            now: now.addingTimeInterval(130)
+        ))
+    }
+
+    func testTrackingModeSamplingPolicies() {
+        XCTAssertEqual(TrackingMode.eco.maximumAcceptedAccuracy, 120)
+        XCTAssertEqual(TrackingMode.balanced.maximumAcceptedAccuracy, 80)
+        XCTAssertEqual(TrackingMode.balanced.minimumRecordingDistance, 55)
+        XCTAssertEqual(TrackingMode.balanced.maximumRecordingInterval, 120)
+        XCTAssertEqual(TrackingMode.precise.minimumRecordingDistance, 20)
+        XCTAssertEqual(TrackingMode.workout.minimumRecordingDistance, 8)
     }
 
     func testTrackComplicationSnapshotNormalizesAndSplitsLongGap() {
@@ -124,16 +279,37 @@ final class TrackMathTests: XCTestCase {
         XCTAssertEqual(points[1].timestamp.timeIntervalSince(points[0].timestamp), 60.5, accuracy: 0.01)
     }
 
-    private func point(latitude: Double, longitude: Double, date: Date) -> TrackPoint {
-        TrackPoint(timestamp: date, latitude: latitude, longitude: longitude, horizontalAccuracy: 8)
+    private func point(
+        latitude: Double,
+        longitude: Double,
+        date: Date,
+        horizontalAccuracy: Double = 8,
+        course: Double = -1
+    ) -> TrackPoint {
+        TrackPoint(
+            timestamp: date,
+            latitude: latitude,
+            longitude: longitude,
+            horizontalAccuracy: horizontalAccuracy,
+            course: course
+        )
     }
 
-    private func location(latitude: Double, longitude: Double, date: Date, accuracy: Double) -> CLLocation {
+    private func location(
+        latitude: Double,
+        longitude: Double,
+        date: Date,
+        accuracy: Double,
+        course: Double = -1,
+        speed: Double = -1
+    ) -> CLLocation {
         CLLocation(
             coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
             altitude: 0,
             horizontalAccuracy: accuracy,
             verticalAccuracy: -1,
+            course: course,
+            speed: speed,
             timestamp: date
         )
     }
