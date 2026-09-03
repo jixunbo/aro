@@ -71,6 +71,7 @@ struct SettingsView: View {
                 }
             }
             LabeledContent("定位引擎", value: "iOS Live Updates")
+            LabeledContent("后台策略", value: locationService.backgroundDeliveryLabel)
             LabeledContent("运行状态", value: locationService.engineState)
             LabeledContent("当前活动", value: locationService.currentActivity)
             LabeledContent("最后记录", value: lastRecordedText)
@@ -120,7 +121,7 @@ struct SettingsView: View {
         } header: {
             Text("系统权限")
         } footer: {
-            Text("全天自动记录要求“始终”定位权限。iOS Live Updates 会在设备静止后自动暂停位置更新，并在重新移动时恢复；显著位置变化和到访事件不再作为轨迹记录或恢复机制。")
+            Text("全天自动记录要求“始终”定位权限。Live Updates 会在设备静止后自动暂停并在重新移动时恢复。极省电/均衡允许 iOS 挂起 aro 并按系统节能节奏排队、唤醒交付；精确/运动才保持及时后台执行。")
         }
     }
 
