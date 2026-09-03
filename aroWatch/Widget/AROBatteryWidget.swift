@@ -143,6 +143,7 @@ private struct UltraBatteryCircularView: View {
     private var accent: Color {
         if snapshot?.state == .charging || snapshot?.state == .full { return .green }
         if level <= 20, snapshot != nil { return .red }
+        if level > 50, snapshot != nil { return .green }
         return .orange
     }
 
