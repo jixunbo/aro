@@ -55,6 +55,9 @@ final class LocationService: NSObject, ObservableObject {
     private var trackingStartedAt: Date
     private var lastMovementLocation: CLLocation?
     private var lastMovementBearing: CLLocationDirection?
+    private var lastBackgroundRepositoryRefreshAt: Date?
+
+    private static let backgroundRepositoryRefreshInterval: TimeInterval = 5 * 60
 
     private enum Keys {
         static let enabled = "tracking.enabled"
@@ -364,6 +367,22 @@ final class LocationService: NSObject, ObservableObject {
         lastRecordedAt = recordedPoint.timestamp
         lastSource = recordedPoint.source
         recordedUpdateCount += 1
+        notifyRepositoryOfRecordedPoint()
+    }
+
+    private func notifyRepositoryOfRecordedPoint() {
+        let now = Date.now
+        if UIApplication.shared.applicationState == .active {
+            lastBackgroundRepositoryRefreshAt = now
+            TrackRepository.shared.didInsertPoint()
+            return
+        }
+
+        if let lastBackgroundRepositoryRefreshAt,
+           now.timeIntervalSince(lastBackgroundRepositoryRefreshAt) < Self.backgroundRepositoryRefreshInterval {
+            return
+        }
+        lastBackgroundRepositoryRefreshAt = now
         TrackRepository.shared.didInsertPoint()
     }
 
