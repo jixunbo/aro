@@ -19,10 +19,10 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .eco: "系统静止时自动休眠，移动时稀疏保存"
-        case .balanced: "移动时自适应保存转弯与约 55 米级轨迹，推荐日常使用"
-        case .precise: "导航级更新，约 20 米级保存，轨迹更完整"
-        case .workout: "健身级持续更新，优先保留完整运动轨迹"
+        case .eco: "允许系统后台挂起，移动时稀疏保存"
+        case .balanced: "允许系统后台挂起，自适应保留转弯与约 55 米级轨迹"
+        case .precise: "保持及时后台更新，约 20 米级保存，轨迹更完整"
+        case .workout: "保持及时健身级后台更新，优先保留完整运动轨迹"
         }
     }
 
@@ -41,6 +41,12 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
         case .precise: .otherNavigation
         case .workout: .fitness
         }
+    }
+
+    /// Balanced/Eco intentionally let iOS suspend the process and queue/relaunch delivery.
+    /// Precise/Workout opt into timely background execution through CLBackgroundActivitySession.
+    var requiresTimelyBackgroundDelivery: Bool {
+        self == .precise || self == .workout
     }
 
     /// Accuracy is a storage-quality gate, not a request to turn GPS hardware on.
