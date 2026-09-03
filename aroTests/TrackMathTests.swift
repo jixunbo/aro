@@ -138,6 +138,26 @@ final class TrackMathTests: XCTestCase {
         ))
     }
 
+    func testBalancedPreservesObservedTurnWhenCourseUnavailable() {
+        let now = Date()
+        let previous = point(latitude: 52.5200, longitude: 13.4050, date: now)
+        let turn = location(
+            latitude: 52.52027,
+            longitude: 13.4050,
+            date: now.addingTimeInterval(30),
+            accuracy: 8
+        )
+
+        XCTAssertTrue(TrackMath.shouldRecordLiveLocation(
+            turn,
+            after: previous,
+            mode: .balanced,
+            trackingStartedAt: now.addingTimeInterval(-60),
+            observedTurnDegrees: 90,
+            now: now.addingTimeInterval(30)
+        ))
+    }
+
     func testBalancedRejectsShortStraightMovement() {
         let now = Date()
         let previous = point(latitude: 52.5200, longitude: 13.4050, date: now, course: 0)
@@ -207,11 +227,25 @@ final class TrackMathTests: XCTestCase {
         ))
     }
 
-    func testTrackingModeSamplingPolicies() {
+    func testBearingAndHeadingDifference() {
+        let origin = CLLocationCoordinate2D(latitude: 52.52, longitude: 13.405)
+        let north = CLLocationCoordinate2D(latitude: 52.521, longitude: 13.405)
+        let east = CLLocationCoordinate2D(latitude: 52.52, longitude: 13.406)
+
+        XCTAssertEqual(TrackMath.bearing(from: origin, to: north), 0, accuracy: 1)
+        XCTAssertEqual(TrackMath.bearing(from: origin, to: east), 90, accuracy: 1)
+        XCTAssertEqual(TrackMath.headingDifference(350, 10), 20, accuracy: 0.001)
+    }
+
+    func testTrackingModeSamplingAndBackgroundPolicies() {
         XCTAssertEqual(TrackingMode.eco.maximumAcceptedAccuracy, 120)
         XCTAssertEqual(TrackingMode.balanced.maximumAcceptedAccuracy, 80)
         XCTAssertEqual(TrackingMode.balanced.minimumRecordingDistance, 55)
         XCTAssertEqual(TrackingMode.balanced.maximumRecordingInterval, 120)
+        XCTAssertFalse(TrackingMode.eco.requiresTimelyBackgroundDelivery)
+        XCTAssertFalse(TrackingMode.balanced.requiresTimelyBackgroundDelivery)
+        XCTAssertTrue(TrackingMode.precise.requiresTimelyBackgroundDelivery)
+        XCTAssertTrue(TrackingMode.workout.requiresTimelyBackgroundDelivery)
         XCTAssertEqual(TrackingMode.precise.minimumRecordingDistance, 20)
         XCTAssertEqual(TrackingMode.workout.minimumRecordingDistance, 8)
     }
