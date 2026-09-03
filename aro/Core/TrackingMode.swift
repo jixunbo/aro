@@ -127,7 +127,7 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
     /// Accuracy is a storage-quality gate, not a request to turn GPS hardware on.
     var maximumAcceptedAccuracy: CLLocationAccuracy {
         switch self {
-        case .eco: 50
+        case .eco: 30
         case .balanced: 80
         case .precise: 65
         case .workout: 50
