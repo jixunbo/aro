@@ -1,6 +1,5 @@
 import Combine
 import CoreLocation
-import CoreMotion
 import Foundation
 import UIKit
 
@@ -14,84 +13,98 @@ final class LocationService: NSObject, ObservableObject {
     @Published private(set) var lastSource: String?
     @Published private(set) var currentActivity = "未知"
     @Published private(set) var lastError: String?
+    @Published private(set) var engineState = "未开启"
+    @Published private(set) var receivedUpdateCount = 0
+    @Published private(set) var recordedUpdateCount = 0
+    @Published private(set) var rejectedUpdateCount = 0
+    @Published private(set) var lastHorizontalAccuracy: CLLocationAccuracy?
+
     @Published var isTrackingEnabled: Bool {
         didSet {
+            guard isTrackingEnabled != oldValue else { return }
             UserDefaults.standard.set(isTrackingEnabled, forKey: Keys.enabled)
-            isTrackingEnabled ? startServices() : stopServices()
-        }
-    }
-    @Published var mode: TrackingMode {
-        didSet {
-            UserDefaults.standard.set(mode.rawValue, forKey: Keys.mode)
-            cancelEcoBurst()
-            configureDetailManager()
             if isTrackingEnabled {
-                restartDetailUpdates()
-                stopMotionUpdates()
-                if mode != .eco { startMotionUpdates() }
+                trackingStartedAt = .now
+                UserDefaults.standard.set(trackingStartedAt.timeIntervalSince1970, forKey: Keys.startedAt)
+                lastError = nil
+                startTrackingIfAuthorized()
+            } else {
+                UserDefaults.standard.removeObject(forKey: Keys.startedAt)
+                stopTracking()
             }
         }
     }
 
-    private let wakeManager = CLLocationManager()
-    private let detailManager = CLLocationManager()
-    private let motionManager = CMMotionActivityManager()
-    private var latestAcceptedPoint: TrackPoint?
-    private var isStarted = false
-    private var detailUpdatesPaused = false
-    private var isMotionUpdating = false
-    private var ecoBurstStartedAt: Date?
-    private var ecoBurstBestLocation: CLLocation?
-    private var ecoBurstTimeoutTask: Task<Void, Never>?
+    @Published var mode: TrackingMode {
+        didSet {
+            guard mode != oldValue else { return }
+            UserDefaults.standard.set(mode.rawValue, forKey: Keys.mode)
+            if liveUpdatesTask != nil {
+                restartLiveUpdates()
+            }
+        }
+    }
 
-    private static let ecoBurstDurationNanoseconds: UInt64 = 8_000_000_000
-    private static let ecoBurstTargetAccuracy: CLLocationAccuracy = 65
-    private static let ecoBurstFreshnessTolerance: TimeInterval = 5
+    private let authorizationManager = CLLocationManager()
+    private var serviceSession: CLServiceSession?
+    private var backgroundActivitySession: CLBackgroundActivitySession?
+    private var liveUpdatesTask: Task<Void, Never>?
+    private var liveUpdatesGeneration = UUID()
+    private var latestAcceptedPoint: TrackPoint?
+    private var trackingStartedAt: Date
 
     private enum Keys {
         static let enabled = "tracking.enabled"
         static let mode = "tracking.mode"
+        static let startedAt = "tracking.startedAt"
     }
 
     private override init() {
-        let savedMode = UserDefaults.standard.string(forKey: Keys.mode).flatMap(TrackingMode.init(rawValue:)) ?? .balanced
+        let defaults = UserDefaults.standard
+        let savedMode = defaults.string(forKey: Keys.mode).flatMap(TrackingMode.init(rawValue:)) ?? .balanced
+        let savedEnabled = defaults.object(forKey: Keys.enabled) as? Bool ?? false
+        let latestPoint = TrackDatabase.shared.latestPoint()
+        let savedStartedAt = defaults.double(forKey: Keys.startedAt)
+
         mode = savedMode
-        isTrackingEnabled = UserDefaults.standard.object(forKey: Keys.enabled) as? Bool ?? false
-        authorizationStatus = wakeManager.authorizationStatus
-        accuracyAuthorization = wakeManager.accuracyAuthorization
-        latestAcceptedPoint = TrackDatabase.shared.latestPoint()
-        lastRecordedAt = latestAcceptedPoint?.timestamp
-        lastSource = latestAcceptedPoint?.source
+        isTrackingEnabled = savedEnabled
+        authorizationStatus = authorizationManager.authorizationStatus
+        accuracyAuthorization = authorizationManager.accuracyAuthorization
+        latestAcceptedPoint = latestPoint
+        lastRecordedAt = latestPoint?.timestamp
+        lastSource = latestPoint?.source
+        trackingStartedAt = savedStartedAt > 0
+            ? Date(timeIntervalSince1970: savedStartedAt)
+            : (savedEnabled ? latestPoint?.timestamp ?? .now : .now)
         super.init()
 
-        wakeManager.delegate = self
-        detailManager.delegate = self
-        configureDetailManager()
+        authorizationManager.delegate = self
+        if savedEnabled, savedStartedAt <= 0 {
+            defaults.set(trackingStartedAt.timeIntervalSince1970, forKey: Keys.startedAt)
+        }
     }
 
-    func handleApplicationLaunch(locationTriggered: Bool) {
-        authorizationStatus = wakeManager.authorizationStatus
-        accuracyAuthorization = wakeManager.accuracyAuthorization
-        if isTrackingEnabled, authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse {
-            startServices()
-        }
-        if locationTriggered, isTrackingEnabled {
-            startLowPowerMonitoring()
-        }
+    /// Called from UIApplicationDelegate on every process launch. This is intentionally the only
+    /// launch-time service bootstrap: a Core Location background relaunch can immediately rejoin
+    /// the outstanding live/background sessions without also starting WatchConnectivity or CloudKit.
+    func handleApplicationLaunch() {
+        authorizationStatus = authorizationManager.authorizationStatus
+        accuracyAuthorization = authorizationManager.accuracyAuthorization
+        startTrackingIfAuthorized()
     }
 
     func requestWhenInUseAuthorization() {
-        wakeManager.requestWhenInUseAuthorization()
+        authorizationManager.requestWhenInUseAuthorization()
     }
 
     func requestAlwaysAuthorization() {
-        guard authorizationStatus == .authorizedWhenInUse else { return }
-        wakeManager.requestAlwaysAuthorization()
+        guard authorizationStatus == .authorizedWhenInUse || authorizationStatus == .notDetermined else { return }
+        authorizationManager.requestAlwaysAuthorization()
     }
 
     func requestTemporaryFullAccuracy() {
         guard accuracyAuthorization == .reducedAccuracy else { return }
-        wakeManager.requestTemporaryFullAccuracyAuthorization(withPurposeKey: "TrackRecording")
+        authorizationManager.requestTemporaryFullAccuracyAuthorization(withPurposeKey: "TrackRecording")
     }
 
     func openSystemSettings() {
@@ -112,205 +125,160 @@ final class LocationService: NSObject, ObservableObject {
         }
     }
 
-    private func startServices() {
-        guard CLLocationManager.locationServicesEnabled(),
-              authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse else { return }
-        guard !isStarted else { return }
-        isStarted = true
-        startLowPowerMonitoring()
-        restartDetailUpdates()
-        if mode != .eco { startMotionUpdates() }
-    }
-
-    private func startLowPowerMonitoring() {
-        if CLLocationManager.significantLocationChangeMonitoringAvailable() {
-            wakeManager.startMonitoringSignificantLocationChanges()
+    private func startTrackingIfAuthorized() {
+        guard isTrackingEnabled else {
+            engineState = "未开启"
+            return
         }
-        wakeManager.startMonitoringVisits()
-    }
-
-    private func stopServices() {
-        isStarted = false
-        detailUpdatesPaused = false
-        wakeManager.stopMonitoringSignificantLocationChanges()
-        wakeManager.stopMonitoringVisits()
-        cancelEcoBurst()
-        detailManager.stopUpdatingLocation()
-        stopMotionUpdates()
-    }
-
-    private func configureDetailManager() {
-        detailManager.desiredAccuracy = mode.desiredAccuracy
-        detailManager.distanceFilter = mode.distanceFilter
-        detailManager.pausesLocationUpdatesAutomatically = mode.allowsAutomaticPausing
-        detailManager.activityType = mode == .workout ? .fitness : .other
-        detailManager.showsBackgroundLocationIndicator = false
-        detailManager.allowsBackgroundLocationUpdates = true
-    }
-
-    private func restartDetailUpdates() {
-        detailManager.stopUpdatingLocation()
-        detailUpdatesPaused = false
-        configureDetailManager()
-        if mode.usesContinuousUpdates,
-           authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse {
-            detailManager.startUpdatingLocation()
+        guard CLLocationManager.locationServicesEnabled() else {
+            engineState = "系统定位已关闭"
+            lastError = "系统定位服务已关闭"
+            return
         }
+        guard authorizationStatus == .authorizedAlways else {
+            engineState = authorizationStatus == .authorizedWhenInUse ? "等待始终定位权限" : "等待定位权限"
+            return
+        }
+        guard liveUpdatesTask == nil else { return }
+
+        // Explicit sessions make the lifetime of aro's all-day tracking request deterministic.
+        // BackgroundActivitySession is retained across the feature lifetime; after a system
+        // termination, recreating it here rejoins the outstanding session before queued updates arrive.
+        serviceSession = CLServiceSession(authorization: .always)
+        backgroundActivitySession = CLBackgroundActivitySession()
+        startLiveUpdates()
     }
 
-    private func resumeDetailUpdatesAfterLowPowerWake() {
-        guard detailUpdatesPaused,
-              isTrackingEnabled,
-              mode.usesContinuousUpdates,
-              authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse
-        else { return }
-
-        detailManager.stopUpdatingLocation()
-        detailUpdatesPaused = false
-        configureDetailManager()
-        detailManager.startUpdatingLocation()
-        if mode != .eco { startMotionUpdates() }
-    }
-
-    /// Eco mode leaves standard updates off between system wake events. A wake starts
-    /// a short burst and stores only a fresh, reasonably accurate standard-location fix.
-    private func startEcoBurst() {
+    private func startLiveUpdates() {
         guard isTrackingEnabled,
-              mode == .eco,
-              ecoBurstStartedAt == nil,
-              authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse
-        else { return }
+              authorizationStatus == .authorizedAlways,
+              liveUpdatesTask == nil else { return }
 
-        ecoBurstStartedAt = .now
-        ecoBurstBestLocation = nil
-        detailManager.stopUpdatingLocation()
-        configureDetailManager()
-        detailManager.distanceFilter = kCLDistanceFilterNone
-        detailManager.pausesLocationUpdatesAutomatically = false
-        detailManager.startUpdatingLocation()
+        let generation = UUID()
+        liveUpdatesGeneration = generation
+        let configuration = mode.liveConfiguration
+        engineState = "等待定位"
 
-        ecoBurstTimeoutTask?.cancel()
-        ecoBurstTimeoutTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: Self.ecoBurstDurationNanoseconds)
-            guard !Task.isCancelled else { return }
-            self?.finishEcoBurst()
-        }
-    }
-
-    private func consumeEcoBurst(_ locations: [CLLocation]) {
-        guard let startedAt = ecoBurstStartedAt else { return }
-        let earliestTimestamp = startedAt.addingTimeInterval(-Self.ecoBurstFreshnessTolerance)
-        let now = Date()
-
-        for location in locations {
-            guard location.horizontalAccuracy >= 0,
-                  location.horizontalAccuracy <= TrackingMode.eco.maximumAcceptedAccuracy,
-                  location.timestamp >= earliestTimestamp,
-                  abs(location.timestamp.timeIntervalSince(now)) < 30,
-                  CLLocationCoordinate2DIsValid(location.coordinate)
-            else { continue }
-
-            if ecoBurstBestLocation == nil || location.horizontalAccuracy < ecoBurstBestLocation!.horizontalAccuracy {
-                ecoBurstBestLocation = location
+        liveUpdatesTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                for try await update in CLLocationUpdate.liveUpdates(configuration) {
+                    guard !Task.isCancelled else { break }
+                    self.consume(update)
+                }
+            } catch is CancellationError {
+                // Expected when tracking is disabled or the user changes mode.
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.lastError = error.localizedDescription
+                self.engineState = "定位流已停止"
             }
-        }
 
-        if let best = ecoBurstBestLocation,
-           best.horizontalAccuracy <= Self.ecoBurstTargetAccuracy {
-            finishEcoBurst()
-        }
-    }
-
-    private func finishEcoBurst() {
-        guard ecoBurstStartedAt != nil else { return }
-        let bestLocation = ecoBurstBestLocation
-        ecoBurstStartedAt = nil
-        ecoBurstBestLocation = nil
-        ecoBurstTimeoutTask?.cancel()
-        ecoBurstTimeoutTask = nil
-        detailManager.stopUpdatingLocation()
-        configureDetailManager()
-
-        guard isTrackingEnabled, mode == .eco, let bestLocation else { return }
-        consume([bestLocation], source: "standard")
-    }
-
-    private func cancelEcoBurst() {
-        guard ecoBurstStartedAt != nil || ecoBurstTimeoutTask != nil else { return }
-        ecoBurstStartedAt = nil
-        ecoBurstBestLocation = nil
-        ecoBurstTimeoutTask?.cancel()
-        ecoBurstTimeoutTask = nil
-        detailManager.stopUpdatingLocation()
-    }
-
-    private func startMotionUpdates() {
-        guard !isMotionUpdating, CMMotionActivityManager.isActivityAvailable() else { return }
-        isMotionUpdating = true
-        motionManager.startActivityUpdates(to: .main) { [weak self] activity in
-            guard let self, let activity, self.isTrackingEnabled, self.mode != .eco else { return }
-            self.currentActivity = Self.label(for: activity)
-            if activity.automotive {
-                self.detailManager.activityType = .automotiveNavigation
-            } else if activity.walking || activity.running || activity.cycling {
-                self.detailManager.activityType = .fitness
-            } else {
-                self.detailManager.activityType = .other
+            if self.liveUpdatesGeneration == generation {
+                self.liveUpdatesTask = nil
             }
         }
     }
 
-    private func stopMotionUpdates() {
-        guard isMotionUpdating else { return }
-        motionManager.stopActivityUpdates()
-        isMotionUpdating = false
+    private func restartLiveUpdates() {
+        liveUpdatesGeneration = UUID()
+        liveUpdatesTask?.cancel()
+        liveUpdatesTask = nil
+        startLiveUpdates()
     }
 
-    private func consume(_ locations: [CLLocation], source: String) {
-        var insertedAny = false
-        for location in locations.sorted(by: { $0.timestamp < $1.timestamp }) {
-            let ageLimit: TimeInterval = source == "visit" ? 7 * 24 * 60 * 60 : (source == "significant" ? 6 * 60 * 60 : 180)
-            let acceptanceMode: TrackingMode = source == "visit" ? .eco : mode
-            let previousForFilter = source == "visit" ? nil : latestAcceptedPoint
-            guard TrackMath.shouldAccept(location, after: previousForFilter, mode: acceptanceMode, maximumAge: ageLimit) else { continue }
-            let point = TrackPoint(location: location, source: source, activity: currentActivity)
-            let rowID = TrackDatabase.shared.insert(point)
-            guard rowID > 0 else { continue }
-            let recordedPoint = TrackPoint(
-                id: rowID,
-                timestamp: point.timestamp,
-                latitude: point.latitude,
-                longitude: point.longitude,
-                altitude: point.altitude,
-                horizontalAccuracy: point.horizontalAccuracy,
-                speed: point.speed,
-                course: point.course,
-                source: point.source,
-                activity: point.activity
-            )
-            if latestAcceptedPoint == nil || recordedPoint.timestamp >= latestAcceptedPoint!.timestamp {
-                latestAcceptedPoint = recordedPoint
-                lastRecordedAt = point.timestamp
-                lastSource = source
-            }
-            insertedAny = true
-        }
-        if insertedAny {
-            TrackRepository.shared.didInsertPoint()
-        }
+    private func stopTracking() {
+        liveUpdatesGeneration = UUID()
+        liveUpdatesTask?.cancel()
+        liveUpdatesTask = nil
+        backgroundActivitySession?.invalidate()
+        backgroundActivitySession = nil
+        serviceSession?.invalidate()
+        serviceSession = nil
+        currentActivity = "未知"
+        engineState = "未开启"
     }
 
-    private static func label(for activity: CMMotionActivity) -> String {
-        if activity.automotive { return "驾车" }
-        if activity.cycling { return "骑行" }
-        if activity.running { return "跑步" }
-        if activity.walking { return "步行" }
-        if activity.stationary { return "静止" }
-        return "未知"
+    private func consume(_ update: CLLocationUpdate) {
+        receivedUpdateCount += 1
+
+        if update.authorizationDenied || update.authorizationDeniedGlobally {
+            engineState = "定位权限不足"
+            lastError = "定位权限已被拒绝"
+            return
+        }
+        if update.authorizationRestricted {
+            engineState = "定位受系统限制"
+            lastError = "定位服务受到系统限制"
+            return
+        }
+        if update.serviceSessionRequired {
+            engineState = "定位会话异常"
+            lastError = "Core Location 要求有效的服务会话"
+            return
+        }
+        if update.insufficientlyInUse {
+            engineState = "后台定位不可用"
+            lastError = "当前后台定位会话不足以继续接收位置"
+            return
+        }
+        if update.accuracyLimited {
+            lastError = "精确位置已关闭，轨迹质量可能受影响"
+        }
+
+        if update.stationary {
+            currentActivity = "静止"
+            engineState = "系统静止休眠"
+        } else if update.locationUnavailable {
+            engineState = "暂时无法定位"
+        }
+
+        guard let location = update.location else { return }
+        lastHorizontalAccuracy = location.horizontalAccuracy
+        if !update.stationary {
+            currentActivity = "移动"
+            engineState = "移动中"
+        }
+
+        guard TrackMath.shouldRecordLiveLocation(
+            location,
+            after: latestAcceptedPoint,
+            mode: mode,
+            trackingStartedAt: trackingStartedAt
+        ) else {
+            rejectedUpdateCount += 1
+            return
+        }
+
+        let point = TrackPoint(location: location, source: "live", activity: currentActivity)
+        let rowID = TrackDatabase.shared.insert(point)
+        guard rowID > 0 else {
+            rejectedUpdateCount += 1
+            return
+        }
+
+        let recordedPoint = TrackPoint(
+            id: rowID,
+            timestamp: point.timestamp,
+            latitude: point.latitude,
+            longitude: point.longitude,
+            altitude: point.altitude,
+            horizontalAccuracy: point.horizontalAccuracy,
+            speed: point.speed,
+            course: point.course,
+            source: point.source,
+            activity: point.activity
+        )
+        latestAcceptedPoint = recordedPoint
+        lastRecordedAt = recordedPoint.timestamp
+        lastSource = recordedPoint.source
+        recordedUpdateCount += 1
+        TrackRepository.shared.didInsertPoint()
     }
 
     var sourceLabel: String {
         switch lastSource {
+        case "live": "Live Updates"
         case "standard": "标准定位"
         case "significant": "显著位置变化"
         case "visit": "到访地点"
@@ -323,56 +291,18 @@ final class LocationService: NSObject, ObservableObject {
 
 extension LocationService: @preconcurrency CLLocationManagerDelegate {
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        guard manager === authorizationManager else { return }
         authorizationStatus = manager.authorizationStatus
         accuracyAuthorization = manager.accuracyAuthorization
-        guard manager === wakeManager else { return }
-        if isTrackingEnabled,
-           authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse {
-            isStarted = false
-            startServices()
-        }
-    }
 
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        if manager === wakeManager {
-            if mode == .eco {
-                startEcoBurst()
-            } else {
-                resumeDetailUpdatesAfterLowPowerWake()
+        if authorizationStatus == .authorizedAlways {
+            lastError = nil
+            startTrackingIfAuthorized()
+        } else if liveUpdatesTask != nil {
+            stopTracking()
+            if isTrackingEnabled {
+                engineState = authorizationStatus == .authorizedWhenInUse ? "等待始终定位权限" : "等待定位权限"
             }
-            return
         }
-
-        if mode == .eco {
-            consumeEcoBurst(locations)
-        } else {
-            consume(locations, source: "standard")
-        }
-    }
-
-    func locationManager(_ manager: CLLocationManager, didVisit visit: CLVisit) {
-        let isDeparture = visit.departureDate != .distantFuture
-        if mode == .eco {
-            startEcoBurst()
-        } else if isDeparture {
-            resumeDetailUpdatesAfterLowPowerWake()
-        }
-    }
-
-    func locationManagerDidPauseLocationUpdates(_ manager: CLLocationManager) {
-        guard manager === detailManager, mode != .eco else { return }
-        detailUpdatesPaused = true
-        stopMotionUpdates()
-    }
-
-    func locationManagerDidResumeLocationUpdates(_ manager: CLLocationManager) {
-        guard manager === detailManager, mode != .eco else { return }
-        detailUpdatesPaused = false
-        startMotionUpdates()
-    }
-
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        let code = (error as? CLError)?.code
-        if code != .locationUnknown { lastError = error.localizedDescription }
     }
 }
