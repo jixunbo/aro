@@ -175,9 +175,10 @@ final class TrackMathTests: XCTestCase {
 
     func testEcoUsesDistanceFilteredStandardLocationAndIdleMonitor() {
         XCTAssertTrue(TrackingMode.eco.usesDistanceFilteredStandardUpdates)
+        XCTAssertEqual(TrackingMode.eco.engineLabel, "iOS 标准定位")
         XCTAssertEqual(TrackingMode.eco.standardDesiredAccuracy, kCLLocationAccuracyNearestTenMeters)
         XCTAssertEqual(TrackingMode.eco.standardDistanceFilter, 100)
-        XCTAssertEqual(TrackingMode.eco.maximumAcceptedAccuracy, 50)
+        XCTAssertEqual(TrackingMode.eco.maximumAcceptedAccuracy, 30)
         XCTAssertEqual(TrackingMode.eco.idleMonitorRadius, 100)
         XCTAssertFalse(TrackingMode.eco.usesSpatialIdleDetection)
         XCTAssertTrue(TrackingMode.eco.usesIdleMonitoring)
@@ -193,6 +194,7 @@ final class TrackMathTests: XCTestCase {
     }
 
     func testTrackingModeSamplingAndBackgroundPolicies() {
+        XCTAssertEqual(TrackingMode.balanced.engineLabel, "iOS Live Updates")
         XCTAssertEqual(TrackingMode.balanced.maximumAcceptedAccuracy, 80)
         XCTAssertEqual(TrackingMode.balanced.minimumRecordingDistance, 35)
         XCTAssertEqual(TrackingMode.balanced.maximumRecordingInterval, 60)
