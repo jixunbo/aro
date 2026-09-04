@@ -111,6 +111,31 @@ final class TrackMathTests: XCTestCase {
         XCTAssertEqual(center.longitude, 13.4050, accuracy: 0.00002)
     }
 
+    func testMotionAssistedIdleWindowAcceptsStableNinetySeconds() {
+        let now = Date()
+        let interval = TrackingMode.balanced.motionAssistedIdleInterval
+        let start = now.addingTimeInterval(-interval)
+        let samples = (0..<7).map { index in
+            location(
+                latitude: 52.5200 + Double(index % 2) * 0.00001,
+                longitude: 13.4050 + Double(index % 3) * 0.00001,
+                date: start.addingTimeInterval(Double(index) * interval / 6),
+                accuracy: 8,
+                speed: 0
+            )
+        }
+
+        XCTAssertNotNil(
+            TrackMath.idleMonitorCenter(
+                for: samples,
+                mode: .balanced,
+                requiredInterval: interval,
+                minimumSamples: TrackingMode.balanced.motionAssistedMinimumIdleSamples,
+                now: now
+            )
+        )
+    }
+
     func testIdleMonitorCenterIgnoresSingleGPSOutlier() throws {
         let now = Date()
         let start = now.addingTimeInterval(-TrackingMode.balanced.idleDetectionInterval)
@@ -173,13 +198,28 @@ final class TrackMathTests: XCTestCase {
         XCTAssertNil(TrackMath.idleMonitorCenter(for: samples, mode: .balanced, now: now))
     }
 
+    func testMotionActivityResolutionPrioritizesConcreteMovement() {
+        XCTAssertEqual(
+            MotionActivityKind.resolve(stationary: true, walking: false, running: false, cycling: false, automotive: true),
+            .automotive
+        )
+        XCTAssertEqual(
+            MotionActivityKind.resolve(stationary: false, walking: true, running: false, cycling: false, automotive: false),
+            .walking
+        )
+        XCTAssertEqual(MotionActivityKind.automotive.locationActivityType, .automotiveNavigation)
+        XCTAssertEqual(MotionActivityKind.walking.locationActivityType, .fitness)
+    }
+
     func testEcoUsesDistanceFilteredStandardLocationAndIdleMonitor() {
         XCTAssertTrue(TrackingMode.eco.usesDistanceFilteredStandardUpdates)
+        XCTAssertTrue(TrackingMode.eco.usesMotionActivity)
         XCTAssertEqual(TrackingMode.eco.engineLabel, "iOS 标准定位")
         XCTAssertEqual(TrackingMode.eco.standardDesiredAccuracy, kCLLocationAccuracyNearestTenMeters)
         XCTAssertEqual(TrackingMode.eco.standardDistanceFilter, 100)
         XCTAssertEqual(TrackingMode.eco.maximumAcceptedAccuracy, 30)
-        XCTAssertEqual(TrackingMode.eco.idleMonitorRadius, 100)
+        XCTAssertEqual(TrackingMode.eco.minimumRecordingDistance, 10)
+        XCTAssertEqual(TrackingMode.eco.idleMonitorRadius, 50)
         XCTAssertFalse(TrackingMode.eco.usesSpatialIdleDetection)
         XCTAssertTrue(TrackingMode.eco.usesIdleMonitoring)
     }
@@ -195,12 +235,14 @@ final class TrackMathTests: XCTestCase {
 
     func testTrackingModeSamplingAndBackgroundPolicies() {
         XCTAssertEqual(TrackingMode.balanced.engineLabel, "iOS Live Updates")
+        XCTAssertTrue(TrackingMode.balanced.usesMotionActivity)
         XCTAssertEqual(TrackingMode.balanced.maximumAcceptedAccuracy, 80)
         XCTAssertEqual(TrackingMode.balanced.minimumRecordingDistance, 35)
         XCTAssertEqual(TrackingMode.balanced.maximumRecordingInterval, 60)
         XCTAssertTrue(TrackingMode.balanced.usesIdleMonitoring)
         XCTAssertTrue(TrackingMode.balanced.usesSpatialIdleDetection)
         XCTAssertEqual(TrackingMode.balanced.idleDetectionInterval, 300)
+        XCTAssertEqual(TrackingMode.balanced.motionAssistedIdleInterval, 90)
         XCTAssertEqual(TrackingMode.balanced.idleMonitorRadius, 60)
         XCTAssertEqual(TrackingMode.balanced.idleDetectionRequiredFraction, 0.90)
         XCTAssertEqual(TrackingMode.balanced.idleDetectionMaximumCenterDrift, 20)
