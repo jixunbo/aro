@@ -74,6 +74,9 @@ struct SettingsView: View {
             LabeledContent("后台策略", value: locationService.backgroundDeliveryLabel)
             LabeledContent("运行状态", value: locationService.engineState)
             LabeledContent("当前活动", value: locationService.currentActivity)
+            if locationService.mode.usesMotionActivity {
+                LabeledContent("运动识别", value: locationService.motionActivity)
+            }
             LabeledContent("最后记录", value: lastRecordedText)
             LabeledContent("记录通道", value: locationService.sourceLabel)
             if let accuracy = locationService.lastHorizontalAccuracy, accuracy >= 0 {
@@ -113,6 +116,7 @@ struct SettingsView: View {
         Section {
             LabeledContent("定位", value: locationService.authorizationLabel)
             LabeledContent("精确位置", value: locationService.accuracyAuthorization == .fullAccuracy ? "开启" : "关闭")
+            LabeledContent("运动与健身", value: locationService.motionAuthorizationLabel)
             LabeledContent("后台 App 刷新", value: backgroundRefreshLabel)
             permissionButton
             if locationService.accuracyAuthorization == .reducedAccuracy {
@@ -121,7 +125,7 @@ struct SettingsView: View {
         } header: {
             Text("系统权限")
         } footer: {
-            Text("全天自动记录要求“始终”定位权限。极省电使用约 100 米距离触发的标准定位，系统确认静止后切到低功耗地理监控；均衡使用 Live Updates，并在稳定静止后切换地理监控。离开静止范围后恢复各自的定位引擎。精确/运动保持及时后台执行。")
+            Text("全天自动记录要求“始终”定位权限。极省电和均衡会使用“运动与健身”来识别静止、步行、跑步、骑行和驾车：极省电据此调整标准定位活动类型并在静止时进入约 50 米低功耗守候；均衡把运动静止与 GPS 稳定性融合，可更快进入约 60 米守候。拒绝运动权限时，定位仍可工作，但均衡会退回较慢的纯 GPS 静止判断。")
         }
     }
 
@@ -218,7 +222,7 @@ struct SettingsView: View {
     private var aboutSection: some View {
         Section("关于") {
             LabeledContent("产品", value: "aro")
-            LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.2")
+            LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.1.0")
             Button("重新查看隐私引导") { hasCompletedOnboarding = false }
         }
     }
