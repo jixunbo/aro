@@ -26,6 +26,8 @@
     <string>aro 需要定位来绘制你主动开启的足迹，并在地图上展示当前位置。</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>允许“始终”定位后，aro 才能在锁屏、切换 App 或被系统回收后继续自动记录你的足迹。</string>
+    <key>NSMotionUsageDescription</key>
+    <string>aro 使用运动与健身活动类型辅助判断静止、步行、跑步、骑行和驾车，从而减少静止耗电并更及时恢复轨迹记录。</string>
     <key>NSLocationRequireExplicitServiceSession</key>
     <true/>
     <key>NSLocationTemporaryUsageDescriptionDictionary</key>
