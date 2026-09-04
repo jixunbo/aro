@@ -18,11 +18,6 @@ enum TrackMath {
         return result
     }
 
-    /// Decides whether a delivered Core Location fix is useful route geometry.
-    ///
-    /// Live Updates and Standard location callbacks may deliver queued fixes after a background
-    /// relaunch, so wall-clock age is deliberately not used as a freshness gate. Instead, a fix
-    /// must belong to the current tracking session and be newer than the last persisted point.
     static func shouldRecordLiveLocation(
         _ location: CLLocation,
         after previous: TrackPoint?,
@@ -75,16 +70,18 @@ enum TrackMath {
         return false
     }
 
-    /// Returns a stable center only when recent good fixes prove the device has remained in one
-    /// place for the complete idle interval. A robust median center plus a high inlier fraction
-    /// prevents one or two GPS spikes from keeping Balanced awake forever, while the first/last
-    /// cluster drift check prevents a slowly translating path from being mistaken for jitter.
     static func idleMonitorCenter(
         for locations: [CLLocation],
         mode: TrackingMode,
+        requiredInterval: TimeInterval? = nil,
+        minimumSamples: Int? = nil,
         now: Date = .now
     ) -> CLLocationCoordinate2D? {
         guard mode.usesSpatialIdleDetection else { return nil }
+
+        let interval = requiredInterval ?? mode.idleDetectionInterval
+        let requiredSamples = minimumSamples ?? mode.minimumIdleSamples
+        guard interval.isFinite, interval > 0, requiredSamples > 0 else { return nil }
 
         let usable = locations
             .filter {
@@ -98,11 +95,11 @@ enum TrackMath {
         guard let newest = usable.last,
               now.timeIntervalSince(newest.timestamp) <= 90 else { return nil }
 
-        let cutoff = newest.timestamp.addingTimeInterval(-mode.idleDetectionInterval)
+        let cutoff = newest.timestamp.addingTimeInterval(-interval)
         let window = usable.filter { $0.timestamp >= cutoff }
-        guard window.count >= mode.minimumIdleSamples,
+        guard window.count >= requiredSamples,
               let oldest = window.first,
-              newest.timestamp.timeIntervalSince(oldest.timestamp) >= mode.idleDetectionInterval,
+              newest.timestamp.timeIntervalSince(oldest.timestamp) >= interval,
               let center = medianCoordinate(of: window) else {
             return nil
         }
@@ -128,7 +125,6 @@ enum TrackMath {
         return center
     }
 
-    /// Bearing of the path segment in degrees clockwise from true north.
     static func bearing(from start: CLLocationCoordinate2D, to end: CLLocationCoordinate2D) -> CLLocationDirection {
         let lat1 = start.latitude * .pi / 180
         let lat2 = end.latitude * .pi / 180
