@@ -190,7 +190,7 @@ final class LocationService: NSObject, ObservableObject {
 
     var motionAuthorizationLabel: String {
         guard CMMotionActivityManager.isActivityAvailable() else { return "设备不支持" }
-        switch CMMotionActivityManager.authorizationStatus() {
+        return switch CMMotionActivityManager.authorizationStatus() {
         case .notDetermined: "尚未授权"
         case .restricted: "受系统限制"
         case .denied: "已拒绝"
