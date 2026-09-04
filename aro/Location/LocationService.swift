@@ -1,5 +1,6 @@
 import Combine
 import CoreLocation
+import CoreMotion
 import Foundation
 import UIKit
 
@@ -12,6 +13,7 @@ final class LocationService: NSObject, ObservableObject {
     @Published private(set) var lastRecordedAt: Date?
     @Published private(set) var lastSource: String?
     @Published private(set) var currentActivity = "未知"
+    @Published private(set) var motionActivity = "未知"
     @Published private(set) var lastError: String?
     @Published private(set) var engineState = "未开启"
     @Published private(set) var isTrackingActive = false
@@ -29,6 +31,7 @@ final class LocationService: NSObject, ObservableObject {
                 beginNewTrackingSession()
                 lastError = nil
                 startTrackingIfAuthorized()
+                configureMotionActivity(allowPrompt: UIApplication.shared.applicationState == .active)
             } else {
                 UserDefaults.standard.removeObject(forKey: Keys.startedAt)
                 clearTrackingAnchor()
@@ -43,19 +46,26 @@ final class LocationService: NSObject, ObservableObject {
             UserDefaults.standard.set(mode.rawValue, forKey: Keys.mode)
             resetMovementGeometry()
             resetIdleDetection()
+            configureMotionActivity(allowPrompt: UIApplication.shared.applicationState == .active)
             guard liveUpdatesTask != nil || ecoStandardUpdatesRunning || idleMonitorTask != nil || isIdleMonitorPersisted else { return }
-            Task { @MainActor [weak self] in
-                await self?.reconfigureActiveTrackingForModeChange()
-            }
+            Task { @MainActor [weak self] in await self?.reconfigureActiveTrackingForModeChange() }
         }
     }
 
     private let authorizationManager = CLLocationManager()
+    private let motionManager = CMMotionActivityManager()
+    private var motionUpdatesRunning = false
+    private var motionKind: MotionActivityKind = .unknown
+    private var motionKindSince = Date.distantPast
     private var serviceSession: CLServiceSession?
     private var backgroundActivitySession: CLBackgroundActivitySession?
     private var liveUpdatesTask: Task<Void, Never>?
     private var liveUpdatesGeneration = UUID()
     private var ecoStandardUpdatesRunning = false
+    private var ecoWarmStartTask: Task<Void, Never>?
+    private var ecoWarmStartStartedAt: Date?
+    private var ecoIdleCaptureTask: Task<Void, Never>?
+    private var ecoIdleCaptureStartedAt: Date?
     private var idleMonitor: CLMonitor?
     private var idleMonitorTask: Task<Void, Never>?
     private var idleMonitorGeneration = UUID()
@@ -71,6 +81,7 @@ final class LocationService: NSObject, ObservableObject {
     private static let backgroundRepositoryRefreshInterval: TimeInterval = 5 * 60
     private static let idleMonitorName = "aro.idle-monitor"
     private static let idleConditionIdentifier = "stationary-area"
+    private static let ecoTransitionTimeout: TimeInterval = 30
 
     private enum Keys {
         static let enabled = "tracking.enabled"
@@ -83,7 +94,6 @@ final class LocationService: NSObject, ObservableObject {
     private struct MovementObservation {
         let turnDegrees: CLLocationDirection?
         let hasMeaningfulMovement: Bool
-
         static let none = MovementObservation(turnDegrees: nil, hasMeaningfulMovement: false)
     }
 
@@ -94,17 +104,14 @@ final class LocationService: NSObject, ObservableObject {
         let latestPoint = TrackDatabase.shared.latestPoint()
         let savedStartedAt = defaults.double(forKey: Keys.startedAt)
         let sessionStart = savedStartedAt > 0 ? Date(timeIntervalSince1970: savedStartedAt) : .now
-        let savedAnchor = defaults.string(forKey: Keys.lastAcceptedSyncID)
-            .flatMap { TrackDatabase.shared.point(syncID: $0) }
+        let savedAnchor = defaults.string(forKey: Keys.lastAcceptedSyncID).flatMap { TrackDatabase.shared.point(syncID: $0) }
 
         mode = savedMode
         isTrackingEnabled = savedEnabled
         authorizationStatus = authorizationManager.authorizationStatus
         accuracyAuthorization = authorizationManager.accuracyAuthorization
         trackingStartedAt = sessionStart
-        if let savedAnchor,
-           savedAnchor.timestamp >= sessionStart.addingTimeInterval(-1),
-           savedAnchor.timestamp <= Date.now.addingTimeInterval(60) {
+        if let savedAnchor, savedAnchor.timestamp >= sessionStart.addingTimeInterval(-1), savedAnchor.timestamp <= Date.now.addingTimeInterval(60) {
             latestAcceptedPoint = savedAnchor
         } else {
             latestAcceptedPoint = nil
@@ -113,7 +120,6 @@ final class LocationService: NSObject, ObservableObject {
         lastSource = latestPoint?.source
 
         super.init()
-
         authorizationManager.delegate = self
         if savedEnabled, savedStartedAt <= 0 {
             defaults.set(trackingStartedAt.timeIntervalSince1970, forKey: Keys.startedAt)
@@ -125,12 +131,15 @@ final class LocationService: NSObject, ObservableObject {
         }
     }
 
-    /// Called from UIApplicationDelegate on every process launch. Location is intentionally the
-    /// only launch-time subsystem so a CLMonitor, Live Updates, or Eco Standard relaunch stays isolated.
     func handleApplicationLaunch() {
         authorizationStatus = authorizationManager.authorizationStatus
         accuracyAuthorization = authorizationManager.accuracyAuthorization
+        configureMotionActivity(allowPrompt: false)
         startTrackingIfAuthorized()
+    }
+
+    func appBecameActive() {
+        configureMotionActivity(allowPrompt: true)
     }
 
     func handleTrackDataDeleted() {
@@ -179,10 +188,21 @@ final class LocationService: NSObject, ObservableObject {
         }
     }
 
+    var motionAuthorizationLabel: String {
+        guard CMMotionActivityManager.isActivityAvailable() else { return "设备不支持" }
+        switch CMMotionActivityManager.authorizationStatus() {
+        case .notDetermined: "尚未授权"
+        case .restricted: "受系统限制"
+        case .denied: "已拒绝"
+        case .authorized: "已允许"
+        @unknown default: "未知"
+        }
+    }
+
     var backgroundDeliveryLabel: String {
         switch mode {
-        case .eco: "约 100 米触发 + 静止监控"
-        case .balanced: "静止低功耗监控"
+        case .eco: "运动感知 · 约 100 米触发 + 50 米静止守候"
+        case .balanced: "运动感知 · 自适应静止低功耗"
         case .precise, .workout: "及时后台"
         }
     }
@@ -237,7 +257,6 @@ final class LocationService: NSObject, ObservableObject {
             serviceSession = CLServiceSession(authorization: .always)
         }
         configureBackgroundDelivery()
-
         if mode.usesIdleMonitoring, isIdleMonitorPersisted {
             restoreIdleMonitoring()
         } else {
@@ -257,15 +276,87 @@ final class LocationService: NSObject, ObservableObject {
         }
     }
 
+    private func configureMotionActivity(allowPrompt: Bool) {
+        guard isTrackingEnabled, mode.usesMotionActivity, CMMotionActivityManager.isActivityAvailable() else {
+            stopMotionActivity()
+            return
+        }
+        let auth = CMMotionActivityManager.authorizationStatus()
+        if auth == .denied || auth == .restricted || (!allowPrompt && auth == .notDetermined) {
+            return
+        }
+        guard !motionUpdatesRunning else { return }
+
+        motionUpdatesRunning = true
+        motionManager.startActivityUpdates(to: .main) { [weak self] activity in
+            guard let activity else { return }
+            Task { @MainActor [weak self] in
+                self?.consumeMotionActivity(activity)
+            }
+        }
+    }
+
+    private func stopMotionActivity() {
+        guard motionUpdatesRunning else { return }
+        motionManager.stopActivityUpdates()
+        motionUpdatesRunning = false
+        motionKind = .unknown
+        motionActivity = "未知"
+    }
+
+    private func consumeMotionActivity(_ activity: CMMotionActivity) {
+        guard mode.usesMotionActivity, activity.confidence != .low else { return }
+        let next = MotionActivityKind.resolve(
+            stationary: activity.stationary,
+            walking: activity.walking,
+            running: activity.running,
+            cycling: activity.cycling,
+            automotive: activity.automotive
+        )
+        guard next != .unknown else { return }
+
+        let changed = next != motionKind
+        if changed {
+            motionKind = next
+            motionKindSince = activity.startDate
+        }
+        motionActivity = next.label
+
+        if mode == .eco, ecoStandardUpdatesRunning {
+            authorizationManager.activityType = next.locationActivityType
+        }
+        guard changed else { return }
+
+        if next.isMoving {
+            cancelEcoIdleCapture()
+            resetIdleDetection()
+            if idleMonitorTask != nil || isIdleMonitorPersisted {
+                Task { @MainActor [weak self] in
+                    await self?.leaveIdleMonitoringAndResumePrimaryUpdates()
+                }
+            } else {
+                currentActivity = next.label
+                engineState = mode == .eco ? "运动中 · 等待约 100 米" : "移动中"
+            }
+        } else if next == .stationary {
+            if mode == .eco, ecoStandardUpdatesRunning {
+                beginEcoIdleCapture()
+            }
+            if mode == .balanced {
+                resetIdleDetection()
+            }
+        }
+    }
+
     private func startPrimaryUpdates() {
         if mode.usesDistanceFilteredStandardUpdates {
-            startEcoStandardUpdates()
+            startEcoStandardUpdates(warmStart: true)
         } else {
             startLiveUpdates()
         }
     }
 
-    private func startEcoStandardUpdates() {
+    private func startEcoStandardUpdates(warmStart: Bool) {
         guard mode == .eco,
               isTrackingEnabled,
               authorizationStatus == .authorizedAlways,
@@ -276,19 +367,92 @@ final class LocationService: NSObject, ObservableObject {
         resetMovementGeometry()
         resetIdleDetection()
         authorizationManager.desiredAccuracy = mode.standardDesiredAccuracy
-        authorizationManager.distanceFilter = mode.standardDistanceFilter
-        authorizationManager.activityType = .other
+        authorizationManager.activityType = motionKind.locationActivityType
         authorizationManager.pausesLocationUpdatesAutomatically = true
         authorizationManager.allowsBackgroundLocationUpdates = true
         authorizationManager.showsBackgroundLocationIndicator = false
         ecoStandardUpdatesRunning = true
         isTrackingActive = true
-        engineState = "等待距离定位"
-        currentActivity = "监测中"
+        currentActivity = motionKind == .unknown ? "监测中" : motionKind.label
+        if warmStart {
+            beginEcoWarmStart()
+        } else {
+            authorizationManager.distanceFilter = mode.standardDistanceFilter
+            engineState = "等待距离移动"
+        }
         authorizationManager.startUpdatingLocation()
     }
 
+    private func beginEcoWarmStart() {
+        guard ecoStandardUpdatesRunning else { return }
+        ecoWarmStartTask?.cancel()
+        ecoWarmStartStartedAt = .now
+        authorizationManager.distanceFilter = kCLDistanceFilterNone
+        authorizationManager.pausesLocationUpdatesAutomatically = false
+        engineState = "恢复定位"
+        ecoWarmStartTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(Self.ecoTransitionTimeout))
+            guard !Task.isCancelled else { return }
+            self?.finishEcoWarmStart()
+        }
+    }
+
+    private func finishEcoWarmStart() {
+        ecoWarmStartTask?.cancel()
+        ecoWarmStartTask = nil
+        ecoWarmStartStartedAt = nil
+        guard ecoStandardUpdatesRunning, mode == .eco, ecoIdleCaptureStartedAt == nil else { return }
+        authorizationManager.distanceFilter = mode.standardDistanceFilter
+        authorizationManager.pausesLocationUpdatesAutomatically = true
+        engineState = "等待距离移动"
+    }
+
+    private func beginEcoIdleCapture() {
+        guard mode == .eco,
+              ecoStandardUpdatesRunning,
+              ecoIdleCaptureStartedAt == nil else { return }
+
+        ecoWarmStartTask?.cancel()
+        ecoWarmStartTask = nil
+        ecoWarmStartStartedAt = nil
+        ecoIdleCaptureStartedAt = .now
+        authorizationManager.distanceFilter = kCLDistanceFilterNone
+        authorizationManager.pausesLocationUpdatesAutomatically = false
+        engineState = "确认静止位置"
+        currentActivity = "静止"
+        authorizationManager.startUpdatingLocation()
+
+        ecoIdleCaptureTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(Self.ecoTransitionTimeout))
+            guard let self, !Task.isCancelled, self.ecoIdleCaptureStartedAt != nil else { return }
+            let center = self.idleAnchorCoordinate()
+            self.cancelEcoIdleCapture()
+            if let center {
+                self.enterIdleMonitoring(center: center)
+            } else {
+                self.authorizationManager.distanceFilter = self.mode.standardDistanceFilter
+                self.authorizationManager.pausesLocationUpdatesAutomatically = true
+            }
+        }
+    }
+
+    private func cancelEcoIdleCapture() {
+        ecoIdleCaptureTask?.cancel()
+        ecoIdleCaptureTask = nil
+        ecoIdleCaptureStartedAt = nil
+        if ecoStandardUpdatesRunning, mode == .eco {
+            authorizationManager.distanceFilter = mode.standardDistanceFilter
+            authorizationManager.pausesLocationUpdatesAutomatically = true
+        }
+    }
+
     private func stopEcoStandardUpdates() {
+        ecoWarmStartTask?.cancel()
+        ecoWarmStartTask = nil
+        ecoWarmStartStartedAt = nil
+        ecoIdleCaptureTask?.cancel()
+        ecoIdleCaptureTask = nil
+        ecoIdleCaptureStartedAt = nil
         guard ecoStandardUpdatesRunning else { return }
         authorizationManager.stopUpdatingLocation()
         ecoStandardUpdatesRunning = false
@@ -307,7 +471,7 @@ final class LocationService: NSObject, ObservableObject {
         let configuration = mode.liveConfiguration
         resetIdleDetection()
         engineState = "等待定位"
-        currentActivity = "监测中"
+        currentActivity = motionKind == .unknown ? "监测中" : motionKind.label
         isTrackingActive = true
 
         liveUpdatesTask = Task { @MainActor [weak self] in
@@ -318,7 +482,6 @@ final class LocationService: NSObject, ObservableObject {
                     self.consume(update)
                 }
             } catch is CancellationError {
-                // Expected when tracking is disabled, mode changes, or idle monitoring takes over.
             } catch {
                 guard !Task.isCancelled else { return }
                 self.lastError = error.localizedDescription
@@ -353,6 +516,7 @@ final class LocationService: NSObject, ObservableObject {
 
     private func reconfigureActiveTrackingForModeChange() async {
         configureBackgroundDelivery()
+        configureMotionActivity(allowPrompt: UIApplication.shared.applicationState == .active)
         if idleMonitorTask != nil || isIdleMonitorPersisted {
             await leaveIdleMonitoringAndResumePrimaryUpdates()
         } else if isPrimaryUpdatesRunning {
@@ -482,7 +646,11 @@ final class LocationService: NSObject, ObservableObject {
         currentActivity = "监测中"
         engineState = "检测到移动"
         configureBackgroundDelivery()
-        startPrimaryUpdates()
+        if mode == .eco {
+            startEcoStandardUpdates(warmStart: true)
+        } else {
+            startPrimaryUpdates()
+        }
     }
 
     private func recoverFromIdleMonitor(_ monitor: CLMonitor, generation: UUID, message: String) async {
@@ -512,6 +680,7 @@ final class LocationService: NSObject, ObservableObject {
     }
 
     private func stopTracking() {
+        stopMotionActivity()
         stopEcoStandardUpdates()
         stopLiveUpdates()
         idleMonitorGeneration = UUID()
@@ -623,6 +792,22 @@ final class LocationService: NSObject, ObservableObject {
             lastHorizontalAccuracy = location.horizontalAccuracy
             rememberReliableLocation(location)
 
+            if let startedAt = ecoWarmStartStartedAt,
+               location.timestamp >= startedAt.addingTimeInterval(-1),
+               location.horizontalAccuracy >= 0,
+               location.horizontalAccuracy <= mode.maximumAcceptedAccuracy {
+                finishEcoWarmStart()
+            }
+
+            if let startedAt = ecoIdleCaptureStartedAt,
+               location.timestamp >= startedAt.addingTimeInterval(-1),
+               location.horizontalAccuracy >= 0,
+               location.horizontalAccuracy <= min(20, mode.maximumAcceptedAccuracy),
+               CLLocationCoordinate2DIsValid(location.coordinate) {
+                cancelEcoIdleCapture()
+                enterIdleMonitoring(center: location.coordinate)
+            }
+
             let movement = advanceMovementGeometry(with: location)
             updateMovementUI(using: movement)
 
@@ -658,10 +843,7 @@ final class LocationService: NSObject, ObservableObject {
     }
 
     private func idleAnchorCoordinate() -> CLLocationCoordinate2D? {
-        if let lastReliableLocation {
-            return lastReliableLocation.coordinate
-        }
-        return latestAcceptedPoint?.location.coordinate
+        lastReliableLocation?.coordinate ?? latestAcceptedPoint?.location.coordinate
     }
 
     private func record(_ location: CLLocation, source: String) {
@@ -711,11 +893,25 @@ final class LocationService: NSObject, ObservableObject {
               CLLocationCoordinate2DIsValid(location.coordinate) else { return nil }
 
         idleLocationWindow.append(location)
-        let cutoff = location.timestamp.addingTimeInterval(-(mode.idleDetectionInterval + 60))
+        let longestInterval = max(mode.idleDetectionInterval, mode.motionAssistedIdleInterval)
+        let cutoff = location.timestamp.addingTimeInterval(-(longestInterval + 60))
         idleLocationWindow.removeAll { $0.timestamp < cutoff }
         if idleLocationWindow.count > 256 {
             idleLocationWindow.removeFirst(idleLocationWindow.count - 256)
         }
+
+        let motionStationary = motionKind == .stationary
+            && Date.now.timeIntervalSince(motionKindSince) >= mode.motionAssistedIdleInterval
+        if motionStationary,
+           let center = TrackMath.idleMonitorCenter(
+               for: idleLocationWindow,
+               mode: mode,
+               requiredInterval: mode.motionAssistedIdleInterval,
+               minimumSamples: mode.motionAssistedMinimumIdleSamples
+           ) {
+            return center
+        }
+
         return TrackMath.idleMonitorCenter(for: idleLocationWindow, mode: mode)
     }
 
@@ -771,12 +967,20 @@ final class LocationService: NSObject, ObservableObject {
     }
 
     private func updateMovementUI(using observation: MovementObservation) {
+        if motionKind.isMoving {
+            currentActivity = motionKind.label
+            if idleMonitorTask == nil {
+                engineState = mode == .eco ? "运动中 · 等待约 100 米" : "移动中"
+            }
+            return
+        }
+
         if observation.hasMeaningfulMovement {
             currentActivity = "移动"
             engineState = "移动中"
         } else if idleMonitorTask == nil {
-            currentActivity = "监测中"
-            if engineState != "准备静止省电" {
+            currentActivity = motionKind == .stationary ? "静止" : "监测中"
+            if engineState != "准备静止省电" && engineState != "确认静止位置" {
                 engineState = mode == .eco ? "等待距离移动" : "监测中"
             }
         }
@@ -838,8 +1042,11 @@ extension LocationService: @preconcurrency CLLocationManagerDelegate {
 
         currentActivity = "静止"
         engineState = "系统确认静止"
-        guard let center = idleAnchorCoordinate() else { return }
-        enterIdleMonitoring(center: center)
+        if CMMotionActivityManager.authorizationStatus() == .authorized {
+            beginEcoIdleCapture()
+        } else if let center = idleAnchorCoordinate() {
+            enterIdleMonitoring(center: center)
+        }
     }
 
     func locationManagerDidResumeLocationUpdates(_ manager: CLLocationManager) {
@@ -847,7 +1054,7 @@ extension LocationService: @preconcurrency CLLocationManagerDelegate {
               mode == .eco,
               ecoStandardUpdatesRunning,
               idleMonitorTask == nil else { return }
-        currentActivity = "监测中"
+        currentActivity = motionKind.isMoving ? motionKind.label : "监测中"
         engineState = "检测到移动"
     }
 }
