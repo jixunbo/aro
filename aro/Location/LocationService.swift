@@ -67,6 +67,7 @@ final class LocationService: NSObject, ObservableObject {
     private var ecoIdleCaptureTask: Task<Void, Never>?
     private var ecoIdleCaptureStartedAt: Date?
     private var idleMonitor: CLMonitor?
+    private var idleMonitorCreationTask: Task<CLMonitor, Never>?
     private var idleMonitorTask: Task<Void, Never>?
     private var idleMonitorGeneration = UUID()
     private var latestAcceptedPoint: TrackPoint?
@@ -79,8 +80,8 @@ final class LocationService: NSObject, ObservableObject {
     private var lastBackgroundRepositoryRefreshAt: Date?
 
     private static let backgroundRepositoryRefreshInterval: TimeInterval = 5 * 60
-    private static let idleMonitorName = "aro.idle-monitor"
-    private static let idleConditionIdentifier = "stationary-area"
+    static let idleMonitorName = "aroIdleMonitor"
+    static let idleConditionIdentifier = "stationaryArea"
     private static let ecoTransitionTimeout: TimeInterval = 30
 
     private enum Keys {
@@ -592,8 +593,13 @@ final class LocationService: NSObject, ObservableObject {
 
     private func getIdleMonitor() async -> CLMonitor {
         if let idleMonitor { return idleMonitor }
-        let monitor = await CLMonitor(Self.idleMonitorName)
+        if let idleMonitorCreationTask { return await idleMonitorCreationTask.value }
+
+        let creationTask = Task { await CLMonitor(Self.idleMonitorName) }
+        idleMonitorCreationTask = creationTask
+        let monitor = await creationTask.value
         idleMonitor = monitor
+        idleMonitorCreationTask = nil
         return monitor
     }
 
