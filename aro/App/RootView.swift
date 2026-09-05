@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @AppStorage("onboarding.completed") private var hasCompletedOnboarding = false
     @EnvironmentObject private var repository: TrackRepository
+    @EnvironmentObject private var locationService: LocationService
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -16,6 +17,7 @@ struct RootView: View {
         .task {
             repository.refresh()
             if scenePhase == .active {
+                locationService.appBecameActive()
                 AROShortcuts.updateAppShortcutParameters()
                 PhoneConnectivity.shared.appBecameActive()
                 PhoneConnectivity.shared.publishTrackComplication(points: repository.todayPoints, force: true)
@@ -34,6 +36,7 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 repository.refresh()
+                locationService.appBecameActive()
                 AROShortcuts.updateAppShortcutParameters()
                 PhoneConnectivity.shared.appBecameActive()
                 PhoneConnectivity.shared.publishTrackComplication(points: repository.todayPoints, force: true)

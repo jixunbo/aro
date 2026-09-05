@@ -43,6 +43,18 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      - name: Cloud simulator build
+        run: |
+          xcodebuild \
+            -project aro.xcodeproj \
+            -scheme aro \
+            -configuration CloudDebug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath DerivedData-cloud \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
       - name: Unit tests
         run: |
           xcodebuild \

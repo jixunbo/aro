@@ -54,14 +54,14 @@ struct TodayView: View {
     private var statusCard: some View {
         HStack(spacing: 14) {
             ZStack {
-                Circle().fill(locationService.isTrackingEnabled ? Color.green.opacity(0.16) : Color.orange.opacity(0.16))
-                Image(systemName: locationService.isTrackingEnabled ? "location.fill" : "pause.fill")
-                    .foregroundStyle(locationService.isTrackingEnabled ? .green : .orange)
+                Circle().fill(locationService.isTrackingActive ? Color.green.opacity(0.16) : Color.orange.opacity(0.16))
+                Image(systemName: locationService.isTrackingActive ? "location.fill" : "pause.fill")
+                    .foregroundStyle(locationService.isTrackingActive ? .green : .orange)
             }
             .frame(width: 48, height: 48)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(locationService.isTrackingEnabled ? "正在自动记录" : "记录已暂停")
+                Text(locationService.isTrackingEnabled ? locationService.engineState : "记录已暂停")
                     .font(.headline)
                 Text("\(locationService.mode.title) · 定位权限：\(locationService.authorizationLabel)")
                     .font(.caption)

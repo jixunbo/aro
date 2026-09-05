@@ -62,6 +62,34 @@ final class TrackDatabaseTests: XCTestCase {
         XCTAssertEqual(allPoints.map(\.timestamp), points.map(\.timestamp))
     }
 
+    func testOutOfOrderRecordedInsertRebuildsDailySummary() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("TrackDatabaseTests-OutOfOrder-\(UUID().uuidString)", isDirectory: true)
+        var database: TrackDatabase? = TrackDatabase(databaseURL: folder.appendingPathComponent("tracks.sqlite3"))
+        defer {
+            database = nil
+            try? FileManager.default.removeItem(at: folder)
+        }
+        let db = try XCTUnwrap(database)
+        let start = Date(timeIntervalSince1970: 12 * 60 * 60)
+        let first = TrackPoint(timestamp: start, latitude: 52.52, longitude: 13.405)
+        let middle = TrackPoint(timestamp: start.addingTimeInterval(60), latitude: 52.521, longitude: 13.406)
+        let last = TrackPoint(timestamp: start.addingTimeInterval(120), latitude: 52.52, longitude: 13.407)
+
+        XCTAssertGreaterThan(db.insert(first), 0)
+        XCTAssertGreaterThan(db.insert(last), 0)
+        XCTAssertGreaterThan(db.insert(middle), 0)
+
+        let stored = db.allPoints()
+        let expectedDistance = TrackMath.distance(of: stored)
+        let day = try XCTUnwrap(db.trackDays().first)
+
+        XCTAssertEqual(stored.map(\.timestamp), [first.timestamp, middle.timestamp, last.timestamp])
+        XCTAssertEqual(day.pointCount, 3)
+        XCTAssertEqual(day.distance, expectedDistance, accuracy: 0.01)
+        XCTAssertEqual(db.lifetimeStats().distance, expectedDistance, accuracy: 0.01)
+    }
+
     func testSyncIDsAreAssignedAndProvidedIDsArePreserved() throws {
         let folder = FileManager.default.temporaryDirectory
             .appendingPathComponent("TrackDatabaseTests-\(UUID().uuidString)", isDirectory: true)
@@ -71,8 +99,16 @@ final class TrackDatabaseTests: XCTestCase {
             try? FileManager.default.removeItem(at: folder)
         }
 
+        let recordedID = "recorded-live-id"
         XCTAssertGreaterThan(
-            database?.insert(TrackPoint(timestamp: Date(timeIntervalSince1970: 1), latitude: 52.52, longitude: 13.405)) ?? 0,
+            database?.insert(
+                TrackPoint(
+                    syncID: recordedID,
+                    timestamp: Date(timeIntervalSince1970: 1),
+                    latitude: 52.52,
+                    longitude: 13.405
+                )
+            ) ?? 0,
             0
         )
         let suppliedID = "cloud-record-id"
@@ -90,9 +126,10 @@ final class TrackDatabaseTests: XCTestCase {
 
         let stored = try XCTUnwrap(database?.allPoints())
         XCTAssertEqual(stored.count, 2)
-        XCTAssertFalse(try XCTUnwrap(stored[0].syncID).isEmpty)
+        XCTAssertEqual(stored[0].syncID, recordedID)
         XCTAssertEqual(stored[1].syncID, suppliedID)
         XCTAssertEqual(Set(stored.compactMap(\.syncID)).count, 2)
+        XCTAssertEqual(database?.point(syncID: recordedID)?.id, stored[0].id)
     }
 
     func testCloudSyncBookkeepingSeparatesLocalAndRemotePoints() throws {

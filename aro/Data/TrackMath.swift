@@ -2,6 +2,36 @@ import CoreLocation
 import Foundation
 
 enum TrackMath {
+    enum RejectionReason: String, CaseIterable, Equatable, Hashable {
+        case invalid
+        case accuracy
+        case beforeSession
+        case future
+        case order
+        case tooClose
+        case implausibleSpeed
+        case belowThreshold
+        case database
+
+        var label: String {
+            switch self {
+            case .invalid: "无效"
+            case .accuracy: "精度"
+            case .beforeSession: "会话前"
+            case .future: "未来"
+            case .order: "顺序"
+            case .tooClose: "过近"
+            case .implausibleSpeed: "异常速度"
+            case .belowThreshold: "未达阈值"
+            case .database: "数据库"
+            }
+        }
+    }
+
+    enum RecordDecision: Equatable {
+        case record
+        case reject(RejectionReason)
+    }
     static func distance(of points: [TrackPoint]) -> CLLocationDistance {
         guard points.count > 1 else { return 0 }
         var result: CLLocationDistance = 0
@@ -18,32 +48,156 @@ enum TrackMath {
         return result
     }
 
-    static func shouldAccept(
+    static func recordDecision(
         _ location: CLLocation,
         after previous: TrackPoint?,
         mode: TrackingMode,
-        maximumAge: TimeInterval = 180,
-        now: Date = Date()
-    ) -> Bool {
-        guard location.horizontalAccuracy >= 0,
-              location.horizontalAccuracy <= mode.maximumAcceptedAccuracy,
-              abs(location.timestamp.timeIntervalSince(now)) < maximumAge,
-              CLLocationCoordinate2DIsValid(location.coordinate)
-        else { return false }
+        trackingStartedAt: Date,
+        observedTurnDegrees: CLLocationDirection? = nil,
+        now: Date = .now
+    ) -> RecordDecision {
+        guard CLLocationCoordinate2DIsValid(location.coordinate), location.horizontalAccuracy >= 0 else {
+            return .reject(.invalid)
+        }
+        guard location.horizontalAccuracy <= mode.maximumAcceptedAccuracy else {
+            return .reject(.accuracy)
+        }
+        guard location.timestamp >= trackingStartedAt.addingTimeInterval(-1) else {
+            return .reject(.beforeSession)
+        }
+        guard location.timestamp <= now.addingTimeInterval(60) else {
+            return .reject(.future)
+        }
 
-        guard let previous else { return true }
+        guard let previous else { return .record }
         let interval = location.timestamp.timeIntervalSince(previous.timestamp)
-        guard interval > 0 else { return false }
+        guard interval > 0 else { return .reject(.order) }
 
         let distance = previous.location.distance(from: location)
-        if distance < max(5, mode.distanceFilter * 0.25), interval < 90 {
-            return false
-        }
+        guard distance >= 5 else { return .reject(.tooClose) }
 
         if interval < 10 * 60, distance / interval > 100 {
-            return false
+            return .reject(.implausibleSpeed)
         }
-        return true
+
+        let previousAccuracy = previous.horizontalAccuracy >= 0 ? previous.horizontalAccuracy : 0
+        let noiseRadius = max(previousAccuracy, location.horizontalAccuracy) * 0.5
+        let normalDistance = max(mode.minimumRecordingDistance, noiseRadius)
+        if distance >= normalDistance {
+            return .record
+        }
+
+        let timedDistance = max(mode.minimumTimedRecordingDistance, noiseRadius)
+        if interval >= mode.maximumRecordingInterval, distance >= timedDistance {
+            return .record
+        }
+
+        let turnDistance = max(mode.minimumTurnDistance, noiseRadius)
+        if distance >= turnDistance,
+           isMeaningfulTurn(
+               from: previous,
+               to: location,
+               observedTurnDegrees: observedTurnDegrees,
+               threshold: mode.turnThresholdDegrees
+           ) {
+            return .record
+        }
+
+        return .reject(.belowThreshold)
+    }
+
+    static func shouldRecordLiveLocation(
+        _ location: CLLocation,
+        after previous: TrackPoint?,
+        mode: TrackingMode,
+        trackingStartedAt: Date,
+        observedTurnDegrees: CLLocationDirection? = nil,
+        now: Date = .now
+    ) -> Bool {
+        recordDecision(
+            location,
+            after: previous,
+            mode: mode,
+            trackingStartedAt: trackingStartedAt,
+            observedTurnDegrees: observedTurnDegrees,
+            now: now
+        ) == .record
+    }
+
+    static func idleMonitorCenter(
+        for locations: [CLLocation],
+        mode: TrackingMode,
+        requiredInterval: TimeInterval? = nil,
+        minimumSamples: Int? = nil,
+        now: Date = .now
+    ) -> CLLocationCoordinate2D? {
+        guard mode.usesSpatialIdleDetection else { return nil }
+
+        let interval = requiredInterval ?? mode.idleDetectionInterval
+        let requiredSamples = minimumSamples ?? mode.minimumIdleSamples
+        guard interval.isFinite, interval > 0, requiredSamples > 0 else { return nil }
+
+        let usable = locations
+            .filter {
+                $0.horizontalAccuracy >= 0
+                    && $0.horizontalAccuracy <= mode.idleDetectionMaximumAccuracy
+                    && $0.timestamp <= now.addingTimeInterval(60)
+                    && CLLocationCoordinate2DIsValid($0.coordinate)
+            }
+            .sorted { $0.timestamp < $1.timestamp }
+
+        guard let newest = usable.last,
+              now.timeIntervalSince(newest.timestamp) <= 90 else { return nil }
+
+        let cutoff = newest.timestamp.addingTimeInterval(-interval)
+        guard let boundaryIndex = usable.lastIndex(where: { $0.timestamp <= cutoff }) else {
+            return nil
+        }
+        let window = Array(usable[boundaryIndex...])
+        guard window.count >= requiredSamples,
+              let oldest = window.first,
+              newest.timestamp.timeIntervalSince(oldest.timestamp) >= interval,
+              let center = medianCoordinate(of: window) else {
+            return nil
+        }
+
+        let centerLocation = CLLocation(latitude: center.latitude, longitude: center.longitude)
+        let inliers = window.filter {
+            centerLocation.distance(from: $0) <= mode.idleDetectionRadius
+        }
+        let requiredInliers = Int(ceil(Double(window.count) * mode.idleDetectionRequiredFraction))
+        guard inliers.count >= requiredInliers,
+              let oldestInlier = inliers.first,
+              let newestInlier = inliers.last,
+              newestInlier.timestamp.timeIntervalSince(oldestInlier.timestamp) >= interval else {
+            return nil
+        }
+
+        let clusterCount = max(3, window.count / 4)
+        guard let earlyCenter = medianCoordinate(of: Array(window.prefix(clusterCount))),
+              let lateCenter = medianCoordinate(of: Array(window.suffix(clusterCount))) else {
+            return nil
+        }
+        let drift = CLLocation(latitude: earlyCenter.latitude, longitude: earlyCenter.longitude)
+            .distance(from: CLLocation(latitude: lateCenter.latitude, longitude: lateCenter.longitude))
+        guard drift <= mode.idleDetectionMaximumCenterDrift else { return nil }
+
+        return center
+    }
+
+    static func bearing(from start: CLLocationCoordinate2D, to end: CLLocationCoordinate2D) -> CLLocationDirection {
+        let lat1 = start.latitude * .pi / 180
+        let lat2 = end.latitude * .pi / 180
+        let deltaLongitude = (end.longitude - start.longitude) * .pi / 180
+        let y = sin(deltaLongitude) * cos(lat2)
+        let x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(deltaLongitude)
+        let degrees = atan2(y, x) * 180 / .pi
+        return (degrees + 360).truncatingRemainder(dividingBy: 360)
+    }
+
+    static func headingDifference(_ first: CLLocationDirection, _ second: CLLocationDirection) -> CLLocationDirection {
+        let difference = abs(first - second).truncatingRemainder(dividingBy: 360)
+        return min(difference, 360 - difference)
     }
 
     static func downsample(_ points: [TrackPoint], maximum: Int) -> [TrackPoint] {
@@ -68,6 +222,39 @@ enum TrackMath {
             updatedAt: now,
             dayStart: calendar.startOfDay(for: now)
         )
+    }
+
+    private static func isMeaningfulTurn(
+        from previous: TrackPoint,
+        to location: CLLocation,
+        observedTurnDegrees: CLLocationDirection?,
+        threshold: CLLocationDirection
+    ) -> Bool {
+        if let observedTurnDegrees, observedTurnDegrees >= threshold {
+            return true
+        }
+
+        guard previous.course >= 0, location.course >= 0 else { return false }
+        if location.speed >= 0, location.speed < 0.5 { return false }
+        return headingDifference(previous.course, location.course) >= threshold
+    }
+
+    private static func medianCoordinate(of locations: [CLLocation]) -> CLLocationCoordinate2D? {
+        guard !locations.isEmpty else { return nil }
+        let latitudes = locations.map(\.coordinate.latitude).sorted()
+        let longitudes = locations.map(\.coordinate.longitude).sorted()
+        return CLLocationCoordinate2D(
+            latitude: median(of: latitudes),
+            longitude: median(of: longitudes)
+        )
+    }
+
+    private static func median(of values: [Double]) -> Double {
+        let middle = values.count / 2
+        if values.count.isMultiple(of: 2) {
+            return (values[middle - 1] + values[middle]) / 2
+        }
+        return values[middle]
     }
 
     private static func routeSegments(_ points: [TrackPoint]) -> [[TrackPoint]] {

@@ -70,11 +70,30 @@ struct SettingsView: View {
                     Label(mode.title, systemImage: mode.symbol).tag(mode)
                 }
             }
+            LabeledContent("定位引擎", value: locationService.mode.engineLabel)
+            LabeledContent("后台策略", value: locationService.backgroundDeliveryLabel)
+            LabeledContent("运行状态", value: locationService.engineState)
             LabeledContent("当前活动", value: locationService.currentActivity)
+            if locationService.mode.usesMotionActivity {
+                LabeledContent("运动识别", value: locationService.motionActivity)
+            }
             LabeledContent("最后记录", value: lastRecordedText)
             LabeledContent("记录通道", value: locationService.sourceLabel)
+            if let accuracy = locationService.lastHorizontalAccuracy, accuracy >= 0 {
+                LabeledContent("最近精度", value: "±\(Int(accuracy.rounded())) m")
+            }
+            LabeledContent(
+                "本次启动",
+                value: "更新 \(locationService.receivedUpdateCount) · 定位 \(locationService.locationUpdateCount) · 保存 \(locationService.recordedUpdateCount) · 过滤 \(locationService.rejectedUpdateCount)"
+            )
+            if locationService.mode == .eco {
+                LabeledContent("极省电诊断", value: locationService.ecoDiagnosticsLabel)
+            }
+            if !locationService.rejectionBreakdownLabel.isEmpty {
+                LabeledContent("过滤原因", value: locationService.rejectionBreakdownLabel)
+            }
             if let error = locationService.lastError {
-                LabeledContent("最近错误", value: error)
+                LabeledContent("最近提示", value: error)
             }
         }
     }
@@ -103,6 +122,7 @@ struct SettingsView: View {
         Section {
             LabeledContent("定位", value: locationService.authorizationLabel)
             LabeledContent("精确位置", value: locationService.accuracyAuthorization == .fullAccuracy ? "开启" : "关闭")
+            LabeledContent("运动与健身", value: locationService.motionAuthorizationLabel)
             LabeledContent("后台 App 刷新", value: backgroundRefreshLabel)
             permissionButton
             if locationService.accuracyAuthorization == .reducedAccuracy {
@@ -111,7 +131,7 @@ struct SettingsView: View {
         } header: {
             Text("系统权限")
         } footer: {
-            Text("要在 App 未打开或被系统回收后继续记录，需要“始终”定位权限。极省电模式只在位置明显变化时唤醒。")
+            Text("全天自动记录要求“始终”定位权限。极省电和均衡会使用“运动与健身”来识别静止、步行、跑步、骑行和驾车：极省电据此调整标准定位活动类型并在静止时进入约 50 米低功耗守候；均衡把运动静止与 GPS 稳定性融合，可更快进入约 60 米守候。拒绝运动权限时，定位仍可工作，但均衡会退回较慢的纯 GPS 静止判断。")
         }
     }
 
@@ -208,7 +228,7 @@ struct SettingsView: View {
     private var aboutSection: some View {
         Section("关于") {
             LabeledContent("产品", value: "aro")
-            LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.3")
+            LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.1.2")
             Button("重新查看隐私引导") { hasCompletedOnboarding = false }
         }
     }
@@ -259,12 +279,14 @@ struct SettingsView: View {
             Task {
                 do {
                     try await cloudSync.deleteCloudAndLocalData()
+                    locationService.handleTrackDataDeleted()
                 } catch {
                     deleteError = error.localizedDescription
                 }
             }
         } else {
             repository.deleteEverything()
+            locationService.handleTrackDataDeleted()
         }
 #else
         guard !localBuildMayHaveCloudData else {
@@ -272,6 +294,7 @@ struct SettingsView: View {
             return
         }
         repository.deleteEverything()
+        locationService.handleTrackDataDeleted()
 #endif
     }
 

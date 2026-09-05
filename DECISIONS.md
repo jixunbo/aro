@@ -6,7 +6,91 @@
 
 **Reason:** Installed iPhone, Watch, and Widget builds must be distinguishable during testing and distribution, especially when validating fixes that require reinstalling the Watch App.
 
-**Implications:** A code or behavior change is not considered delivery-ready until the version has been reviewed and updated. Documentation-only edits may retain the current version when they do not alter the shipped product. The Watch energy and complication refresh fixes advanced the project from `1.3.1` to `1.3.2`; adding the track complication advanced the backward-compatible feature version to `1.4.0`; the background route-publication fix advanced the patch version to `1.4.1`; the battery sampling/cache race fix advanced it to `1.4.2`; the map point-marker improvement advanced it to `1.4.3`; the substantial Eco/Balanced tracking redesign advances the minor version to `1.5.0`. The Watch App displays the bundle-derived marketing and build versions on its main screen so a tester can verify the installed build without relying on Xcode's build-number-only device list.
+**Implications:** A code or behavior change is not considered delivery-ready until the version has been reviewed and updated. Documentation-only edits may retain the current version when they do not alter the shipped product. The Watch energy and complication refresh fixes advanced the project from `1.3.1` to `1.3.2`; adding the track complication advanced the backward-compatible feature version to `1.4.0`; the background route-publication fix advanced the patch version to `1.4.1`; the battery sampling/cache race fix advanced it to `1.4.2`; the map point-marker improvement advanced it to `1.4.3`; the Eco/Balanced redesign advanced it to `1.5.0`. Dropping iOS 17–25 and replacing the legacy recorder with the iOS 26 architecture advanced all shipped targets to `2.0.0`. Watch complication fixes advanced the unreleased line to `2.0.1`; robust idle detection and the distance-filtered Eco redesign advanced it to `2.0.2`; Motion-assisted Eco/Balanced state handling advanced the feature line to `2.1.0`; the CLMonitor identifier/runtime crash fix is the `2.1.1` patch; Eco moving-quality recovery, safer stationary confirmation, and diagnostic breakdown are the `2.1.2` patch.
+
+## iOS 26+ platform baseline
+
+**Decision:** aro 2.0 supports iOS/iPadOS 26.0 and later. Do not maintain iOS 17–25 compatibility code or a legacy Core Location fallback. Keep watchOS 10.0+ unless Watch-specific requirements independently change.
+
+**Reason:** The product is self-directed and can target current iOS. Removing old compatibility constraints allows the location recorder to use current Core Location lifecycle semantics directly rather than carrying compatibility branches.
+
+**Implications:** The iOS app/test deployment target is 26.0 in Local and Cloud configurations. Code may use the iOS 26 SDK without availability branches for older iOS. Future iOS 27 support is through the normal minimum-target model; there is no maximum OS gate. This breaking support change is part of aro 2.0.0.
+
+## iOS 26 Core Location tracking architecture
+
+This decision supersedes “iOS 26 native Live Updates tracking” as an all-modes rule while retaining Live Updates for Balanced/Precise/Workout.
+
+**Decision:** Keep an explicit `CLServiceSession(authorization: .always)` tied to automatic recording and enable `NSLocationRequireExplicitServiceSession`. Balanced/Precise/Workout use `CLLocationUpdate.liveUpdates`; Eco intentionally uses the Standard location service through the existing single `CLLocationManager`, because only Standard location exposes `distanceFilter` and therefore lets Core Location reduce update generation at the hardware/service layer. Eco and Balanced may use Motion & Fitness activity classification as an advisory input while aro is executing, but Motion is never a wake mechanism. Do not add significant-location-change, Visits, a second recorder, or another legacy wake fallback. `CLMonitor` is the first-class idle/wake state for Eco and Balanced.
+
+**Reason:** Real-device 2.0 diagnostics showed `.default` Live Updates could produce hundreds of high-quality fixes while the phone was physically stationary, and exported data from the target footprint app's power-saving mode showed a very strong roughly-100-metre point-spacing signature while retaining high-quality (~10 m) fixes. Apple documents `distanceFilter` as the minimum horizontal movement before a Standard-location update event is generated and recommends using the largest useful value to reduce power. A dedicated Eco Standard-location path therefore maps more closely to the target behavior than receiving high-cadence Live Updates and discarding most of them later.
+
+**Implications:** `LocationService` owns one `CLLocationManager`; in Eco it is both the authorization manager and the Standard recorder, while in all other modes it remains authorization-only. Eco configures `kCLLocationAccuracyNearestTenMeters`, `distanceFilter ≈ 100 m`, background updates, and automatic pause. Motion classification dynamically selects the Standard manager `activityType` when available (`.automotiveNavigation` for driving, `.fitness` for walking/running/cycling), but correctness cannot depend on Motion delivery during suspension. Balanced uses `.default`, Precise `.otherNavigation`, and Workout `.fitness`. Automatic recording still requires Always authorization and a persisted `tracking.startedAt` session boundary.
+
+## Suspendable low-power modes vs timely Precise/Workout background delivery
+
+**Decision:** Eco and Balanced intentionally do not retain `CLBackgroundActivitySession`. Eco uses distance-filtered Standard updates; Balanced uses `.default` Live Updates. Precise uses `.otherNavigation` and Workout uses `.fitness`; those two modes retain `CLBackgroundActivitySession` for timely background execution.
+
+**Reason:** aro's all-day modes prioritize battery life over point-by-point real-time UI delivery. `CLBackgroundActivitySession` is reserved for modes where timely delivery justifies higher energy cost. Eco additionally reduces the frequency of Standard-location generation itself with `distanceFilter`.
+
+**Implications:** Balanced may receive queued/coalesced Live Updates while moving, and valid queued fixes must not be discarded solely because they are several minutes old. Eco receives Standard-location callbacks primarily after about 100 m of movement, though Core Location may also deliver startup or improved-accuracy fixes. Precise/Workout do not use the idle transition and have intentionally different energy behavior.
+
+## Persistent idle CLMonitor for Eco/Balanced
+
+**Decision:** Eco and Balanced both enter one persistent `CLMonitor.CircularGeographicCondition` before stopping their moving recorder, but they establish stationary state differently. Eco treats a Standard-location automatic-pause callback as the strongest stationary signal even if the latest Motion classification is stale; Motion-only stationary classification must persist for about two minutes before it may initiate idle capture. In either case Eco first obtains a fresh high-quality stationary fix, then arms a roughly 50 m monitor. Balanced uses a robust spatial stability detector over fresh Live Updates, then arms a roughly 60 m monitor. Leaving the monitored circle is the normal wake path: remove the condition, reset transient geometry/idle state, and resume that mode's own primary recorder. Monitor setup failure never stops a working moving recorder; if an armed monitor becomes unavailable/unmonitored, aro resumes the primary recorder and surfaces the error.
+
+**Reason:** The first iOS 26 Live Updates build received 537 update events and 526 locations while the phone was physically still for about half an hour, with only one location worth saving. Database filtering cannot recover the energy already spent generating those fixes. The target footprint app's observed power-saving behavior also strongly suggests a “moving high-quality distance-triggered GPS / stationary no continuous points” model.
+
+**Implications:** Eco's monitored radius is currently about 50 m so waking does not add another full 100 m of dead travel before its 100 m moving cadence resumes. A brief Motion stationary report cannot put Eco to sleep immediately, and Eco does not arm a monitor around a stale distance-filtered point if fresh idle capture fails. Balanced still uses a 60 m monitor. `tracking.idleMonitorActive` records only that aro expects a persistent monitor to exist; after relaunch the monitor itself remains Core Location's source of truth. If its identifier is absent, aro clears the flag and starts the selected mode's primary recorder rather than inventing another fallback.
+
+## Robust Balanced idle detection
+
+**Decision:** Balanced must not require every single location in the idle window to be within the stability radius. Use a median geographic center, require at least 90% of a full five-minute window (minimum 12 samples) inside roughly 30 m, require a fresh newest fix, and require the robust early/late cluster centers to drift no more than roughly 20 m.
+
+**Reason:** Real-device 2.0.1 testing produced long periods with hundreds of locations, zero saved points, and no stationary transition. The previous `allSatisfy` rule let one 30–40 m GPS outlier reset the entire idle proof even when the route sampler already classified essentially all updates as stationary noise.
+
+**Implications:** A small number of GPS spikes no longer keeps Balanced awake forever. The full-duration window includes the latest sample at or before the time boundary instead of trimming first and then requiring an exact boundary timestamp; irregular Live Updates therefore can satisfy the intended five-minute/90-second duration. The inlier cluster itself must also span the interval, so an older outlier cannot make a shorter stationary period look complete. The center-drift check prevents a slowly translating but locally clustered path from being misclassified as stationary. UI state does not equate `CLLocationUpdate.stationary == false` with actual movement; it remains `监测中` until meaningful displacement is observed.
+
+## Adaptive route persistence independent of hardware cadence
+
+**Decision:** For Live Updates modes, treat Core Location generation and SQLite persistence as separate concerns. Persist valid locations based on an accuracy-aware combination of normal movement distance, elapsed time with real movement, or meaningful direction change. Track short-term geometric bearings in memory so pedestrian turns can be retained even when `CLLocation.course` is unavailable. Eco is the intentional exception at the generation layer: its Standard service uses about a 100 m `distanceFilter`, while its software persistence threshold stays much lower so useful extra system-delivered fixes are not discarded.
+
+**Reason:** Fewer database points can still represent a route accurately if turns are preserved, while fixed sparse storage thresholds can cut corners badly. Conversely, once Live Updates has already generated a good fix, aggressively discarding it provides negligible hardware-energy benefit. Eco needs a different trade-off: the target behavior specifically shows distance-driven system callbacks, and `distanceFilter` is the public API that moves that saving upstream.
+
+**Implications:** Balanced accepts horizontal accuracy up to 80 m, normally saves at roughly 35 m movement, may save after one minute with at least 12 m real movement, and can save a meaningful turn after roughly 12 m with a 35-degree direction change. Eco requests nearest-ten-metre Standard location, uses a 100 m system distance filter, normally accepts fixes up to 30 m horizontal accuracy, and keeps only a 10 m software movement threshold so a good system callback is not discarded by a second sparse gate. If a moving steady-state callback has 30–100 m horizontal accuracy and is plausibly at least about 50 m from the last saved point, Eco may temporarily remove the distance filter for at most about 12 seconds to recover one better fix, then restores the 100 m cadence; recovery starts are limited to roughly once per minute. This recovery is bounded and does not apply to very coarse/reduced-accuracy fixes.
+
+## Motion is advisory; CLMonitor remains the wake mechanism
+
+**Decision:** Eco and Balanced may use `CMMotionActivityManager` to classify stationary/walking/running/cycling/automotive while the process is executing, but they must never depend on Motion callbacks to wake or continuously execute the app in the background. Eco uses Motion to tune `CLLocationManager.activityType` and to accelerate idle consideration only after sustained stationary classification; Balanced uses Motion only to shorten a GPS-proven idle window.
+
+**Reason:** Motion classification materially improves the semantic state used by Core Location, but activity-update delivery is best-effort and pauses while an app is suspended. Treating it as a wake source would create silent tracking gaps. `CLMonitor`, by contrast, is the intended persistent low-power boundary primitive in this architecture.
+
+**Implications:** Denying Motion permission must not break recording. Eco still has Standard-location automatic pause plus CLMonitor, and Balanced still has its full GPS-only robust idle path. Motion transitions can cancel a pending idle candidate, but the app does not add a Core Motion background wake fallback or rely on Motion timers as the only way to restore positioning.
+
+## Preserve queued current-session locations
+
+**Decision:** Do not reject a delivered location solely because its timestamp is more than a few minutes behind wall-clock time. Accept queued fixes if they belong to the persisted current tracking session, are time-ordered relative to the persisted route, satisfy accuracy/coordinate checks, are not implausibly future-dated, and do not imply impossible motion.
+
+**Reason:** iOS may suspend aro and queue location updates for later delivery. The old 180-second freshness test could discard exactly the background route points the low-power architecture depends on.
+
+**Implications:** `tracking.startedAt` is persisted while automatic recording is enabled. Disabling/re-enabling tracking establishes a new boundary. Tests cover queued-current-session acceptance and pre-session/future/inaccurate rejection.
+
+## Location relaunch isolation without deprecated launch-option detection
+
+**Decision:** On every process launch, `AppDelegate` immediately restores only `LocationService` if tracking is enabled. Do not use the deprecated iOS 26 `UIApplication.LaunchOptionsKey.location` discriminator. WatchConnectivity and CloudKit are not initialized from generic launch; ordinary foreground activation owns WatchConnectivity/normal cloud startup, and CloudKit remote notifications have their own delegate callback.
+
+**Reason:** Core Location can relaunch an app in the background and requires outstanding sessions/sequences or monitors to be recreated promptly. Without the old launch discriminator, the safe invariant is to make generic launch location-only rather than trying to guess why the process started.
+
+**Implications:** A Core Location relaunch cannot accidentally send a Watch request or start cloud network work. If `tracking.idleMonitorActive` is set, launch restores the named CLMonitor and awaits its events rather than starting the moving recorder immediately; if the persisted monitor identifier no longer exists, the selected mode's recorder resumes. Normal foreground behavior remains available from `RootView`.
+
+## Adaptive native background location (superseded)
+
+This 1.5 decision is retained for history and superseded by the iOS 26 Core Location decisions above.
+
+**Decision:** Use significant-location-change and visit monitoring as low-power wake signals rather than route geometry. Eco keeps standard location updates off between wake events; Balanced uses continuous high-quality standard updates with automatic stationary pausing and low-power wake restart.
+
+**Reason:** This removed coarse wake coordinates from route geometry and improved point quality compared with pre-1.5 behavior.
+
+**Why superseded:** Real-device 1.5 comparison still showed too few useful route points and long corner-cutting segments. The restart dependency after automatic pause remained a structural weakness, and the app no longer needs to support pre-iOS-26 APIs.
 
 ## Local-only persistence (superseded)
 
@@ -24,25 +108,17 @@ This decision was superseded by “Opt-in private CloudKit sync” below.
 
 **Reason:** The app needs optional multi-device track continuity without introducing an aro account or self-hosted backend, while preserving local-first recording and privacy boundaries.
 
-**Implications:** Every stored point has a stable `sync_id`; local writes are committed to SQLite first and are tracked as unsynced until CloudKit acknowledges them. Remote records are merged into SQLite and summaries are derived locally. Remote notification support is part of the iOS CloudKit capability, but Core Location-triggered cold launches deliberately do not initialize CloudKit so a location wake does not gain incidental network work. CloudKit/private-database behavior requires signed real-device validation; simulator and unsigned CI only validate compile and local logic.
+**Implications:** Every stored point has a stable `sync_id`; local writes are committed to SQLite first and tracked as unsynced until CloudKit acknowledges them. Remote records are merged into SQLite and summaries are derived locally. Cloud remote-notification handling is independent of the generic Core Location relaunch path. CloudKit/private-database behavior requires signed real-device validation.
 
-Disabling sync stops future synchronization but does not delete existing CloudKit data. “Delete all tracks” must delete the private `AROTracks` record zone before clearing local SQLite whenever a cloud footprint may exist. A fetched deletion of that zone is treated as a global delete and clears local tracks on the receiving device, preventing stale rows from recreating deleted cloud history. Account changes pause sync and preserve local data rather than silently assigning it to a different Apple account.
+Disabling sync stops future synchronization but does not delete existing CloudKit data. “Delete all tracks” must delete the private `AROTracks` record zone before clearing local SQLite whenever a cloud footprint may exist. A fetched deletion of that zone is treated as a global delete and clears local tracks on the receiving device. Account changes pause sync and preserve local data rather than silently assigning it to a different Apple account.
 
 ## CloudKit optional build capability
 
-**Decision:** CloudKit capability must not be required for the local/self-signed build. Keep `Debug`/`Release` as Local configurations with an empty iOS entitlements file and compile out the CloudKit service; provide `CloudDebug`/`CloudRelease` configurations that retain the existing CloudKit/APNs entitlements and `ARO_CLOUDKIT_ENABLED` condition.
+**Decision:** CloudKit capability must not be required for the local/self-signed build. Keep `Debug`/`Release` as Local configurations with an empty iOS entitlements file and compile out the CloudKit service; provide `CloudDebug`/`CloudRelease` configurations that retain CloudKit/APNs entitlements and `ARO_CLOUDKIT_ENABLED`.
 
-**Reason:** Apple Personal Teams cannot provision iCloud/CloudKit or Push Notifications, while the app's local SQLite, Core Location, Watch, and Widget features must remain installable and usable with free development signing.
+**Reason:** Apple Personal Teams cannot provision iCloud/CloudKit or Push Notifications, while local SQLite, Core Location, Watch, and Widget features must remain installable and usable with free development signing.
 
-**Implications:** The Local build has no CloudKit runtime or iCloud controls beyond a clear unavailable status in Settings. The Cloud build still requires the `iCloud.com.xunbo.aro` container, Push Notifications, Remote notifications, and a matching paid-team provisioning profile. Both builds preserve the same local-first SQLite data model, bundle identifiers, Watch App Group, and Watch battery architecture.
-
-## Adaptive native background location
-
-**Decision:** Use significant-location-change and visit monitoring as low-power wake signals rather than route geometry. Eco mode keeps standard location updates off between wake events; each wake starts an at-most-eight-second `kCLLocationAccuracyNearestTenMeters` burst, stores only the best fresh fix that is no worse than 150 m, and stops early when a fix reaches 65 m or better. Balanced uses the same high-quality requested accuracy continuously but with a 75 m distance filter and a 100 m acceptance ceiling. Balanced and Precise allow Core Location to automatically pause the standard service when the device appears stationary; when a pause occurs, motion updates stop, and a later significant-location event or visit departure explicitly restarts the standard location service.
-
-**Reason:** A route should be built from comparatively trustworthy GPS fixes, not from coarse significant-change or visit coordinates. The previous strategy could accept 350 m Balanced fixes and 1.5 km Eco/visit fixes, so a larger number of points could still produce visibly worse geometry and distance than a competitor using fewer high-quality fixes. Spending a few seconds on a good fix after a low-power wake is preferable to permanently storing a coarse wake coordinate.
-
-**Implications:** Always authorization and the location background mode are required for the strongest background behavior. Eco remains the lowest-power mode because standard GPS is normally off, but its point cadence is system-controlled and a burst that cannot obtain a fix inside the 150 m ceiling is intentionally dropped. Balanced now asks for substantially better single-fix quality than before and therefore may use more energy than the old 100 m requested-accuracy configuration even though its 75 m distance filter limits stored-point cadence. Significant-change and visit event coordinates are not inserted into `track_points`; they only wake Eco or restart paused continuous modes. Precise remains 25 m / nearest-ten-metre detail, Workout remains continuously high accuracy without automatic pausing. Route density, pause/resume behavior, Eco burst success rate, and energy use must be verified on real hardware.
+**Implications:** Local builds have no CloudKit runtime. Cloud builds require `iCloud.com.xunbo.aro`, Push Notifications, Remote notifications, and a matching paid-team profile. CI compiles both `Debug` and `CloudDebug` unsigned so Cloud-only source remains compile-checked.
 
 ## Raw points plus daily summaries
 
@@ -50,7 +126,7 @@ Disabling sync stops future synchronization but does not delete existing CloudKi
 
 **Reason:** History and lifetime statistics read the summary table instead of recalculating the complete track history. Deduplication allows recording, imports, and remote CloudKit changes to coexist.
 
-**Implications:** Every data mutation must preserve summary consistency. Batch imports and remote changes rebuild summaries when needed in timestamp order, and schema evolution currently belongs in `TrackDatabase.openAndMigrate()`. Cloud sync identity is additional metadata and does not replace the timestamp/latitude/longitude natural deduplication key.
+**Implications:** Every data mutation must preserve summary consistency. Batch imports and remote changes rebuild summaries when needed in timestamp order, and schema evolution belongs in `TrackDatabase.openAndMigrate()`. Cloud sync identity is additional metadata and does not replace the timestamp/latitude/longitude natural deduplication key.
 
 ## Actor-isolated UI state and serialized database access
 
@@ -58,86 +134,86 @@ Disabling sync stops future synchronization but does not delete existing CloudKi
 
 **Reason:** UI-visible state must be published on the main thread, while the shared SQLite connection must not receive concurrent unsynchronized access.
 
-**Implications:** Expensive reads are dispatched away from the main actor, then published back on it. New database APIs, including CloudKit apply/delete/bookkeeping operations, must continue using the database queue rather than exposing the connection.
+**Implications:** Expensive reads are dispatched away from the main actor, then published back on it. New database APIs must continue using the database queue.
 
 ## Platform-native dependency set
 
 **Decision:** Build with SwiftUI and Apple frameworks, using a UIKit `MKMapView` bridge and the system SQLite library; do not use third-party packages.
 
-**Reason:** No separate rationale is recorded in the repository.
+**Reason:** The app's requirements are covered by platform APIs and avoiding external packages reduces privacy, binary, compatibility, and maintenance surface.
 
-**Implications:** Prefer existing Apple APIs and the current SQLite layer. Cloud sync uses CloudKit/CKSyncEngine because they are platform-native. Adding a package requires a concrete need plus review of binary size, privacy-manifest impact, compatibility, and maintenance cost.
+**Implications:** Prefer existing Apple APIs and the current SQLite layer. Adding a package requires a concrete need plus explicit review.
 
 ## One surviving iOS host with an embedded watch companion
 
-**Decision:** Keep the existing `aro` target and Xcode project as the sole iOS host, retain the existing location functionality, and expose Apple Watch device functionality through an embedded `ARO Watch App` target and separate iOS feature within the host.
+**Decision:** Keep the `aro` target and Xcode project as the sole iOS host and expose Apple Watch device functionality through an embedded `ARO Watch App` target and separate iOS feature within the host.
 
-**Reason:** aro needs both established Traceon location history and Apple Watch battery behavior without creating a third project or replacing the source-of-truth host.
+**Reason:** aro needs location history and Apple Watch battery behavior without creating another iOS host or source of truth.
 
-**Implications:** The host depends on and embeds the watch target. Shared WatchConnectivity payload code is compiled into both targets. Location, track storage/cloud sync, device UI/connectivity, and watch source remain logically separate; CloudKit must not be driven by Watch battery code.
+**Implications:** The host depends on and embeds the watch target. Shared WatchConnectivity payload code is compiled into both targets. Location, track storage/cloud sync, device UI/connectivity, and watch source remain logically separate.
 
 ## Preserve the legacy application identity and data container (superseded)
 
-This earlier decision applied while the product was being renamed without changing its system identity. It was superseded by “Adopt aro bundle identifiers” below after the user explicitly requested a new Bundle ID namespace.
+This earlier decision was superseded by “Adopt aro bundle identifiers”.
 
-**Decision:** Change the user-visible application name to aro and rename the local project/source targets, while retaining the iOS bundle identifier `com.xunbo.traceon`, the `Application Support/traceon/tracks.sqlite3` database path, and existing tracking/onboarding `UserDefaults` keys.
+**Decision:** Change the user-visible application name to aro while retaining the earlier Traceon identity/data container.
 
-**Reason:** Existing installed Traceon/Companio users must retain their local SQLite history and settings through an upgrade even though the product is now called aro.
+**Reason:** It originally attempted an in-place product rename.
 
-**Implications:** No bundle-ID or data-path migration is introduced. The embedded watch target is internally named `ARO Watch App`; its on-device display name is `aro`.
+**Implications:** Superseded; current Bundle IDs are defined below. The relative SQLite path and Watch App Group remain stable compatibility identifiers inside the current product.
 
 ## aro repository and source naming
 
-**Decision:** Rename the repository-facing project, scheme, iOS source directory, and Watch source directory to `aro`/`aroWatch`, while keeping internal Watch target/type names and persistent data names unchanged.
+**Decision:** Use `aro`/`aroWatch` for the repository-facing project, scheme, iOS source directory, and Watch source directory, while keeping persistent data identifiers that intentionally remain stable.
 
-**Reason:** aro is the product name and “Everything Around You” is the intended identity; the codebase should expose that name consistently while preserving stable on-device data and Watch snapshot names.
+**Reason:** aro is the product name and “Everything Around You” is the intended identity.
 
-**Implications:** Open `aro.xcodeproj` and build the shared `aro` scheme. The iOS module and test target are `aro` and `aroTests`; Watch sources live under `aroWatch`, while the internal Watch targets and battery/widget symbols retain their existing names. The Watch App Group and `Application Support/traceon/tracks.sqlite3` remain stable data identifiers; Bundle IDs are defined by the newer decision below.
+**Implications:** Open `aro.xcodeproj` and build the shared `aro` scheme. The iOS module/test target are `aro`/`aroTests`; Watch sources live under `aroWatch`.
 
 ## Adopt aro bundle identifiers
 
 **Decision:** Use `com.xunbo.aro` for the iOS host, `com.xunbo.aro.watchkitapp` for the embedded Watch App, `com.xunbo.aro.watchkitapp.widget` for the Widget Extension, and `com.xunbo.aro` as `WKCompanionAppBundleIdentifier`. Keep the existing Watch App Group and relative SQLite filename unchanged.
 
-**Reason:** The product identity is now aro, and the user explicitly chose a new Bundle ID namespace for all three shipped targets.
+**Reason:** The product identity is aro and the user explicitly chose the aro Bundle ID namespace.
 
-**Implications:** aro is a new system app identity rather than an in-place Traceon upgrade. Existing Traceon/Companio containers, UserDefaults, permissions, and SQLite history are not automatically visible to aro; users should export/import data if they need to move history. The stable Watch App Group remains a deliberate compatibility choice for the watch snapshot store, while the iOS host does not gain that group entitlement. The iOS host additionally owns the separate CloudKit container `iCloud.com.xunbo.aro` for opt-in track sync.
+**Implications:** aro is a new system app identity rather than an in-place Traceon upgrade. Existing Traceon/Companio containers, UserDefaults, permissions, and SQLite history are not automatically visible; users export/import data if needed. The iOS host owns `iCloud.com.xunbo.aro` for opt-in sync.
 
 ## Separate location and device lifecycles
 
-**Decision:** WatchConnectivity activation is passive, and iPhone live battery requests are limited to explicit Devices UI use or the App Intent. Ordinary iPhone launch and foreground activation may activate the WatchConnectivity session to receive queued application context, but a Core Location-triggered cold launch skips WatchConnectivity startup. Device connectivity is not driven by `LocationService`, does not poll on iPhone, and does not add periodic iPhone background work.
+**Decision:** WatchConnectivity activation is passive, and iPhone live battery requests are limited to explicit Devices UI use or the App Intent. Generic process launch restores location only. Normal foreground activation may activate WatchConnectivity to ingest queued application context; `LocationService` never drives connectivity or polling.
 
-**Reason:** Opportunistic Watch battery snapshots need to be ingested without requiring the Devices tab to have been opened, while adding watch battery functionality must not meaningfully increase background-location energy cost or turn a location relaunch into device communication work.
+**Reason:** Watch battery functionality must not meaningfully increase background-location energy cost or turn a location relaunch into device communication work.
 
-**Implications:** Session activation and connectivity callbacks may accept opportunistic application-context state but must not send live battery requests. The Devices tab and App Intent own explicit live requests. The watch performs its own system-scheduled background sampling on watchOS. CloudKit follows the same cold-launch isolation principle: a launch identified as Core Location-triggered skips cloud-engine startup. Track-complication publication is allowed only through the already-existing WatchConnectivity session and never activates that session from a location-only cold launch.
+**Implications:** Devices UI and App Intent own explicit live requests. Track-complication publication can use an already-active session but never activates one from location-only work. CloudKit follows the same isolation principle via foreground lifecycle and its own remote-notification entry point.
 
 ## Latest timestamped watch snapshot
 
 **Decision:** Keep Apple Watch as the battery source, application context for opportunistic latest-state synchronization, reachable messages for explicit live request/reply, and an iPhone `UserDefaults` cache where newer timestamps win.
 
-**Reason:** Device UI and Shortcuts need a useful last known value when the watch is temporarily unreachable without implying that cached state is live.
+**Reason:** Device UI and Shortcuts need a useful last known value when the watch is temporarily unreachable without implying cached data is live.
 
-**Implications:** The UI presents the synchronization timestamp and explicitly labels unreachable data as cached. Payload key/type changes remain a coordinated cross-target compatibility change.
+**Implications:** The UI presents synchronization timestamp and labels unreachable data as cached. Payload changes remain coordinated across targets.
 
 ## Watch-owned snapshot and WidgetKit complication
 
-**Decision:** Persist the newest valid `BatterySnapshot` in the Watch App Group `group.com.xunbo.traceon.watch`. `WatchBatteryService` samples for the Watch App UI and WatchConnectivity, while the WidgetKit timeline provider takes one local `WKInterfaceDevice` battery sample whenever WidgetKit grants it a timeline refresh and writes that sample to the same store. Continue using the single-target watch app's `WKApplicationDelegate.handle(_:)` with `WKApplication.scheduleBackgroundRefresh` for opportunistic Watch App background sampling. Schedule the next app task before sampling, await the battery read, and explicitly complete every delivered WatchKit background task.
+**Decision:** Persist the newest valid `BatterySnapshot` in Watch App Group `group.com.xunbo.traceon.watch`. `WatchBatteryService` samples for Watch App UI and WatchConnectivity, while the WidgetKit timeline provider takes one local `WKInterfaceDevice` battery sample whenever WidgetKit grants a timeline refresh and writes it to the same store. Continue using `WKApplicationDelegate.handle(_:)` with `WKApplication.scheduleBackgroundRefresh` for opportunistic Watch App background sampling.
 
-**Reason:** The complication must remain useful when current watchOS releases decline to deliver requested Watch App background refreshes. WidgetKit's separately budgeted timeline execution is the reliable opportunity to sample the same local device for complication display. The fallback remains local, system-triggered, and short-lived, without a timer, cloud path, iPhone polling path, or fabricated value.
+**Reason:** The complication must remain useful when watchOS declines to deliver requested Watch App background refreshes. WidgetKit provides a separately budgeted local execution opportunity without waking iPhone or network.
 
-**Implications:** Battery monitoring is enabled only during a one-shot read and disabled immediately afterward in both the Watch App and Widget Extension. Watch App foreground sampling runs every five minutes only while `scenePhase` is active, persists newer timestamps locally, and suppresses unchanged WatchConnectivity application-context writes. Autonomous watch refreshes and WidgetKit timeline refreshes do not send unsolicited `sendMessage` calls that could wake the iPhone; only an explicit iPhone request receives a live reply. The Widget extension can advance the shared Watch snapshot without advancing the iPhone cache until WatchConnectivity next publishes from the Watch App. The original WidgetKit kind string stays stable so an installed complication survives the aro display-name rename. The one-hour preferred app refresh and the complication's 30-minute requested timeline refresh remain system-controlled and may be deferred or throttled. The Watch App disables Always On display because its battery dashboard has no continuous-display use case. The circular battery presentation uses an Ultra-style gauge while the existing non-circular families remain available.
+**Implications:** Battery monitoring is enabled only for a one-shot read and disabled immediately afterward. Foreground sampling is every five minutes only while active. Background/task/timeline schedules are system-controlled and not guaranteed. The original WidgetKit battery kind remains stable. The Watch App disables Always On display. Public WatchKit exposes `WKInterfaceDevice.batteryLevel` but does not guarantee one-percent granularity; aro does not use private APIs to infer hidden values. Circular complication color is green above 50%, orange from 21–50%, red at 20% or below, with charging/full always green.
 
 ## iPhone-owned track snapshot for the Watch face
 
-**Decision:** Add a second WidgetKit complication kind, `AROTrackWidget`, for an accessory-circular “aro 轨迹” complication. The iPhone derives a compact display snapshot from today's local `TrackPoint` history: cumulative distance plus normalized route geometry, keeping at most the latest four display segments and downsampling each to at most eight points. The watch does not start a second location recorder. The iPhone sends this snapshot with `WCSession.updateApplicationContext`; the watch stores the newest snapshot in the existing Watch App Group and reloads only the track complication when its visible data changes.
+**Decision:** Keep `AROTrackWidget` as an accessory-circular track complication. iPhone derives a compact current-day route/distance snapshot and keeps latest state in `WCSession.updateApplicationContext`. When the Watch reports the complication active and the system has complication-transfer budget, iPhone also sends route changes using `transferCurrentComplicationUserInfo`. Watch accepts both delivery paths, persists the newest snapshot in the App Group, and reloads the WidgetKit timeline. Watch does not start a second location recorder.
 
-**Reason:** The selected design needs the shape of the user's actual iPhone-recorded route on the watch face, but duplicating Core Location recording on Apple Watch would increase energy use and create a second source of truth. A compact application-context snapshot reuses the existing companion channel and keeps SQLite on iPhone as the authoritative track store.
+**Reason:** Application context is correct for eventual latest-state convergence but does not reliably wake the Watch extension specifically for a complication. The dedicated complication transfer API is intended for this case and improves freshness without turning location recording into a WatchConnectivity polling loop.
 
-**Implications:** Foreground iPhone activation can publish immediately. While the same WatchConnectivity session remains activated in the background, route updates are opportunistically throttled to five minutes or 250 metres of additional distance, with a first-route/new-day update allowed immediately. `publishTrackComplication` never activates WatchConnectivity by itself, so a Core Location-only cold launch still performs no incidental watch startup. Delivery is therefore eventual rather than point-by-point real time and may be coalesced by watchOS. The snapshot is scoped to the iPhone's current local day; the Watch store hides an old-day route and the Widget timeline schedules a day-boundary refresh. This path is independent of CloudKit and works in Local builds.
+**Implications:** Foreground publication can be immediate. Background publication remains opportunistic and throttled. A location-only process relaunch never activates WatchConnectivity. Complication transfer is system-budgeted and can still be delayed/coalesced.
 
 ## Freshness and retryable WatchConnectivity activation
 
-**Decision:** After activation, ingest `WCSession.receivedApplicationContext` through the existing newest-timestamp-wins `BatteryStore` path before checking reachability or falling back to cache. Track activation-in-progress separately so an explicit call retries `.notActivated` sessions after an activation error, while avoiding duplicate activation calls and continuation resumes. Also activate the session passively on ordinary iPhone launch and foreground activation so a background-produced Watch snapshot is not unnecessarily left unread until the Devices UI is opened.
+**Decision:** After activation, ingest `WCSession.receivedApplicationContext` through the newest-timestamp-wins `BatteryStore` before checking reachability. Track activation-in-progress so explicit calls can retry after activation errors without duplicate continuation resumes. Activate passively on normal foreground use.
 
-**Reason:** A newer opportunistic Watch sample can already be available when the app starts, a Shortcut runs, or a Devices refresh begins, and failed activation must not permanently disable later explicit refreshes.
+**Reason:** Newer opportunistic Watch data can already exist when UI/Shortcut access begins, and an activation error must not permanently disable later explicit refreshes.
 
-**Implications:** Reachable sessions still receive an explicit live request; unreachable sessions return the newest cache available after context ingestion. Passive activation never sends a live battery message and remains excluded from Core Location-triggered cold launches.
+**Implications:** Reachable sessions still receive an explicit live request; unreachable sessions return the newest available cache. Passive activation never sends a live battery message and is not part of generic location restoration.

@@ -18,6 +18,7 @@ final class PhoneConnectivity: NSObject, ObservableObject {
     private var pendingRequests: [UUID: CheckedContinuation<BatterySnapshot?, Never>] = [:]
     private var pendingTrackSnapshot: TrackComplicationSnapshot?
     private var lastPublishedTrackSnapshot: TrackComplicationSnapshot?
+    private var lastComplicationTransferSnapshot: TrackComplicationSnapshot?
 
     private override init() {
         super.init()
@@ -161,11 +162,37 @@ final class PhoneConnectivity: NSObject, ObservableObject {
         guard !payload.isEmpty else { return }
         do {
             try session.updateApplicationContext(payload)
+            transferTrackComplicationIfUseful(snapshot, payload: payload, session: session)
             lastPublishedTrackSnapshot = snapshot
             pendingTrackSnapshot = nil
         } catch {
             lastError = error.localizedDescription
         }
+    }
+
+    private func transferTrackComplicationIfUseful(
+        _ snapshot: TrackComplicationSnapshot,
+        payload: [String: Any],
+        session: WCSession
+    ) {
+        guard session.isComplicationEnabled,
+              session.remainingComplicationUserInfoTransfers > 0,
+              hasVisibleTrackChange(snapshot, comparedWith: lastComplicationTransferSnapshot) else {
+            return
+        }
+
+        _ = session.transferCurrentComplicationUserInfo(payload)
+        lastComplicationTransferSnapshot = snapshot
+    }
+
+    private func hasVisibleTrackChange(
+        _ snapshot: TrackComplicationSnapshot,
+        comparedWith previous: TrackComplicationSnapshot?
+    ) -> Bool {
+        guard let previous else { return true }
+        return snapshot.distanceMeters != previous.distanceMeters
+            || snapshot.segments != previous.segments
+            || !Calendar.autoupdatingCurrent.isDate(snapshot.dayStart, inSameDayAs: previous.dayStart)
     }
 
     private func startActivationIfNeeded(force: Bool = false) {
