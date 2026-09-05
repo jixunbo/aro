@@ -11,9 +11,9 @@ aro（Everything Around You）是一款隐私优先的 iOS + watchOS App：在 i
 ## 功能
 
 - 四档定位模式：极省电、均衡、精确、运动。
-- 极省电模式使用高质量 Standard Core Location + 约 100 m `distanceFilter`，把省电放在系统产生定位更新这一层，而不是先高频拿点再大量丢弃。
+- 极省电模式使用 Motion & Fitness 活动识别 + 高质量 Standard Core Location + 约 100 m `distanceFilter`，把主要省电放在系统产生定位更新这一层；移动里程点若精度暂时不够，会做一次短时有界的精度恢复，而不是直接丢掉后继续等下一个 100 m。
 - 均衡/精确/运动使用 iOS 26 `CLLocationUpdate.liveUpdates`；全天记录统一使用显式 `CLServiceSession(.always)`。
-- 极省电在 Standard location 自动暂停后建立约 100 m persistent `CLMonitor` 并停止 Standard updates；离开静止范围后由 Core Location 唤醒并重新开始距离驱动定位。
+- 极省电在系统自动暂停或 Motion 持续静止后，先取得新鲜高质量静止点，再建立约 50 m persistent `CLMonitor` 并停止 Standard updates；离开静止范围后由 Core Location 唤醒并重新开始距离驱动定位。
 - 均衡通过约 5 分钟的 robust 空间稳定窗口主动进入 60 m `CLMonitor`。少量 GPS outlier 不再阻止休眠，同时用前后稳定中心漂移限制避免把缓慢真实移动误判为静止。
 - 精确/运动模式使用 `CLBackgroundActivitySession` 保持及时后台交付，因此更适合需要更完整实时轨迹的场景，也会比均衡/极省电更耗电。
 - 自适应轨迹保存结合距离、时间、定位精度噪声和转弯变化决定是否保存点。均衡模式正常直线约 35 米级保存，同时允许较短距离的真实转弯提前落点。
@@ -32,7 +32,7 @@ aro（Everything Around You）是一款隐私优先的 iOS + watchOS App：在 i
 
 ## 定位模式
 
-- **极省电**：Standard Core Location，高质量定位，`distanceFilter ≈ 100 m`，允许系统自动暂停；暂停后切换到约 100 m persistent `CLMonitor`，离开范围再恢复 Standard updates。目标行为贴近实测的一生足迹省电模式：移动时约百米级高质量点，静止时真正停止持续定位。
+- **极省电**：Motion 活动识别 + Standard Core Location，高质量定位，`distanceFilter ≈ 100 m`，允许系统自动暂停；Motion-only 静止需持续约 2 分钟，随后用新鲜静止点切换到约 50 m persistent `CLMonitor`。移动中的 100 m 回调若只差定位质量，会短暂尝试恢复一个 ≤30 m 的更好 fix 后立即回到 100 m cadence，并限制为约每分钟最多启动一次，避免弱信号时退化成持续高频定位。目标行为贴近实测的一生足迹省电模式：移动时约百米级高质量点，静止时真正停止持续定位。
 - **均衡**：`.default` Live Updates。正常移动约 35 米级保存，最长约 60 秒且确有移动时补点，明显转弯可更早保存；约 5 分钟稳定静止后切到 60 m `CLMonitor`。推荐日常足迹。
 - **精确**：`.otherNavigation` + 及时后台活动，约 20 米级保存。
 - **运动**：`.fitness` + 及时后台活动，约 8 米级保存。
@@ -52,7 +52,7 @@ aro（Everything Around You）是一款隐私优先的 iOS + watchOS App：在 i
 
 `NSLocationRequireExplicitServiceSession` 已启用。开启自动记录后，aro 保持一个明确要求 `.always` 的 `CLServiceSession`。均衡/精确/运动迭代 `CLLocationUpdate.liveUpdates`；极省电使用同一个授权生命周期下的 Standard location service，并设置约 100 m `distanceFilter`。
 
-极省电和均衡最终都把静止状态交给 persistent `CLMonitor`：极省电主要依赖 Standard location 的 automatic pause 作为静止确认；均衡使用 robust 空间稳定检测。只有在 monitor 建立成功后才停止当前移动定位引擎。离开 geofence 后恢复该模式自己的主定位引擎，不使用 significant-change、Visits 或 Core Motion wake fallback。
+极省电和均衡最终都把静止状态交给 persistent `CLMonitor`：极省电结合 Standard location automatic pause 与 Motion 活动分类，但 Motion 仅作提示而不是后台唤醒源；均衡把 Motion stationary 与 robust GPS 空间稳定检测融合。只有在 monitor 建立成功后才停止当前移动定位引擎。离开 geofence 后恢复该模式自己的主定位引擎，不使用 significant-change、Visits 或 Core Motion wake fallback。
 
 定位启动路径刻意不初始化 WatchConnectivity 或 CloudKit。普通前台进入由 `RootView` 激活 WatchConnectivity，并在 Cloud 构建中恢复 CloudKit；CloudKit remote notification 有独立入口。这样，后台足迹唤醒不会顺便产生手表请求或云网络工作。
 
@@ -68,7 +68,7 @@ aro 使用新的 Bundle ID 身份，不能覆盖升级现有的 Traceon/Companio
 
 ## Apple Watch
 
-Watch App 主界面底部显示实际安装包的营销版本与构建号；aro 2.0 当前构建显示 `v2.0.2 (1)`，用于真机安装和功耗对照时确认版本。
+Watch App 主界面底部显示实际安装包的营销版本与构建号；当前未发布测试线为 `v2.1.2 (1)`，用于真机安装和功耗对照时确认版本。
 
 如果表盘编辑器中没有 `aro 电量` 或 `aro 轨迹`：确认手表系统为 watchOS 10 或更新版本，并且是从配对 iPhone 的 `aro` scheme 安装了完整的 Watch App（其中包含 `ARO Watch Widget Extension`）。先在手表上打开一次 aro，再重新进入表盘编辑器。`aro 轨迹` 当前只支持圆形位置。
 
@@ -78,9 +78,9 @@ Apple Watch 电量必须使用配对真机测试。公开 WatchKit 仍只提供 
 
 ## 真机验证
 
-后台轨迹与功耗不能由模拟器证明。发布 aro 2.0.2 前至少验证：
+后台轨迹与功耗不能由模拟器证明。发布 aro 2.1.2 前至少验证：
 
-- **极省电竞品对照**：与一生足迹省电模式同时跑相同路线，重点比较移动阶段的点间距离分布是否接近约 100 m、定位精度是否保持高质量、静止后是否停止持续回调，以及离开约 100 m 静止范围后的恢复延迟。
+- **极省电竞品对照**：与一生足迹省电模式同时跑相同路线，重点比较稳态点间距离是否接近约 100 m、有效点数量、定位精度、过滤原因、稳态/过渡回调比例、静止后是否停止持续回调，以及离开约 50 m 静止范围后的恢复延迟。
 - **均衡静止**：完全静止约 5–7 分钟，应从“监测中”进入“静止省电监控”；少量 30–40 m GPS 漂移不应再让 Live Updates 永远保持运行。
 - 锁屏和普通后台下，同一路线与目标足迹 App 对照总距离、转弯保留、轨迹点数量和最近精度。
 - 在 Live Updates 和 CLMonitor 状态分别制造系统内存压力，确认当前 tracking session 可正确恢复，且定位恢复不能顺带初始化 WatchConnectivity 或 CloudKit。

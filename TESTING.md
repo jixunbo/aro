@@ -1,26 +1,28 @@
 # aro 真机验收清单
 
-安装或分发改动后的构建前，确认 iOS App、Watch App、Widget Extension 以及全部 Local/Cloud 配置使用同一个预期版本。aro 2.0.2 的 iOS/iPadOS 最低版本是 26.0；不要在 iOS 17–25 上做兼容性验收。
+安装或分发改动后的构建前，确认 iOS App、Watch App、Widget Extension 以及全部 Local/Cloud 配置使用同一个预期版本。aro 2.1.2 的 iOS/iPadOS 最低版本是 26.0；不要在 iOS 17–25 上做兼容性验收。
 
 ## 测试前提
 
-每次测试前确认：自动记录已开启、定位权限为“始终”、精确位置已开启。设置页诊断项区分“更新 / 定位 / 保存 / 过滤”：`更新` 是 Core Location 回调或 Live Update 事件，`定位` 是其中实际包含 `CLLocation` 的数量。
+每次测试前确认：自动记录已开启、定位权限为“始终”、精确位置已开启；Eco/Balanced 还应确认“运动与健身”已允许。设置页诊断项区分“更新 / 定位 / 保存 / 过滤”：`更新` 是 Core Location 回调或 Live Update 事件，`定位` 是其中实际包含 `CLLocation` 的数量。2.1.2 还显示过滤原因；Eco 额外显示稳态定位/稳态过滤、过渡定位/过渡过滤和精度恢复次数。
 
 四种模式当前应表现为：
 
-- **极省电**：Standard Core Location，高质量定位，约 100 m `distanceFilter`，允许 automatic pause；静止后切到约 100 m persistent `CLMonitor`。记录通道显示“标准定位”。
-- **均衡**：`.default` Live Updates；约 35 m 自适应保存；robust 空间静止判定后切到约 60 m persistent `CLMonitor`。记录通道显示“Live Updates”。
+- **极省电**：Motion 活动识别 + Standard Core Location，高质量定位，约 100 m `distanceFilter`，允许 automatic pause；Motion-only 静止持续约 2 分钟或系统自动 pause 后，先捕获新鲜高质量静止点，再切到约 50 m persistent `CLMonitor`。移动稳态的低质量里程回调可触发最多约 12 秒的精度恢复，且约每分钟最多一次。记录通道显示“标准定位”。
+- **均衡**：Motion stationary + `.default` Live Updates；约 35 m 自适应保存；Motion 可缩短静止证明，但仍要求 GPS robust 空间稳定，随后切到约 60 m persistent `CLMonitor`。拒绝 Motion 权限时回退为完整 GPS idle 判定。记录通道显示“Live Updates”。
 - **精确**：`.otherNavigation` Live Updates + `CLBackgroundActivitySession`，约 20 m 保存，不进入 idle monitor。
 - **运动**：`.fitness` Live Updates + `CLBackgroundActivitySession`，约 8 m 保存，不进入 idle monitor。
 
 ## 极省电：与目标 App 省电模式同类行为
 
-1. **移动点间距基线**：在开阔区域连续步行/驾车至少 2–3 km。导出当天点并计算相邻有效点距离。多数移动点应围绕约 100 m 量级分布；允许启动、定位精度改善或系统调度产生更短/更长间隔，不能要求固定 100.0 m。
-2. **单点质量**：重点看 horizontal accuracy，而不是只看点数。目标是多数正常环境下保持高质量定位，不通过接受数百米粗点换省电。明显劣于约 30 m 的点应被保存层拒绝。
-3. **静止自动休眠**：在信号良好处保持不动。观察 Standard location 是否触发 automatic pause。触发后设置页应进入“静止省电监控”，Standard updates 应停止，后续静止期间 `定位` 不应继续高频增长。
-4. **静止范围唤醒**：进入“静止省电监控”后，不打开 aro，直接离开当前位置并持续移动至少 500 m。约 100 m monitored circle 被系统判定离开后，应恢复 Standard updates。记录从真实开始移动到首个新保存点的时间与距离。
-5. **系统回收后唤醒**：先进入 Eco idle monitor，再让系统在内存压力下回收 aro（不要手动上划），保持静止一段时间后离开 monitored circle。确认 persistent CLMonitor 能恢复进程和 Eco Standard recorder。
-6. **对照一生足迹省电模式**：同一台手机、相近时间和路线同时运行。比较：总距离、点数、相邻点距离中位数/分布、定位精度、长时间静止 gap、重新移动后的首点延迟、系统“电池”页占比与后台活动。目标是行为和功耗尽量接近，不要求逐点完全一致。
+1. **移动点间距基线**：在开阔区域连续步行/驾车至少 2–3 km。导出当天点并计算相邻有效点距离。多数**稳态保存点**应围绕约 100 m 量级分布；允许 warm start、静止捕获、精度恢复或系统调度产生更短/更长间隔，不能要求所有交付位置固定 100.0 m。
+2. **过滤诊断**：同一路线结束后记录“本次启动”“极省电诊断”“过滤原因”。重点区分稳态过滤与过渡过滤。warm start/精度改善产生的短距点被过滤是正常的；如果稳态定位大量被“精度”过滤，精度恢复应启动并把后续高质量 fix 留下。若稳态仍大量出现“未达阈值/顺序/异常速度”，先查过滤逻辑而不是降低 `distanceFilter`。
+3. **单点质量与精度恢复**：目标是多数正常环境下保存 ≤30 m 的高质量点。制造一次 30–100 m 的差精度移动回调时，若已明显离开上一个保存点且 Motion/速度表明正在移动，应短暂进入“改善定位精度”，在约 12 秒内恢复到 ≤30 m 后保存并回到 100 m cadence；连续恢复约每分钟最多一次；>100 m 或 reduced-accuracy 粗点不应让 Eco 长时间保持高频定位。
+4. **短暂停车不得误睡**：驾车遇红灯/短暂停车 30–90 秒，Motion 即使短暂报告 stationary，也不应立即建立 CLMonitor。Motion-only 静止需持续约 2 分钟；若 Standard location 自己触发 automatic pause，可作为更强的静止信号。
+5. **静止自动休眠**：在信号良好处保持不动。进入“确认静止位置”后必须取得一个新鲜高质量 fix 才可建立 monitor；捕获失败不能拿旧的 100 m distance-filter 点直接当 geofence 中心。成功后设置页进入“静止省电监控”，Standard updates 停止，后续静止期间 `定位` 不应继续高频增长。
+6. **静止范围唤醒**：进入“静止省电监控”后，不打开 aro，直接离开当前位置并持续移动至少 500 m。约 50 m monitored circle 被系统判定离开后，应先 warm start 取得当前位置，再恢复 100 m cadence。记录从真实开始移动到首个新保存点的时间与距离。
+7. **系统回收后唤醒**：先进入 Eco idle monitor，再让系统在内存压力下回收 aro（不要手动上划），保持静止一段时间后离开 monitored circle。确认 persistent CLMonitor 能恢复进程和 Eco Standard recorder；Motion 不作为 wake 条件。
+8. **对照一生足迹省电模式**：同一台手机、相近时间和路线同时运行。2026-09-05 的基线里一生足迹约 2.5 km / 25 点，而 aro 同次约 2.0 km / 9 点且进程诊断为 23 定位 / 10 保存 / 13 过滤。2.1.2 的目标是先消除不必要的**稳态**丢点，使有效点数量和约 100 m spacing 明显靠近竞品，同时保持静止功耗优势；不要通过永久关闭 automatic pause 或把 steady `distanceFilter` 降低到 50 m 来“刷点数”。
 
 ## 均衡：Live Updates + robust idle
 
@@ -61,7 +63,7 @@
 不要用一次短测试判断耗电。至少做路线和手机使用方式相近的完整工作日比较：
 
 - **Day 0 / baseline**：暂停 aro，记录“设置 → 电池”的总耗电、后台活动和屏幕时间。
-- **Day 1 / Eco**：极省电全天记录；重点验证移动时不是高频回调再过滤，而是 Standard location 的约 100 m 距离驱动生成，静止后进入 CLMonitor。
+- **Day 1 / Eco**：极省电全天记录；重点验证 steady-state 仍由 Standard location 的约 100 m 距离驱动生成，精度恢复只在必要时短暂发生，静止后进入 CLMonitor。
 - **Day 2 / competitor**：一生足迹省电模式，尽量保持相近日程，与 Day 1 比较点间距、路线和耗电。
 - **Day 3 / Balanced**：均衡全天记录；重点验证 robust idle 后 Live Updates 真正停止，观察轨迹质量相对 Eco 提升带来的实际耗电差。
 - **Day 4 / Precise（可选）**：验证 `CLBackgroundActivitySession` 的及时交付和预期更高功耗。
@@ -70,7 +72,7 @@
 
 ## Watch 真机验证
 
-- 安装 aro 2.0.2 的 iPhone App、Watch App 和 Widget Extension，确认 Watch App 底部显示 `v2.0.2 (1)`。
+- 安装 aro 2.1.2 的 iPhone App、Watch App 和 Widget Extension，确认 Watch App 底部显示 `v2.1.2 (1)`。
 - `aro 轨迹` complication：iPhone 当日路线变化后，不手动打开 Watch App，确认 complication 最终能通过 application context / complication transfer 更新。
 - `aro 电量` complication：>50% 为绿色，21–50% 为橙色，≤20% 为红色；充电/已充满始终绿色。
 - 电量百分比以公共 `WKInterfaceDevice.batteryLevel` 为准；如果 watchOS 只提供 5%/10% 粒度，不把它当 aro rounding bug。
@@ -78,7 +80,7 @@
 ## Local / Cloud 构建配置
 
 1. Local `Debug`/`Release` 使用 `aro/aro.local.entitlements`，不携带 CloudKit container、iCloud services 或 APNs entitlement。
-2. CI 的 `CloudDebug` simulator build 必须通过，确保可选 CloudKit 代码仍可编译；CloudKit 当前不是 2.0.2 的真机发布重点。
+2. CI 的 `CloudDebug` simulator build 必须通过，确保可选 CloudKit 代码仍可编译；CloudKit 当前不是 2.1.2 的真机发布重点。
 3. Personal Team 真机安装使用 Debug Local，验证 Core Location、SQLite、导入导出、Watch App 与 complications。
 4. 仅 Core Location 导致的后台进程恢复不能顺带初始化 WatchConnectivity 或 CloudKit。
 
