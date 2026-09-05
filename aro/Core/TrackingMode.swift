@@ -94,6 +94,10 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
 
     var standardDesiredAccuracy: CLLocationAccuracy { kCLLocationAccuracyNearestTenMeters }
     var standardDistanceFilter: CLLocationDistance { self == .eco ? 100 : kCLDistanceFilterNone }
+    var ecoAccuracyRecoveryMaximumAccuracy: CLLocationAccuracy { self == .eco ? 100 : 0 }
+    var ecoAccuracyRecoveryMinimumDistance: CLLocationDistance { self == .eco ? 50 : 0 }
+    var ecoAccuracyRecoveryTimeout: TimeInterval { self == .eco ? 12 : 0 }
+    var ecoAccuracyRecoveryCooldown: TimeInterval { self == .eco ? 60 : 0 }
 
     var liveConfiguration: CLLocationUpdate.LiveConfiguration {
         switch self {
@@ -128,7 +132,13 @@ enum TrackingMode: String, CaseIterable, Codable, Identifiable {
         }
     }
 
-    var motionAssistedIdleInterval: TimeInterval { self == .balanced ? 90 : .infinity }
+    var motionAssistedIdleInterval: TimeInterval {
+        switch self {
+        case .eco: 2 * 60
+        case .balanced: 90
+        case .precise, .workout: .infinity
+        }
+    }
     var motionAssistedMinimumIdleSamples: Int { self == .balanced ? 6 : .max }
     var idleDetectionRequiredFraction: Double { self == .balanced ? 0.90 : 1 }
     var idleDetectionMaximumCenterDrift: CLLocationDistance { self == .balanced ? 20 : 0 }

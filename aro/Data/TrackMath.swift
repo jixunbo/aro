@@ -2,6 +2,36 @@ import CoreLocation
 import Foundation
 
 enum TrackMath {
+    enum RejectionReason: String, CaseIterable, Equatable, Hashable {
+        case invalid
+        case accuracy
+        case beforeSession
+        case future
+        case order
+        case tooClose
+        case implausibleSpeed
+        case belowThreshold
+        case database
+
+        var label: String {
+            switch self {
+            case .invalid: "无效"
+            case .accuracy: "精度"
+            case .beforeSession: "会话前"
+            case .future: "未来"
+            case .order: "顺序"
+            case .tooClose: "过近"
+            case .implausibleSpeed: "异常速度"
+            case .belowThreshold: "未达阈值"
+            case .database: "数据库"
+            }
+        }
+    }
+
+    enum RecordDecision: Equatable {
+        case record
+        case reject(RejectionReason)
+    }
     static func distance(of points: [TrackPoint]) -> CLLocationDistance {
         guard points.count > 1 else { return 0 }
         var result: CLLocationDistance = 0
@@ -18,42 +48,48 @@ enum TrackMath {
         return result
     }
 
-    static func shouldRecordLiveLocation(
+    static func recordDecision(
         _ location: CLLocation,
         after previous: TrackPoint?,
         mode: TrackingMode,
         trackingStartedAt: Date,
         observedTurnDegrees: CLLocationDirection? = nil,
         now: Date = .now
-    ) -> Bool {
-        guard location.horizontalAccuracy >= 0,
-              location.horizontalAccuracy <= mode.maximumAcceptedAccuracy,
-              location.timestamp >= trackingStartedAt.addingTimeInterval(-1),
-              location.timestamp <= now.addingTimeInterval(60),
-              CLLocationCoordinate2DIsValid(location.coordinate)
-        else { return false }
+    ) -> RecordDecision {
+        guard CLLocationCoordinate2DIsValid(location.coordinate), location.horizontalAccuracy >= 0 else {
+            return .reject(.invalid)
+        }
+        guard location.horizontalAccuracy <= mode.maximumAcceptedAccuracy else {
+            return .reject(.accuracy)
+        }
+        guard location.timestamp >= trackingStartedAt.addingTimeInterval(-1) else {
+            return .reject(.beforeSession)
+        }
+        guard location.timestamp <= now.addingTimeInterval(60) else {
+            return .reject(.future)
+        }
 
-        guard let previous else { return true }
+        guard let previous else { return .record }
         let interval = location.timestamp.timeIntervalSince(previous.timestamp)
-        guard interval > 0 else { return false }
+        guard interval > 0 else { return .reject(.order) }
 
         let distance = previous.location.distance(from: location)
-        guard distance >= 5 else { return false }
+        guard distance >= 5 else { return .reject(.tooClose) }
 
         if interval < 10 * 60, distance / interval > 100 {
-            return false
+            return .reject(.implausibleSpeed)
         }
 
         let previousAccuracy = previous.horizontalAccuracy >= 0 ? previous.horizontalAccuracy : 0
         let noiseRadius = max(previousAccuracy, location.horizontalAccuracy) * 0.5
         let normalDistance = max(mode.minimumRecordingDistance, noiseRadius)
         if distance >= normalDistance {
-            return true
+            return .record
         }
 
         let timedDistance = max(mode.minimumTimedRecordingDistance, noiseRadius)
         if interval >= mode.maximumRecordingInterval, distance >= timedDistance {
-            return true
+            return .record
         }
 
         let turnDistance = max(mode.minimumTurnDistance, noiseRadius)
@@ -64,10 +100,28 @@ enum TrackMath {
                observedTurnDegrees: observedTurnDegrees,
                threshold: mode.turnThresholdDegrees
            ) {
-            return true
+            return .record
         }
 
-        return false
+        return .reject(.belowThreshold)
+    }
+
+    static func shouldRecordLiveLocation(
+        _ location: CLLocation,
+        after previous: TrackPoint?,
+        mode: TrackingMode,
+        trackingStartedAt: Date,
+        observedTurnDegrees: CLLocationDirection? = nil,
+        now: Date = .now
+    ) -> Bool {
+        recordDecision(
+            location,
+            after: previous,
+            mode: mode,
+            trackingStartedAt: trackingStartedAt,
+            observedTurnDegrees: observedTurnDegrees,
+            now: now
+        ) == .record
     }
 
     static func idleMonitorCenter(
@@ -96,7 +150,10 @@ enum TrackMath {
               now.timeIntervalSince(newest.timestamp) <= 90 else { return nil }
 
         let cutoff = newest.timestamp.addingTimeInterval(-interval)
-        let window = usable.filter { $0.timestamp >= cutoff }
+        guard let boundaryIndex = usable.lastIndex(where: { $0.timestamp <= cutoff }) else {
+            return nil
+        }
+        let window = Array(usable[boundaryIndex...])
         guard window.count >= requiredSamples,
               let oldest = window.first,
               newest.timestamp.timeIntervalSince(oldest.timestamp) >= interval,
@@ -105,13 +162,16 @@ enum TrackMath {
         }
 
         let centerLocation = CLLocation(latitude: center.latitude, longitude: center.longitude)
-        let inlierCount = window.reduce(into: 0) { count, location in
-            if centerLocation.distance(from: location) <= mode.idleDetectionRadius {
-                count += 1
-            }
+        let inliers = window.filter {
+            centerLocation.distance(from: $0) <= mode.idleDetectionRadius
         }
         let requiredInliers = Int(ceil(Double(window.count) * mode.idleDetectionRequiredFraction))
-        guard inlierCount >= requiredInliers else { return nil }
+        guard inliers.count >= requiredInliers,
+              let oldestInlier = inliers.first,
+              let newestInlier = inliers.last,
+              newestInlier.timestamp.timeIntervalSince(oldestInlier.timestamp) >= interval else {
+            return nil
+        }
 
         let clusterCount = max(3, window.count / 4)
         guard let earlyCenter = medianCoordinate(of: Array(window.prefix(clusterCount))),

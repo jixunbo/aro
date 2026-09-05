@@ -136,6 +136,48 @@ final class TrackMathTests: XCTestCase {
         )
     }
 
+    func testIdleMonitorCenterAcceptsIrregularSamplesAcrossFullInterval() {
+        let now = Date()
+        let interval = TrackingMode.balanced.idleDetectionInterval
+        let start = now.addingTimeInterval(-(interval + 7))
+        let samples = (0..<19).map { index in
+            location(
+                latitude: 52.5200 + Double(index % 2) * 0.00001,
+                longitude: 13.4050 + Double(index % 3) * 0.00001,
+                date: start.addingTimeInterval(Double(index) * 17),
+                accuracy: 8,
+                speed: 0
+            )
+        }
+
+        XCTAssertNotNil(TrackMath.idleMonitorCenter(for: samples, mode: .balanced, now: now))
+    }
+
+    func testIdleMonitorCenterDoesNotUseBoundaryOutlierAsStableDuration() {
+        let now = Date()
+        let interval = TrackingMode.balanced.idleDetectionInterval
+        var samples = [
+            location(
+                latitude: 52.5210,
+                longitude: 13.4050,
+                date: now.addingTimeInterval(-(interval + 20)),
+                accuracy: 8,
+                speed: 1
+            )
+        ]
+        samples += (0..<16).map { index in
+            location(
+                latitude: 52.5200 + Double(index % 2) * 0.00001,
+                longitude: 13.4050,
+                date: now.addingTimeInterval(-280 + Double(index) * (280.0 / 15.0)),
+                accuracy: 8,
+                speed: 0
+            )
+        }
+
+        XCTAssertNil(TrackMath.idleMonitorCenter(for: samples, mode: .balanced, now: now))
+    }
+
     func testIdleMonitorCenterIgnoresSingleGPSOutlier() throws {
         let now = Date()
         let start = now.addingTimeInterval(-TrackingMode.balanced.idleDetectionInterval)
@@ -211,6 +253,52 @@ final class TrackMathTests: XCTestCase {
         XCTAssertEqual(MotionActivityKind.walking.locationActivityType, .fitness)
     }
 
+    func testRecordDecisionExplainsCommonRejections() {
+        let now = Date()
+        let startedAt = now.addingTimeInterval(-60)
+        let previous = point(latitude: 52.5200, longitude: 13.4050, date: now.addingTimeInterval(-30))
+
+        let inaccurate = location(
+            latitude: 52.5209, longitude: 13.4050, date: now, accuracy: 45, speed: 4
+        )
+        XCTAssertEqual(
+            TrackMath.recordDecision(inaccurate, after: previous, mode: .eco, trackingStartedAt: startedAt, now: now),
+            .reject(.accuracy)
+        )
+
+        let tooClose = location(
+            latitude: 52.52001, longitude: 13.4050, date: now, accuracy: 8, speed: 0
+        )
+        XCTAssertEqual(
+            TrackMath.recordDecision(tooClose, after: previous, mode: .balanced, trackingStartedAt: startedAt, now: now),
+            .reject(.tooClose)
+        )
+
+        let belowThreshold = location(
+            latitude: 52.52018, longitude: 13.4050, date: now, accuracy: 8, speed: 1
+        )
+        XCTAssertEqual(
+            TrackMath.recordDecision(belowThreshold, after: previous, mode: .balanced, trackingStartedAt: startedAt, now: now),
+            .reject(.belowThreshold)
+        )
+
+        let beforeSession = location(
+            latitude: 52.5209, longitude: 13.4050, date: startedAt.addingTimeInterval(-5), accuracy: 8, speed: 4
+        )
+        XCTAssertEqual(
+            TrackMath.recordDecision(beforeSession, after: nil, mode: .eco, trackingStartedAt: startedAt, now: now),
+            .reject(.beforeSession)
+        )
+
+        let impossible = location(
+            latitude: 52.5300, longitude: 13.4050, date: previous.timestamp.addingTimeInterval(1), accuracy: 8, speed: 4
+        )
+        XCTAssertEqual(
+            TrackMath.recordDecision(impossible, after: previous, mode: .balanced, trackingStartedAt: startedAt, now: now),
+            .reject(.implausibleSpeed)
+        )
+    }
+
     func testEcoUsesDistanceFilteredStandardLocationAndIdleMonitor() {
         XCTAssertTrue(TrackingMode.eco.usesDistanceFilteredStandardUpdates)
         XCTAssertTrue(TrackingMode.eco.usesMotionActivity)
@@ -218,6 +306,11 @@ final class TrackMathTests: XCTestCase {
         XCTAssertEqual(TrackingMode.eco.standardDesiredAccuracy, kCLLocationAccuracyNearestTenMeters)
         XCTAssertEqual(TrackingMode.eco.standardDistanceFilter, 100)
         XCTAssertEqual(TrackingMode.eco.maximumAcceptedAccuracy, 30)
+        XCTAssertEqual(TrackingMode.eco.ecoAccuracyRecoveryMaximumAccuracy, 100)
+        XCTAssertEqual(TrackingMode.eco.ecoAccuracyRecoveryMinimumDistance, 50)
+        XCTAssertEqual(TrackingMode.eco.ecoAccuracyRecoveryTimeout, 12)
+        XCTAssertEqual(TrackingMode.eco.ecoAccuracyRecoveryCooldown, 60)
+        XCTAssertEqual(TrackingMode.eco.motionAssistedIdleInterval, 120)
         XCTAssertEqual(TrackingMode.eco.minimumRecordingDistance, 10)
         XCTAssertEqual(TrackingMode.eco.idleMonitorRadius, 50)
         XCTAssertFalse(TrackingMode.eco.usesSpatialIdleDetection)

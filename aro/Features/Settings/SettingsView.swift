@@ -86,6 +86,12 @@ struct SettingsView: View {
                 "本次启动",
                 value: "更新 \(locationService.receivedUpdateCount) · 定位 \(locationService.locationUpdateCount) · 保存 \(locationService.recordedUpdateCount) · 过滤 \(locationService.rejectedUpdateCount)"
             )
+            if locationService.mode == .eco {
+                LabeledContent("极省电诊断", value: locationService.ecoDiagnosticsLabel)
+            }
+            if !locationService.rejectionBreakdownLabel.isEmpty {
+                LabeledContent("过滤原因", value: locationService.rejectionBreakdownLabel)
+            }
             if let error = locationService.lastError {
                 LabeledContent("最近提示", value: error)
             }
@@ -222,7 +228,7 @@ struct SettingsView: View {
     private var aboutSection: some View {
         Section("关于") {
             LabeledContent("产品", value: "aro")
-            LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.1.0")
+            LabeledContent("版本", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.1.2")
             Button("重新查看隐私引导") { hasCompletedOnboarding = false }
         }
     }
